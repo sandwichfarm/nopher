@@ -24,7 +24,7 @@ func NewRouter(server *Server, host string, port int) *Router {
 		server:   server,
 		host:     host,
 		port:     port,
-		renderer: NewRenderer(server.fullConfig),
+		renderer: NewRenderer(server.fullConfig, server.storage),
 	}
 }
 

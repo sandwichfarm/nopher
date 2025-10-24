@@ -1,6 +1,7 @@
 package gemini
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -8,24 +9,28 @@ import (
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sandwich/nopher/internal/aggregates"
 	"github.com/sandwich/nopher/internal/config"
+	"github.com/sandwich/nopher/internal/entities"
 	"github.com/sandwich/nopher/internal/markdown"
 	nostrclient "github.com/sandwich/nopher/internal/nostr"
 	"github.com/sandwich/nopher/internal/presentation"
+	"github.com/sandwich/nopher/internal/storage"
 )
 
 // Renderer renders Nostr events as Gemtext
 type Renderer struct {
-	parser *markdown.Parser
-	config *config.Config
-	loader *presentation.Loader
+	parser   *markdown.Parser
+	config   *config.Config
+	loader   *presentation.Loader
+	resolver *entities.Resolver
 }
 
 // NewRenderer creates a new event renderer
-func NewRenderer(cfg *config.Config) *Renderer {
+func NewRenderer(cfg *config.Config, st *storage.Storage) *Renderer {
 	return &Renderer{
-		parser: markdown.NewParser(),
-		config: cfg,
-		loader: presentation.NewLoader(cfg),
+		parser:   markdown.NewParser(),
+		config:   cfg,
+		loader:   presentation.NewLoader(cfg),
+		resolver: entities.NewResolver(st),
 	}
 }
 
@@ -56,8 +61,12 @@ func (r *Renderer) RenderNote(event *nostr.Event, agg *aggregates.EventAggregate
 	sb.WriteString(fmt.Sprintf("# Note by %s\n", truncatePubkey(event.PubKey)))
 	sb.WriteString(fmt.Sprintf("Posted: %s\n\n", formatTimestamp(event.CreatedAt)))
 
-	// Content (render markdown as gemtext)
-	rendered, _ := r.parser.RenderGemini([]byte(event.Content), nil)
+	// Content (resolve NIP-19 entities, then render markdown as gemtext)
+	content := event.Content
+	ctx := context.Background()
+	content = r.resolver.ReplaceEntities(ctx, content, entities.PlainTextFormatter)
+
+	rendered, _ := r.parser.RenderGemini([]byte(content), nil)
 	sb.WriteString(rendered)
 	sb.WriteString("\n")
 

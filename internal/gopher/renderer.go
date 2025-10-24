@@ -1,6 +1,7 @@
 package gopher
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -8,24 +9,28 @@ import (
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sandwich/nopher/internal/aggregates"
 	"github.com/sandwich/nopher/internal/config"
+	"github.com/sandwich/nopher/internal/entities"
 	"github.com/sandwich/nopher/internal/markdown"
 	nostrclient "github.com/sandwich/nopher/internal/nostr"
 	"github.com/sandwich/nopher/internal/presentation"
+	"github.com/sandwich/nopher/internal/storage"
 )
 
 // Renderer renders Nostr events as Gopher text
 type Renderer struct {
-	parser *markdown.Parser
-	config *config.Config
-	loader *presentation.Loader
+	parser   *markdown.Parser
+	config   *config.Config
+	loader   *presentation.Loader
+	resolver *entities.Resolver
 }
 
 // NewRenderer creates a new event renderer
-func NewRenderer(cfg *config.Config) *Renderer {
+func NewRenderer(cfg *config.Config, st *storage.Storage) *Renderer {
 	return &Renderer{
-		parser: markdown.NewParser(),
-		config: cfg,
-		loader: presentation.NewLoader(cfg),
+		parser:   markdown.NewParser(),
+		config:   cfg,
+		loader:   presentation.NewLoader(cfg),
+		resolver: entities.NewResolver(st),
 	}
 }
 
@@ -39,8 +44,12 @@ func (r *Renderer) RenderNote(event *nostr.Event, agg *aggregates.EventAggregate
 	sb.WriteString(strings.Repeat("=", 70))
 	sb.WriteString("\n\n")
 
-	// Content (render markdown)
+	// Content (resolve NIP-19 entities, then render markdown)
 	content := event.Content
+
+	// Resolve NIP-19 entities
+	ctx := context.Background()
+	content = r.resolver.ReplaceEntities(ctx, content, entities.GopherFormatter)
 
 	// Apply max content length if configured
 	if r.config.Display.Limits.MaxContentLength > 0 && len(content) > r.config.Display.Limits.MaxContentLength {
