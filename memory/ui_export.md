@@ -24,8 +24,10 @@ Note: "inbox" and "outbox" are internal concepts for data organization, not expo
 
 Gemini Server (gemini://)
 - Serves on port 1965 with TLS (self-signed or custom cert).
-- Main page (gemini://host/ or gemini://host): homepage gemtext with links to all sections.
-- Default sections (same as Gopher, configurable):
+- Homepage (gemini://host/ or gemini://host): fully configurable via layout.pages.home or layout.sections
+  - Default: Auto-generated gemtext with links to all sections
+  - Customizable: Can show composed sections, single section, or custom content
+- Default sections (same as Gopher, all configurable via layout.sections):
   - /notes - Owner's notes (kind 1, non-replies)
   - /articles - Owner's long-form articles (kind 30023)
   - /replies - Replies to owner's content
