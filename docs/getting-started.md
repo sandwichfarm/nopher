@@ -162,7 +162,7 @@ The generated configuration includes many sections:
 | `rendering` | Protocol-specific rendering options | 🟡 Implemented |
 | `caching` | Response caching (memory/Redis) | ✅ Verified |
 | `logging` | Log level configuration | ✅ Verified |
-| `layout` | Custom sections and pages | 🟡 Implemented |
+| `layout` | Sections and layouts (filtering/pagination/archives) | ✅ Verified |
 
 For complete configuration documentation, see [configuration.md](configuration.md).
 

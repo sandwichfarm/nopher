@@ -877,17 +877,181 @@ NOPHER_LOG_LEVEL=debug nopher --config nopher.yaml
 
 ## layout
 
-Custom sections and page layouts.
+Custom sections and page layouts for organizing and presenting content.
 
 ```yaml
 layout:
-  sections: {}
-  pages: {}
+  sections:
+    notes:
+      title: "Recent Notes"
+      description: "Latest short-form posts"
+      filters:
+        kinds: [1]
+        limit: 20
+      sort_by: "created_at"
+      sort_order: "desc"
+      show_dates: true
+      show_authors: true
+
+    articles:
+      title: "Articles"
+      description: "Long-form content"
+      filters:
+        kinds: [30023]
+        limit: 10
+      sort_by: "published_at"
+      sort_order: "desc"
+
+    inbox:
+      title: "Inbox"
+      description: "Your interactions"
+      filters:
+        tags:
+          p: ["${OWNER_PUBKEY}"]
+        kinds: [1, 7, 9735]
+        limit: 50
+      sort_by: "created_at"
+      sort_order: "desc"
 ```
 
-**Status:** 🚧 IN PROGRESS (Phase 11)
+### layout.sections
 
-See [memory/layouts_sections.md](../memory/layouts_sections.md) for planned schema.
+Define custom sections for organizing events by kind, author, tags, time range, and other criteria.
+
+**Section structure:**
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `title` | string | - | Display title for the section |
+| `description` | string | - | Section description |
+| `filters` | object | - | Filter criteria (see below) |
+| `sort_by` | string | `created_at` | Sort field: `created_at`, `reactions`, `zaps`, `replies` |
+| `sort_order` | string | `desc` | Sort order: `asc` or `desc` |
+| `limit` | int | `20` | Events per page |
+| `show_dates` | bool | `true` | Display event timestamps |
+| `show_authors` | bool | `true` | Display author names |
+| `group_by` | string | - | Grouping: `day`, `week`, `month`, `year`, `author`, `kind` |
+
+**Filter options:**
+
+```yaml
+filters:
+  kinds: [1, 30023]                    # Event kinds to include
+  authors: ["pubkey1", "pubkey2"]      # Filter by pubkeys
+  tags:
+    p: ["pubkey"]                      # Filter by tags (p, e, etc.)
+    e: ["eventid"]
+  since: 1704067200                    # Unix timestamp (start)
+  until: 1735689600                    # Unix timestamp (end)
+  limit: 20                            # Max events
+  scope: "following"                   # self, following, mutual, foaf, all
+```
+
+**Default sections:**
+
+Nopher provides built-in sections:
+- **notes**: Short-form notes (kind 1)
+- **articles**: Long-form articles (kind 30023)
+- **reactions**: Reactions (kind 7)
+- **zaps**: Zap receipts (kind 9735)
+- **inbox**: Mentions and replies to owner
+- **outbox**: Owner's published content
+
+**Time-based filtering:**
+
+```yaml
+filters:
+  kinds: [1]
+  since: ${LAST_7_DAYS}    # Built-in time ranges
+  # LAST_7_DAYS, LAST_30_DAYS, THIS_WEEK, THIS_MONTH, THIS_YEAR
+```
+
+**Archive support:**
+
+Sections automatically generate time-based archives:
+- `/archive/notes/2025/10` - October 2025 notes
+- `/archive/articles/2025` - All 2025 articles
+- Monthly calendar views with event counts
+
+### layout.sections Examples
+
+**Popular posts section:**
+```yaml
+sections:
+  popular:
+    title: "Popular Posts"
+    description: "Most liked and zapped"
+    filters:
+      kinds: [1, 30023]
+      limit: 10
+    sort_by: "reactions"
+    sort_order: "desc"
+```
+
+**Recent from following:**
+```yaml
+sections:
+  timeline:
+    title: "Timeline"
+    description: "Recent posts from people you follow"
+    filters:
+      kinds: [1]
+      scope: "following"
+      limit: 50
+    sort_by: "created_at"
+    sort_order: "desc"
+```
+
+**Thread view:**
+```yaml
+sections:
+  thread:
+    title: "Thread"
+    description: "Conversation thread"
+    filters:
+      tags:
+        e: ["${ROOT_EVENT_ID}"]
+      kinds: [1]
+    sort_by: "created_at"
+    sort_order: "asc"
+    group_by: "day"
+```
+
+**Monthly archive:**
+```yaml
+sections:
+  monthly:
+    title: "This Month"
+    description: "Posts from this month"
+    filters:
+      kinds: [1]
+      since: ${THIS_MONTH_START}
+      until: ${THIS_MONTH_END}
+    sort_by: "created_at"
+    sort_order: "desc"
+```
+
+### Pagination
+
+Sections support automatic pagination:
+- Page 1: `/section/notes`
+- Page 2: `/section/notes/2`
+- Page 3: `/section/notes/3`
+
+Navigation includes:
+- Previous/Next page links
+- Page numbers
+- Total pages and items
+
+### Archives
+
+Sections generate archives automatically:
+- List archives: `/archive/notes`
+- Monthly view: `/archive/notes/2025/10`
+- Daily view: `/archive/notes/2025/10/24`
+- Calendar: Monthly calendar with event counts per day
+
+**Status:** ✅ VERIFIED (Phase 11 complete - implemented in internal/sections/)
 
 ---
 

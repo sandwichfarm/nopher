@@ -493,6 +493,91 @@ aggregate:event123              - Interaction counts
 
 ---
 
+### 9. Sections and Layouts
+
+**Location:** `internal/sections/`
+
+**Purpose:** Organize and present events through configurable sections with filtering, pagination, and archive generation.
+
+**Architecture:**
+```
+┌─────────────────────────┐
+│   Section Manager       │
+│   (sections.go)         │
+└───────┬─────────────────┘
+        │
+    ┌───┴───────────┐
+    ↓               ↓
+┌────────────┐  ┌────────────┐
+│  Filters   │  │  Archives  │
+│ (filters.go)│  │(archives.go)│
+└────────────┘  └────────────┘
+```
+
+**Key files:**
+- `sections.go` - Section definitions, manager, page composition
+- `filters.go` - Filter query builder, time range helpers
+- `archives.go` - Archive generation (day/month/year)
+- `sections_test.go`, `filters_test.go` - Test coverage
+
+**Features:**
+- **Section Definition**: Title, description, filters, sorting, pagination
+- **Filtering**: By kinds, authors, tags, time ranges, scope (self/following/mutual/foaf)
+- **Sorting**: By created_at, reactions, zaps, replies (asc/desc)
+- **Pagination**: Automatic pagination with page numbers, totals, navigation
+- **Grouping**: By day, week, month, year, author, kind
+- **Archives**: Time-based archives (monthly/yearly) with event counts
+- **Calendar Views**: Monthly calendar showing days with events
+
+**Default sections:**
+- **notes**: Short-form notes (kind 1)
+- **articles**: Long-form articles (kind 30023)
+- **reactions**: Reactions (kind 7)
+- **zaps**: Zap receipts (kind 9735)
+- **inbox**: Mentions and replies to owner
+- **outbox**: Owner's published content
+
+**Filter builder:**
+```go
+filter := sections.NewFilterBuilder().
+    Kinds(1, 30023).
+    Authors("pubkey1", "pubkey2").
+    Since(sections.LastNDays(7).Start).
+    Limit(20).
+    Build()
+```
+
+**Time range helpers:**
+- `Today()`, `Yesterday()`, `ThisWeek()`, `ThisMonth()`, `ThisYear()`
+- `LastNDays(n)`, `LastNHours(n)`
+
+**Archive structure:**
+```
+/archive/notes              - List of monthly archives
+/archive/notes/2025/10      - October 2025 notes
+/archive/notes/2025/10/24   - October 24, 2025 notes
+```
+
+**Page composition:**
+```go
+page, _ := manager.GetPage(ctx, "notes", 1)
+// page.Events       - Events on this page
+// page.PageNumber   - Current page
+// page.TotalPages   - Total pages
+// page.HasNext      - Has next page
+// page.HasPrev      - Has previous page
+```
+
+**Integration:**
+- Protocol servers use sections for navigation
+- Each section cached independently (Phase 10)
+- Archives can be pre-generated and cached
+- Supports custom sections via configuration
+
+**Status:** ✅ Phase 11 complete
+
+---
+
 ## Code Organization
 
 ```
@@ -545,6 +630,13 @@ nopher/
 │   │   ├── invalidator.go   # Cache invalidation
 │   │   ├── cache_test.go    # Tests
 │   │   └── keys_test.go     # Key tests
+│   │
+│   ├── sections/            # Sections and layouts
+│   │   ├── sections.go      # Section manager
+│   │   ├── filters.go       # Filter builder
+│   │   ├── archives.go      # Archive generation
+│   │   ├── sections_test.go # Tests
+│   │   └── filters_test.go  # Filter tests
 │   │
 │   ├── markdown/            # Markdown conversion
 │   │   ├── parser.go        # AST parsing
@@ -919,13 +1011,6 @@ func (s *Server) Start() {
 ---
 
 ## Future Enhancements
-
-### Phase 11: Sections and Layouts
-
-- Custom section definitions
-- Configurable page layouts
-- Filter-based sections
-- Archive generation
 
 ### Phase 12: Operations and Diagnostics
 
