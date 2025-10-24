@@ -1,0 +1,64 @@
+# Nopher Test Configuration
+
+logging:
+  level: info
+  format: text
+
+site:
+  title: "Nopher Test Instance"
+  operator: "Test Operator"
+  description: "Testing Nopher integration"
+
+identity:
+  npub: "npub1test1234567890abcdefghijklmnopqrstuvwxyz123456789"
+  nsec: ""
+
+storage:
+  driver: sqlite
+  sqlite_path: ./test-data/nopher.db
+  lmdb_path: ./test-data/lmdb
+  lmdb_max_size_mb: 1024
+
+protocols:
+  gopher:
+    enabled: true
+    host: localhost
+    port: 7070
+    bind: "0.0.0.0"
+
+  gemini:
+    enabled: true
+    host: localhost
+    port: 11965
+    bind: "0.0.0.0"
+    tls:
+      cert_path: ./test-data/certs/gemini.crt
+      key_path: ./test-data/certs/gemini.key
+      auto_generate: true
+
+  finger:
+    enabled: true
+    port: 7079
+    bind: "0.0.0.0"
+    max_users: 10
+
+relays:
+  seeds:
+    - wss://relay.damus.io
+    - wss://nos.lol
+  discovery:
+    enabled: false
+
+sync:
+  enabled: false
+  scope:
+    mode: self
+  interval_minutes: 60
+
+inbox:
+  enabled: true
+  include_replies: true
+  include_mentions: true
+  include_reactions: true
+  include_zaps: true
+  include_reposts: false
