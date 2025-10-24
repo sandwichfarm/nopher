@@ -39,6 +39,28 @@ func (s *Storage) SaveGraphNode(ctx context.Context, node *GraphNode) error {
 	return nil
 }
 
+// GetGraphNode retrieves a single graph node for a specific root-target pair
+func (s *Storage) GetGraphNode(ctx context.Context, rootPubkey, targetPubkey string) (*GraphNode, error) {
+	query := `
+		SELECT root_pubkey, pubkey, depth, mutual, last_seen
+		FROM graph_nodes
+		WHERE root_pubkey = ? AND pubkey = ?
+	`
+
+	var node GraphNode
+	var mutual int
+
+	err := s.db.QueryRowContext(ctx, query, rootPubkey, targetPubkey).Scan(
+		&node.RootPubkey, &node.Pubkey, &node.Depth, &mutual, &node.LastSeen,
+	)
+	if err != nil {
+		return nil, err // Returns sql.ErrNoRows if not found
+	}
+
+	node.Mutual = mutual == 1
+	return &node, nil
+}
+
 // GetGraphNodes retrieves graph nodes for a given root pubkey
 func (s *Storage) GetGraphNodes(ctx context.Context, rootPubkey string, maxDepth int) ([]*GraphNode, error) {
 	query := `

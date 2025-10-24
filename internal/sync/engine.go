@@ -29,6 +29,9 @@ type Engine struct {
 
 	// Channels for coordination
 	eventChan chan *nostr.Event
+
+	// Phase 20: Optional retention evaluation callback
+	evaluateRetention func(context.Context, *nostr.Event) error
 }
 
 // New creates a new sync engine (legacy signature for compatibility)
@@ -108,6 +111,11 @@ func (e *Engine) Stop() {
 	e.cancel()
 	close(e.eventChan)
 	e.wg.Wait()
+}
+
+// SetRetentionEvaluator sets the retention evaluation callback (Phase 20)
+func (e *Engine) SetRetentionEvaluator(fn func(context.Context, *nostr.Event) error) {
+	e.evaluateRetention = fn
 }
 
 // getOwnerPubkey decodes the npub to hex pubkey
@@ -385,6 +393,14 @@ func (e *Engine) processEvent(event *nostr.Event) error {
 		// Zap - update aggregates
 		if err := e.updateZapAggregate(event); err != nil {
 			return fmt.Errorf("failed to update zap: %w", err)
+		}
+	}
+
+	// Phase 20: Evaluate retention if enabled
+	if e.evaluateRetention != nil {
+		if err := e.evaluateRetention(e.ctx, event); err != nil {
+			// Log error but don't fail the entire event processing
+			fmt.Printf("[SYNC]   ⚠ Retention evaluation error: %v\n", err)
 		}
 	}
 

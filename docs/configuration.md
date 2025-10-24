@@ -442,9 +442,11 @@ Data retention and pruning.
 
 **Status:** ✅ VERIFIED (code in internal/sync/)
 
-### sync.retention.advanced (Phase 17)
+### sync.retention.advanced (Phase 20)
 
 **Advanced configurable retention system** - sophisticated, multi-dimensional retention rules.
+
+**Status:** ✅ IMPLEMENTED
 
 ```yaml
 sync:

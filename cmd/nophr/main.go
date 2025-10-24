@@ -13,6 +13,7 @@ import (
 	"github.com/sandwich/nophr/internal/finger"
 	"github.com/sandwich/nophr/internal/gemini"
 	"github.com/sandwich/nophr/internal/gopher"
+	"github.com/sandwich/nophr/internal/ops"
 	"github.com/sandwich/nophr/internal/sections"
 	"github.com/sandwich/nophr/internal/storage"
 	"github.com/sandwich/nophr/internal/sync"
@@ -96,11 +97,35 @@ func run(cfg *config.Config) error {
 	aggMgr := aggregates.NewManager(st, cfg)
 	fmt.Println("  Aggregates manager ready")
 
+	// Phase 20: Initialize retention manager
+	fmt.Println("Initializing retention manager...")
+	logger := ops.NewLogger(&cfg.Logging)
+	retentionMgr := ops.NewRetentionManager(st, &cfg.Sync.Retention, logger, cfg.Identity.Npub)
+	fmt.Println("  Retention manager ready")
+
+	// Run prune on startup if configured
+	if retentionMgr.ShouldPruneOnStart() {
+		fmt.Println("  Running startup pruning...")
+		deleted, err := retentionMgr.PruneOldEvents(ctx)
+		if err != nil {
+			fmt.Printf("  ⚠ Startup pruning failed: %v\n", err)
+		} else {
+			fmt.Printf("  ✓ Startup pruning complete: %d events deleted\n", deleted)
+		}
+	}
+
 	// Initialize sync engine if enabled
 	var syncEngine *sync.Engine
 	if cfg.Sync.Enabled {
 		fmt.Println("Initializing sync engine...")
 		syncEngine = sync.NewEngine(st, cfg)
+
+		// Phase 20: Integrate retention evaluation if advanced retention is enabled
+		if cfg.Sync.Retention.Advanced != nil && cfg.Sync.Retention.Advanced.Enabled {
+			fmt.Println("  Integrating advanced retention with sync engine...")
+			syncEngine.SetRetentionEvaluator(retentionMgr.EvaluateEvent)
+		}
+
 		if err := syncEngine.Start(); err != nil {
 			return fmt.Errorf("failed to start sync engine: %w", err)
 		}

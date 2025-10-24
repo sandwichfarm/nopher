@@ -282,3 +282,23 @@ func (s *Storage) DeleteRetentionMetadata(ctx context.Context, eventID string) e
 	}
 	return nil
 }
+
+// CountRetentionMetadata returns the total number of events with retention metadata
+func (s *Storage) CountRetentionMetadata(ctx context.Context) (int64, error) {
+	query := `SELECT COUNT(*) FROM retention_metadata`
+	var count int64
+	if err := s.db.QueryRowContext(ctx, query).Scan(&count); err != nil {
+		return 0, fmt.Errorf("failed to count retention metadata: %w", err)
+	}
+	return count, nil
+}
+
+// CountRetentionProtected returns the number of protected events
+func (s *Storage) CountRetentionProtected(ctx context.Context) (int64, error) {
+	query := `SELECT COUNT(*) FROM retention_metadata WHERE protected = 1`
+	var count int64
+	if err := s.db.QueryRowContext(ctx, query).Scan(&count); err != nil {
+		return 0, fmt.Errorf("failed to count protected events: %w", err)
+	}
+	return count, nil
+}

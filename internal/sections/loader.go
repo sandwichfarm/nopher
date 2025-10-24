@@ -36,11 +36,11 @@ func convertConfigToSection(cfg config.SectionConfig) (*Section, error) {
 		Order:       cfg.Order,
 	}
 
-	// Set defaults
-	if section.Limit == 0 {
-		section.Limit = 20
-	} else {
+	// Set limit (default to 20 if not specified)
+	if cfg.Limit > 0 {
 		section.Limit = cfg.Limit
+	} else {
+		section.Limit = 20
 	}
 
 	// Convert sort field

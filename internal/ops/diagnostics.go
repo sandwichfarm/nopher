@@ -70,24 +70,44 @@ type AggregateStats struct {
 	LastReconcile   *time.Time
 }
 
+// Phase 20: RetentionDiagStats contains retention-related diagnostics
+type RetentionDiagStats struct {
+	Enabled             bool
+	AdvancedEnabled     bool
+	KeepDays            int
+	TotalEvents         int64
+	EstimatedPrunable   int64
+	TotalProtected      int64
+	TotalWithMetadata   int64
+	OldestEvent         *time.Time
+	NewestEvent         *time.Time
+	Cutoff              *time.Time
+}
+
 // DiagnosticsCollector collects system diagnostics
 type DiagnosticsCollector struct {
-	version   string
-	commit    string
-	startTime time.Time
-	storage   *storage.Storage
-	syncEngine *sync.Engine
+	version       string
+	commit        string
+	startTime     time.Time
+	storage       *storage.Storage
+	syncEngine    *sync.Engine
+	retentionMgr  *RetentionManager // Phase 20
 }
 
 // NewDiagnosticsCollector creates a new diagnostics collector
 func NewDiagnosticsCollector(version, commit string, st *storage.Storage, syncEng *sync.Engine) *DiagnosticsCollector {
 	return &DiagnosticsCollector{
-		version:   version,
-		commit:    commit,
-		startTime: time.Now(),
-		storage:   st,
+		version:    version,
+		commit:     commit,
+		startTime:  time.Now(),
+		storage:    st,
 		syncEngine: syncEng,
 	}
+}
+
+// SetRetentionManager sets the retention manager for diagnostics (Phase 20)
+func (d *DiagnosticsCollector) SetRetentionManager(rm *RetentionManager) {
+	d.retentionMgr = rm
 }
 
 // CollectSystemStats collects system-level statistics
@@ -256,6 +276,55 @@ func (d *DiagnosticsCollector) CollectAggregateStats(ctx context.Context) (*Aggr
 	return stats, nil
 }
 
+// CollectRetentionStats collects retention statistics (Phase 20)
+func (d *DiagnosticsCollector) CollectRetentionStats(ctx context.Context) (*RetentionDiagStats, error) {
+	if d.retentionMgr == nil {
+		return &RetentionDiagStats{Enabled: false}, nil
+	}
+
+	stats := &RetentionDiagStats{
+		Enabled: true,
+	}
+
+	// Get retention stats from manager
+	retStats, err := d.retentionMgr.GetRetentionStats(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get retention stats: %w", err)
+	}
+
+	stats.KeepDays = retStats.KeepDays
+	stats.TotalEvents = retStats.TotalEvents
+	stats.EstimatedPrunable = retStats.EstimatedPrunable
+	if !retStats.OldestEvent.IsZero() {
+		stats.OldestEvent = &retStats.OldestEvent
+	}
+	if !retStats.NewestEvent.IsZero() {
+		stats.NewestEvent = &retStats.NewestEvent
+	}
+	if !retStats.Cutoff.IsZero() {
+		stats.Cutoff = &retStats.Cutoff
+	}
+
+	// Check if advanced retention is enabled
+	if d.retentionMgr.config.Advanced != nil && d.retentionMgr.config.Advanced.Enabled {
+		stats.AdvancedEnabled = true
+
+		// Get protected event count
+		protectedCount, err := d.storage.CountRetentionProtected(ctx)
+		if err == nil {
+			stats.TotalProtected = protectedCount
+		}
+
+		// Get total events with retention metadata
+		metadataCount, err := d.storage.CountRetentionMetadata(ctx)
+		if err == nil {
+			stats.TotalWithMetadata = metadataCount
+		}
+	}
+
+	return stats, nil
+}
+
 // CollectAll collects all diagnostic information
 func (d *DiagnosticsCollector) CollectAll(ctx context.Context) (*Diagnostics, error) {
 	diag := &Diagnostics{
@@ -293,6 +362,13 @@ func (d *DiagnosticsCollector) CollectAll(ctx context.Context) (*Diagnostics, er
 	}
 	diag.Aggregates = aggStats
 
+	// Phase 20: Collect retention stats
+	retStats, err := d.CollectRetentionStats(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect retention stats: %w", err)
+	}
+	diag.Retention = retStats
+
 	return diag, nil
 }
 
@@ -304,6 +380,7 @@ type Diagnostics struct {
 	Sync        *SyncStats
 	Relays      []RelayHealth
 	Aggregates  *AggregateStats
+	Retention   *RetentionDiagStats // Phase 20
 }
 
 // FormatAsText formats diagnostics as plain text
@@ -377,6 +454,24 @@ func (d *Diagnostics) FormatAsText() string {
 	if d.Aggregates.LastReconcile != nil {
 		out += fmt.Sprintf("Last Reconcile: %s\n", d.Aggregates.LastReconcile.Format(time.RFC3339))
 	}
+	out += "\n"
+
+	// Phase 20: Retention
+	out += fmt.Sprintf("--- Retention ---\n")
+	out += fmt.Sprintf("Enabled: %v\n", d.Retention.Enabled)
+	if d.Retention.Enabled {
+		out += fmt.Sprintf("Keep Days: %d\n", d.Retention.KeepDays)
+		if d.Retention.Cutoff != nil {
+			out += fmt.Sprintf("Cutoff Date: %s\n", d.Retention.Cutoff.Format(time.RFC3339))
+		}
+		out += fmt.Sprintf("Total Events: %d\n", d.Retention.TotalEvents)
+		out += fmt.Sprintf("Estimated Prunable: %d\n", d.Retention.EstimatedPrunable)
+		if d.Retention.AdvancedEnabled {
+			out += fmt.Sprintf("Advanced Retention: enabled\n")
+			out += fmt.Sprintf("  Protected Events: %d\n", d.Retention.TotalProtected)
+			out += fmt.Sprintf("  Events with Metadata: %d\n", d.Retention.TotalWithMetadata)
+		}
+	}
 
 	return out
 }
@@ -430,6 +525,19 @@ func (d *Diagnostics) FormatAsGemtext() string {
 	if d.Sync.Enabled {
 		out += fmt.Sprintf("* Relays: %d total, %d connected\n", d.Sync.RelayCount, d.Sync.ConnectedRelays)
 		out += fmt.Sprintf("* Total Synced: %d events\n", d.Sync.TotalSynced)
+	}
+	out += "\n"
+
+	// Phase 20: Retention
+	out += "## Retention\n\n"
+	out += fmt.Sprintf("* Enabled: %v\n", d.Retention.Enabled)
+	if d.Retention.Enabled {
+		out += fmt.Sprintf("* Keep Days: %d\n", d.Retention.KeepDays)
+		out += fmt.Sprintf("* Estimated Prunable: %d events\n", d.Retention.EstimatedPrunable)
+		if d.Retention.AdvancedEnabled {
+			out += fmt.Sprintf("* Advanced Retention: enabled\n")
+			out += fmt.Sprintf("* Protected Events: %d\n", d.Retention.TotalProtected)
+		}
 	}
 
 	return out

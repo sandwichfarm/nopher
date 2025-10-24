@@ -71,6 +71,37 @@ func (s *Storage) StoreEvent(ctx context.Context, event *nostr.Event) error {
 	return nil
 }
 
+// DeleteEvent deletes an event from the Khatru relay by ID (Phase 20)
+func (s *Storage) DeleteEvent(ctx context.Context, eventID string) error {
+	if s.relay == nil {
+		return fmt.Errorf("relay not initialized")
+	}
+
+	// Query the event first (Khatru DeleteEvent needs the full event)
+	filter := nostr.Filter{
+		IDs:   []string{eventID},
+		Limit: 1,
+	}
+
+	events, err := s.QueryEvents(ctx, filter)
+	if err != nil {
+		return fmt.Errorf("failed to query event before delete: %w", err)
+	}
+
+	if len(events) == 0 {
+		return nil // Event doesn't exist, nothing to delete
+	}
+
+	// Call all DeleteEvent handlers
+	for _, handler := range s.relay.DeleteEvent {
+		if err := handler(ctx, events[0]); err != nil {
+			return fmt.Errorf("failed to delete event: %w", err)
+		}
+	}
+
+	return nil
+}
+
 // QueryEvents queries events from the Khatru relay using Nostr filters
 func (s *Storage) QueryEvents(ctx context.Context, filter nostr.Filter) ([]*nostr.Event, error) {
 	if s.relay == nil {
