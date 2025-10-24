@@ -215,3 +215,27 @@ func (d *Discovery) RefreshRelayHints(ctx context.Context, operatorPubkey string
 	// Refresh from seed relays
 	return d.BootstrapFromSeeds(ctx, operatorPubkey)
 }
+
+// RelayStatus contains relay status information
+type RelayStatus struct {
+	URL         string
+	Connected   bool
+	LastConnect *time.Time
+	LastError   error
+}
+
+// GetRelays returns status information for all known relays
+func (d *Discovery) GetRelays() []RelayStatus {
+	// Get seed relays
+	seedRelays := d.client.GetSeedRelays()
+
+	relays := make([]RelayStatus, 0, len(seedRelays))
+	for _, url := range seedRelays {
+		relays = append(relays, RelayStatus{
+			URL:       url,
+			Connected: false, // TODO: Get actual connection status from client
+		})
+	}
+
+	return relays
+}

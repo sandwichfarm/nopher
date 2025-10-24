@@ -128,7 +128,8 @@ caching:
     reconciler_interval_seconds: 900
 
 logging:
-  level: "info"  # debug|info|warn|error
+  level: "info"   # debug|info|warn|error
+  format: "text"  # text|json
 
 layout:
   # See memory/layouts_sections.md for full spec

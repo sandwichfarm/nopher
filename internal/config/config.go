@@ -219,7 +219,8 @@ type AggregatesCaching struct {
 
 // Logging contains logging configuration
 type Logging struct {
-	Level string `yaml:"level"` // debug|info|warn|error
+	Level  string `yaml:"level"`  // debug|info|warn|error
+	Format string `yaml:"format"` // text|json
 }
 
 // Layout contains layout and section definitions
@@ -419,7 +420,8 @@ func Default() *Config {
 			},
 		},
 		Logging: Logging{
-			Level: "info",
+			Level:  "info",
+			Format: "text",
 		},
 		Layout: Layout{
 			Sections: make(map[string]interface{}),
