@@ -522,20 +522,55 @@ aggregate:event123              - Interaction counts
 
 **Features:**
 - **Section Definition**: Title, description, filters, sorting, pagination
+- **URL Path Mapping**: Sections can be mapped to specific URL paths (e.g., `/diy`, `/philosophy`)
+- **Multiple Sections per Path**: Multiple sections can share the same path (ordered display)
 - **Filtering**: By kinds, authors, tags, time ranges, scope (self/following/mutual/foaf)
 - **Sorting**: By created_at, reactions, zaps, replies (asc/desc)
 - **Pagination**: Automatic pagination with page numbers, totals, navigation
 - **Grouping**: By day, week, month, year, author, kind
 - **Archives**: Time-based archives (monthly/yearly) with event counts
 - **Calendar Views**: Monthly calendar showing days with events
+- **"More" Links**: Sections can include links to full paginated views
 
-**Default sections:**
-- **notes**: Short-form notes (kind 1)
-- **articles**: Long-form articles (kind 30023)
-- **reactions**: Reactions (kind 7)
-- **zaps**: Zap receipts (kind 9735)
-- **inbox**: Mentions and replies to owner
-- **outbox**: Owner's published content
+**Section structure:**
+```go
+type Section struct {
+    Name        string     // Internal identifier
+    Path        string     // URL path (e.g., "/diy", "/")
+    Title       string     // Display title
+    Description string     // Description
+    Filters     FilterSet  // Event filters
+    Order       int        // Display order (when multiple sections share path)
+    MoreLink    *MoreLink  // Optional link to full paginated view
+    // ... sorting, pagination, grouping options
+}
+```
+
+**Custom sections examples:**
+```yaml
+sections:
+  - name: diy-preview
+    path: /               # Homepage
+    title: "Latest DIY"
+    filters:
+      tags:
+        t: ["diy"]
+    limit: 5
+    order: 0
+    more_link:
+      text: "More DIY posts"
+      section_ref: "diy-full"
+
+  - name: diy-full
+    path: /diy            # Dedicated page
+    title: "DIY Projects"
+    filters:
+      tags:
+        t: ["diy"]
+    limit: 20
+```
+
+**Note:** The `inbox` and `outbox` concepts are DEPRECATED. The router provides `/notes`, `/replies`, `/mentions`, `/articles` as built-in endpoints. Sections are for custom filtered views (e.g., `/art`, `/dev`, `/following`).
 
 **Filter builder:**
 ```go
@@ -798,6 +833,134 @@ lightning := profile.GetLightningAddress() // lud16 or lud06
 
 ---
 
+### 12. Entity Resolution (NIP-19)
+
+**Location:** `internal/entities/`
+
+**Purpose:** Parse, resolve, and format NIP-19 entities (npub, nprofile, note, nevent, naddr) found in content.
+
+**Architecture:**
+```
+┌─────────────────────────┐
+│   Entity Resolver       │
+│   (resolver.go)         │
+└───────┬─────────────────┘
+        │
+    ┌───┴─────────┐
+    ↓             ↓
+┌──────────┐  ┌──────────┐
+│  Parse   │  │  Format  │
+│ NIP-19   │  │ (protocol│
+│ Entities │  │ specific)│
+└──────────┘  └──────────┘
+        │
+        ↓
+┌─────────────────────────┐
+│   Storage Lookup        │
+│ (profiles, events)      │
+└─────────────────────────┘
+```
+
+**Key files:**
+- `resolver.go` - NIP-19 entity detection, decoding, resolution
+- `formatters.go` - Protocol-specific entity formatters (Gopher, Gemini, plain text)
+
+**Features:**
+- **Entity Detection**: Regex-based detection of `nostr:` URIs in content
+- **NIP-19 Decoding**: Supports npub, nprofile, note, nevent, naddr
+- **Name Resolution**: Fetches display names from kind 0 profiles
+- **Title Resolution**: Extracts titles from notes and articles
+- **Protocol Formatters**: Different output formats per protocol
+- **Inline Replacement**: Replace entities in text with resolved forms
+
+**Supported entity types:**
+```
+npub1...     → Profile (hex pubkey)
+nprofile1... → Profile with relay hints
+note1...     → Event (hex event ID)
+nevent1...   → Event with relay hints and context
+naddr1...    → Parameterized replaceable event (kind:pubkey:d-tag)
+```
+
+**Resolution flow:**
+```
+1. Text Scanning
+   └→ Regex finds "nostr:npub1..."
+   └→ Extract entity strings
+
+2. NIP-19 Decoding
+   └→ Decode prefix and payload
+   └→ Extract pubkey/event ID/coordinates
+
+3. Storage Lookup
+   └→ Query kind 0 for profiles (display name)
+   └→ Query event for notes (title/preview)
+   └→ Query with d-tag for naddr (title)
+
+4. Entity Object
+   └→ Type, DisplayName, Link, OriginalText
+   └→ Ready for formatting
+
+5. Protocol Formatting
+   └→ Gopher: "@DisplayName"
+   └→ Gemini: "[DisplayName](link)"
+   └→ Plain: "DisplayName"
+```
+
+**Example resolution:**
+```go
+// Input text
+"Check out nostr:npub1abc... and nostr:note1xyz..."
+
+// After resolution
+"Check out @alice and Short note preview..."
+```
+
+**Display name priority:**
+```
+Kind 0 profile:
+  1. display_name (highest priority)
+  2. name
+  3. nip05
+  4. truncated pubkey (fallback)
+```
+
+**Link generation:**
+```
+npub/nprofile  → /profile/{hex_pubkey}
+note/nevent    → /note/{hex_event_id}
+naddr          → /addr/{kind}/{pubkey}/{d-tag}
+```
+
+**Protocol-specific formatters:**
+- **GopherFormatter**: `@{DisplayName}` (no inline links)
+- **GeminiFormatter**: `[{DisplayName}](gemini://HOST{Link})`
+- **PlainTextFormatter**: `{DisplayName}` (just the name)
+- **MarkdownFormatter**: `[{DisplayName}]({Link})`
+- **HTMLFormatter**: `<a href="{Link}">{DisplayName}</a>`
+
+**Integration:**
+- Gopher renderer uses `resolver.ReplaceEntities()` before markdown conversion
+- Gemini renderer uses `resolver.ReplaceEntities()` before rendering
+- Content with `nostr:` URIs automatically shows human-readable references
+- Storage lookups cached (Phase 10 caching layer)
+
+**Performance:**
+- Regex matching: O(n) with compiled pattern
+- Entity resolution: O(1) per entity (storage lookup)
+- Batch resolution: Parallelizable for multiple entities
+- Typical overhead: <10ms for 10 entities
+
+**Graceful degradation:**
+- Missing profiles: Falls back to truncated pubkey
+- Missing events: Shows "Note abc123..." or "Event abc123..."
+- Invalid NIP-19: Keeps original `nostr:` URI unchanged
+- Decode errors: Preserves original text
+
+**Status:** ✅ Complete
+
+---
+
 ## Code Organization
 
 ```
@@ -869,6 +1032,10 @@ nopher/
 │   │
 │   ├── search/              # Search functionality
 │   │   └── nip50.go         # NIP-50 search engine
+│   │
+│   ├── entities/            # NIP-19 entity resolution
+│   │   ├── resolver.go      # Entity parsing and resolution
+│   │   └── formatters.go    # Protocol-specific formatters
 │   │
 │   ├── markdown/            # Markdown conversion
 │   │   ├── parser.go        # AST parsing

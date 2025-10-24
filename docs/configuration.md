@@ -981,6 +981,8 @@ Define custom sections for organizing events by kind, author, tags, time range, 
 |-------|------|---------|-------------|
 | `title` | string | - | Display title for the section |
 | `description` | string | - | Section description |
+| `path` | string | - | URL path (e.g., `/diy`, `/art`, `/` for homepage) |
+| `order` | int | `0` | Display order when multiple sections share a path |
 | `filters` | object | - | Filter criteria (see below) |
 | `sort_by` | string | `created_at` | Sort field: `created_at`, `reactions`, `zaps`, `replies` |
 | `sort_order` | string | `desc` | Sort order: `asc` or `desc` |
@@ -988,6 +990,14 @@ Define custom sections for organizing events by kind, author, tags, time range, 
 | `show_dates` | bool | `true` | Display event timestamps |
 | `show_authors` | bool | `true` | Display author names |
 | `group_by` | string | - | Grouping: `day`, `week`, `month`, `year`, `author`, `kind` |
+| `more_link` | object | - | Optional link to full paginated view (see below) |
+
+**MoreLink structure:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `text` | string | Link text (e.g., "More DIY posts", "View all articles") |
+| `section_ref` | string | Name of the section to link to (must be registered) |
 
 **Filter options:**
 
@@ -1004,15 +1014,22 @@ filters:
   scope: "following"                   # self, following, mutual, foaf, all
 ```
 
-**Default sections:**
+**Built-in endpoints vs. Custom sections:**
 
-Nopher provides built-in sections:
-- **notes**: Short-form notes (kind 1)
-- **articles**: Long-form articles (kind 30023)
-- **reactions**: Reactions (kind 7)
-- **zaps**: Zap receipts (kind 9735)
-- **inbox**: Mentions and replies to owner
-- **outbox**: Owner's published content
+Nopher provides built-in router endpoints:
+- `/notes` - Short-form notes (kind 1, non-replies)
+- `/articles` - Long-form articles (kind 30023)
+- `/replies` - Replies to your content
+- `/mentions` - Posts mentioning you
+- `/search` - Search interface
+
+**Custom sections** are for filtered views at custom paths:
+- `/diy` - Posts tagged with #diy
+- `/art` - Posts tagged with #art
+- `/following` - Posts from people you follow
+- `/` - Homepage with multiple section previews
+
+**Note:** The concepts of "inbox" and "outbox" as section names are DEPRECATED. Use the built-in router endpoints instead (`/notes`, `/replies`, `/mentions`, `/articles`). Sections are for custom filtered content only.
 
 **Time-based filtering:**
 
@@ -1032,15 +1049,62 @@ Sections automatically generate time-based archives:
 
 ### layout.sections Examples
 
-**Popular posts section:**
+**Homepage with multiple section previews:**
 ```yaml
 sections:
-  popular:
-    title: "Popular Posts"
-    description: "Most liked and zapped"
+  diy-preview:
+    path: /                         # Show on homepage
+    title: "Latest DIY Projects"
+    description: "Recent DIY posts"
+    order: 0                        # First section
     filters:
+      tags:
+        t: ["diy"]
       kinds: [1, 30023]
-      limit: 10
+      limit: 5
+    sort_by: "created_at"
+    sort_order: "desc"
+    more_link:
+      text: "View all DIY posts"
+      section_ref: "diy-full"
+
+  art-preview:
+    path: /                         # Also show on homepage
+    title: "Recent Art"
+    description: "Latest art posts"
+    order: 1                        # Second section
+    filters:
+      tags:
+        t: ["art"]
+      kinds: [1, 30023]
+      limit: 5
+    sort_by: "created_at"
+    sort_order: "desc"
+    more_link:
+      text: "View all art posts"
+      section_ref: "art-full"
+
+  diy-full:
+    path: /diy                      # Dedicated DIY page
+    title: "DIY Projects"
+    description: "All DIY projects and tutorials"
+    filters:
+      tags:
+        t: ["diy"]
+      kinds: [1, 30023]
+      limit: 20
+    sort_by: "created_at"
+    sort_order: "desc"
+
+  art-full:
+    path: /art                      # Dedicated art page
+    title: "Art Gallery"
+    description: "All art and creative posts"
+    filters:
+      tags:
+        t: ["art"]
+      kinds: [1, 30023]
+      limit: 20
     sort_by: "reactions"
     sort_order: "desc"
 ```
@@ -1049,6 +1113,7 @@ sections:
 ```yaml
 sections:
   timeline:
+    path: /following
     title: "Timeline"
     description: "Recent posts from people you follow"
     filters:

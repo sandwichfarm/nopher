@@ -83,6 +83,7 @@ Gopher uses "selectors" (paths) to navigate content:
 | `/thread/<id>` | Thread view |
 | `/diagnostics` | System status and statistics |
 | `/about` | Your profile (kind 0) |
+| `/<custom>` | Custom sections (configured in `sections` config) |
 
 **Legacy selectors** (redirect to new paths):
 | `/inbox` | → `/replies` (backwards compatibility) |
@@ -250,6 +251,7 @@ rendering:
 | `/thread/<id>` | Thread view |
 | `/diagnostics` | System status and statistics |
 | `/about` | Your profile (kind 0) |
+| `/<custom>` | Custom sections (configured in `sections` config) |
 
 **Legacy paths** (redirect to new paths):
 | `/inbox` | → `/replies` (backwards compatibility) |
@@ -470,6 +472,62 @@ Followers: 142  Following: 87  Mutual: 56
 
 ## Common Features
 
+### Custom Sections
+
+All protocols support custom sections that can be configured to display filtered content at specific URL paths.
+
+**What are sections?**
+
+Sections allow you to create custom views of your content with specific filters. For example:
+- `/diy` - Posts tagged with #diy
+- `/art` - Posts tagged with #art
+- `/following` - Posts from people you follow
+- `/` - Homepage with multiple section previews
+
+**Configuration example:**
+
+```yaml
+sections:
+  - name: diy-preview
+    path: /                    # Show on homepage
+    title: "Latest DIY Projects"
+    filters:
+      tags:
+        t: ["diy"]
+    limit: 5                   # Show 5 most recent
+    order: 0                   # First section on page
+    more_link:
+      text: "View all DIY posts"
+      section_ref: "diy-full"
+
+  - name: diy-full
+    path: /diy                 # Dedicated page
+    title: "DIY Projects"
+    filters:
+      tags:
+        t: ["diy"]
+    limit: 20                  # Full page with 20 items
+```
+
+**Features:**
+- **Path Mapping**: Map sections to any URL path
+- **Multiple Sections**: Show multiple filtered views on one page (e.g., homepage)
+- **Ordering**: Control display order when multiple sections share a path
+- **"More" Links**: Add navigation to full paginated views
+- **Filters**: By kinds, authors, tags, time ranges, scope
+- **Sorting**: By date, reactions, zaps, or replies
+
+**Example usage:**
+
+A homepage (`/`) could show:
+1. "Latest DIY Projects" (5 items)
+2. "Recent Philosophy Posts" (5 items)
+3. "Popular Articles" (5 items)
+
+Each with a "View all" link to the full section page.
+
+**Note:** Built-in endpoints (`/notes`, `/replies`, `/mentions`, `/articles`) are NOT sections. They are provided by the router. Sections are for custom filtered views.
+
 ### Thread Navigation
 
 All three protocols support thread navigation:
@@ -522,6 +580,48 @@ Nostr content (often markdown) is converted to protocol-specific formats:
 - Truncate to ~500 chars
 
 See [markdown_conversion.md](../memory/markdown_conversion.md) for detailed rules.
+
+### NIP-19 Entity Resolution
+
+All protocols automatically resolve NIP-19 entities (`nostr:` URIs) in content to human-readable references.
+
+**Supported entities:**
+- `nostr:npub1...` - Profile (resolved to display name)
+- `nostr:nprofile1...` - Profile with relay hints
+- `nostr:note1...` - Event (resolved to title/preview)
+- `nostr:nevent1...` - Event with relay hints
+- `nostr:naddr1...` - Parameterized replaceable event
+
+**Gopher:**
+```
+Check out nostr:npub1abc... for more info.
+
+Rendered as:
+Check out @alice for more info.
+```
+
+**Gemini:**
+```gemtext
+Check out nostr:npub1abc... for more info.
+
+Rendered as:
+Check out [@alice](gemini://host/profile/abc123...) for more info.
+```
+
+**Display name resolution:**
+- Fetches kind 0 profile metadata from storage
+- Priority: display_name > name > nip05 > truncated pubkey
+- Falls back gracefully if profile not found
+
+**Title resolution for events:**
+- Kind 1 (notes): First line of content (truncated)
+- Kind 30023 (articles): "title" tag value
+- Fallback: "Note abc123..." or "Event abc123..."
+
+**Performance:**
+- Entity resolution cached (Phase 10)
+- Storage lookups only for unknown entities
+- Regex matching optimized with compiled pattern
 
 ### Aggregates Display
 

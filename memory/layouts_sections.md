@@ -3,19 +3,29 @@ Composable Layouts and Sections
 Concept
 - Sections are query-driven views over indexed data. Pages are composed of sections.
 - Each section defines what to show (filters) and how to show it (template), plus archives and feeds.
+- **Multiple sections can be registered for the same path** (e.g., homepage with multiple topic previews)
+- Sections are **completely optional** - default routes work without configuration
 
-Section fields
-- id: stable identifier
-- title: display name
-- source: inbox|outbox|all
-- filter: structured selectors (see Filter spec) describing kinds/authors/relations/tags/time
-- transform: grouping or threading options (group_by_thread, collapse_reposts)
-- sort: field and order (e.g., -created_at)
-- limit: max items per page; page_size for pagination
-- template: list|cards|threaded|gallery|table (pluggable)
-- archive: by month|year with route pattern
-- feeds: enable rss/json
-- hide_when_empty: true|false
+Section fields (Current Implementation)
+- Name: stable identifier (required)
+- Path: URL path like "/diy" or "/" (required)
+- Title: display name (optional)
+- Description: section description (optional)
+- Filters: FilterSet with kinds, authors, tags, time ranges (required)
+- SortBy: created_at|published_at|reactions|zaps|replies (default: created_at)
+- SortOrder: asc|desc (default: desc)
+- Limit: max items to show (default: 20)
+- ShowDates: display timestamps (default: false)
+- ShowAuthors: display author info (default: false)
+- GroupBy: none|day|week|month|year|author|kind (default: none)
+- MoreLink: optional link to full paginated section (for previews)
+- Order: display order when multiple sections on same path (lower first)
+
+Section fields (Future/Planned)
+- template: list|cards|threaded|gallery|table (pluggable) - NOT YET IMPLEMENTED
+- archive: by month|year with route pattern - NOT YET IMPLEMENTED
+- feeds: enable rss/json - NOT YET IMPLEMENTED
+- hide_when_empty: true|false - NOT YET IMPLEMENTED
 
 Filter spec (examples)
 - kinds: [1, 30023, 7, 9735]
@@ -36,111 +46,175 @@ Filter spec (examples)
 - include_direct_mentions: true|false
 - include_threads_of_mine: true|false
 
-Default layout (when none configured)
+Current Implementation Status
 
 Homepage (/ or empty selector):
-- **Default behavior**: Auto-generated menu (gophermap/gemtext) with links to all sections
-- **Fully customizable**: Configure via pages.home.layout or create a section with path: "/"
-- **Composable**: Can show multiple sections, single section, or custom content
+- **Default behavior**: Auto-generated menu (gophermap/gemtext) with links to default routes
+- **✅ Implemented**: Sections can override any path including "/"
+- **✅ Implemented**: Multiple sections can be registered for the same path
+- **✅ Implemented**: Sections are sorted by Order field (lower numbers first)
 
-Default sections (user-facing paths):
-- /notes - Owner's notes (outbox, kinds:[1], is_reply:false, limit:20)
-- /articles - Owner's articles (outbox, kinds:[30023], limit:10)
-- /replies - Replies to owner (inbox, filter: replies_to:owner)
-- /mentions - Mentions of owner (inbox, filter: mentions:owner)
-- /archive - Time-based archives (by year/month)
-- /about - Owner profile (kind 0)
-- /diagnostics - System status
+Default routes (hardcoded in router, work without sections):
+- `/notes` - Owner's notes (kind 1, is_reply:false, limit:9, paginated)
+- `/articles` - Owner's articles (kind 30023, limit:9, paginated)
+- `/replies` - Replies to owner (kind 1, replies_to:owner, limit:9, paginated)
+- `/mentions` - Mentions of owner (mentions:owner, limit:9, paginated)
+- `/profile/<pubkey>` - Profile display (kind 0)
+- `/note/<id>` - Individual note display
+- `/diagnostics` - System status
 
-Customization Options for Homepage (/):
-1. **Menu (default)**: Auto-generated links to all sections
-2. **Composed page**: Multiple sections via pages.home.layout (e.g., profile + notes + replies)
-3. **Single section**: Create a section with path: "/" (e.g., just show recent notes)
-4. **Custom template**: Use any template (list, threaded, cards, etc.)
+Sections System (Optional Customization):
+- **✅ Sections override default routes** - If section registered at path, it takes precedence
+- **✅ Multiple sections per path** - Compose homepage with multiple topic previews
+- **✅ Section ordering** - Control display order with Order field
+- **✅ "More" links** - Preview sections can link to full paginated views
+- **✅ Completely optional** - Default routes work without any section configuration
 
-Note: "inbox" and "outbox" are internal source identifiers in section config, not exposed as paths.
-Sections use source: "inbox" or source: "outbox" internally, but are accessed via descriptive paths like /replies or /notes.
+IMPORTANT: "inbox" and "outbox" are INTERNAL source identifiers, NOT user-facing paths or sections.
+- These terms refer to relay selection strategy (inbox relays vs outbox relays)
+- Do NOT create sections named "inbox" or "outbox"
+- Sections are for custom filtered views like "/diy", "/philosophy", "/following"
 
-Example (YAML fragment)
+Example 1: Go Code (Current Implementation)
 
-layout:
-  sections:
-    about:
-      id: "about"
-      path: "/about"                  # User-facing path
-      title: "About"
-      source: "outbox"                # Internal: where data comes from
-      filter: { kinds: [0], authors: [owner] }
-      template: "profile"
-      hide_when_empty: false
-    notes:
-      id: "notes"
-      path: "/notes"                  # User-facing path
-      title: "Notes"
-      source: "outbox"                # Internal: owner's content
-      filter: { kinds: [1], authors: [owner], is_reply: false }
-      sort: "-created_at"
-      limit: 20
-      template: "list"
-      archive: { by: "month", route: "/archive/notes/{YYYY}/{MM}" }
-    articles:
-      id: "articles"
-      path: "/articles"               # User-facing path
-      title: "Articles"
-      source: "outbox"                # Internal: owner's content
-      filter: { kinds: [30023], authors: [owner] }
-      sort: "-created_at"
-      limit: 10
-      template: "list"
-      archive: { by: "year", route: "/archive/articles/{YYYY}" }
-    replies:
-      id: "replies"
-      path: "/replies"                # User-facing path
-      title: "Replies"
-      source: "inbox"                 # Internal: content targeting owner
-      filter: { kinds: [1], replies_to: "owner" }
-      sort: "-created_at"
-      limit: 50
-      template: "threaded"
-    mentions:
-      id: "mentions"
-      path: "/mentions"               # User-facing path
-      title: "Mentions"
-      source: "inbox"                 # Internal: content mentioning owner
-      filter: { mentions: "owner" }
-      sort: "-created_at"
-      limit: 50
-      template: "list"
-  pages:
-    home:
-      path: "/"                       # Root path (customizable)
-      layout:
-        - ["about"]                   # Row 1: profile section
-        - ["notes", "articles"]       # Row 2: two sections side-by-side
-        - ["replies", "mentions"]     # Row 3: two sections side-by-side
+```go
+// Homepage with multiple topic previews
+sectionManager.RegisterSection(&sections.Section{
+    Name:  "diy-preview",
+    Path:  "/",
+    Title: "Recent DIY Projects",
+    Order: 1,  // Show first
+    Limit: 5,
+    Filters: sections.FilterSet{
+        Tags: map[string][]string{"t": {"diy"}},
+    },
+    ShowDates:   true,
+    ShowAuthors: true,
+    MoreLink: &sections.MoreLink{
+        Text:       "More DIY posts",
+        SectionRef: "diy-full",
+    },
+})
 
-# Alternative: Custom homepage (just recent notes)
-# pages:
-#   home:
-#     path: "/"
-#     layout:
-#       - ["notes"]
+sectionManager.RegisterSection(&sections.Section{
+    Name:  "philosophy-preview",
+    Path:  "/",
+    Title: "Recent Philosophy",
+    Order: 2,  // Show second
+    Limit: 5,
+    Filters: sections.FilterSet{
+        Tags: map[string][]string{"t": {"philosophy"}},
+    },
+    ShowDates: true,
+    MoreLink: &sections.MoreLink{
+        Text:       "More philosophy posts",
+        SectionRef: "philosophy-full",
+    },
+})
 
-# Alternative: Custom homepage (single custom section at /)
-# sections:
-#   homepage:
-#     path: "/"                       # Override default menu
-#     title: "Welcome"
-#     source: "outbox"
-#     filter: { kinds: [1, 30023], authors: [owner] }
-#     sort: "-created_at"
-#     limit: 10
-#     template: "list"
+// Full sections (paginated)
+sectionManager.RegisterSection(&sections.Section{
+    Name:  "diy-full",
+    Path:  "/diy",
+    Title: "All DIY Projects",
+    Limit: 9,  // Gopher pagination limit
+    Filters: sections.FilterSet{
+        Tags: map[string][]string{"t": {"diy"}},
+    },
+    ShowDates:   true,
+    ShowAuthors: true,
+})
 
-Notes
-- The homepage (/) is fully configurable via pages.home.layout or by creating a section with path: "/"
-- Default behavior: Auto-generated menu linking to all sections
-- Custom behavior: Compose any sections you want, or create a single section at /
-- Sections obey global sync scope by default; they can narrow to authors:[owner] etc.
-- Archives are optional per section; feeds can be generated per section.
-- Templates are themeable; operators can choose different templates per section.
+sectionManager.RegisterSection(&sections.Section{
+    Name:  "philosophy-full",
+    Path:  "/philosophy",
+    Title: "All Philosophy Posts",
+    Limit: 9,
+    Filters: sections.FilterSet{
+        Tags: map[string][]string{"t": {"philosophy"}},
+    },
+    ShowDates: true,
+})
+```
+
+Example 2: Future YAML Configuration (NOT YET IMPLEMENTED)
+
+```yaml
+# This is the planned YAML configuration format
+# Currently sections must be registered in Go code
+sections:
+  diy-preview:
+    path: "/"
+    title: "Recent DIY Projects"
+    order: 1
+    limit: 5
+    filters:
+      tags:
+        t: ["diy"]
+    show_dates: true
+    show_authors: true
+    more_link:
+      text: "More DIY posts"
+      section_ref: "diy-full"
+
+  philosophy-preview:
+    path: "/"
+    title: "Recent Philosophy"
+    order: 2
+    limit: 5
+    filters:
+      tags:
+        t: ["philosophy"]
+    show_dates: true
+    more_link:
+      text: "More philosophy posts"
+      section_ref: "philosophy-full"
+
+  diy-full:
+    path: "/diy"
+    title: "All DIY Projects"
+    limit: 9
+    filters:
+      tags:
+        t: ["diy"]
+    show_dates: true
+    show_authors: true
+
+  philosophy-full:
+    path: "/philosophy"
+    title: "All Philosophy Posts"
+    limit: 9
+    filters:
+      tags:
+        t: ["philosophy"]
+    show_dates: true
+```
+
+Implementation Notes
+
+✅ **Currently Implemented**:
+- Sections can override any path (including `/`)
+- Multiple sections per path supported
+- Section ordering via Order field
+- "More" links for preview → full view navigation
+- Sections are completely optional
+- Default routes work without configuration
+- FilterSet supports kinds, authors, tags, time ranges
+- Gopher and Gemini protocols supported
+
+🚧 **Not Yet Implemented** (Future):
+- YAML configuration for sections (currently Go code only)
+- Template system (list, cards, threaded, etc.)
+- Archive generation (by month/year)
+- Feed generation (RSS/JSON)
+- hide_when_empty field
+- Scope-based filtering (following, mutual, foaf)
+- Advanced filter fields (is_reply, mentions, etc.)
+
+📝 **Usage Pattern**:
+1. Register sections in Go code (e.g., in main() or init())
+2. Sections with same Path are rendered together, sorted by Order
+3. Preview sections use small Limit (3-5) and MoreLink
+4. Full sections use larger Limit (9 for Gopher pagination)
+5. Sections override default routes if registered at that path
+6. If no sections registered, default routes are used
