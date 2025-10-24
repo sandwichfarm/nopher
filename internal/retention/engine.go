@@ -16,16 +16,26 @@ type Engine struct {
 	storage     StorageReader
 	socialGraph SocialGraphReader
 	ownerPubkey string
+	sortedRules []config.RetentionRule // Cached sorted rules (performance optimization)
 }
 
 // NewEngine creates a new retention engine
 func NewEngine(cfg *config.AdvancedRetention, storage StorageReader, graph SocialGraphReader, ownerPubkey string) *Engine {
-	return &Engine{
+	e := &Engine{
 		config:      cfg,
 		storage:     storage,
 		socialGraph: graph,
 		ownerPubkey: ownerPubkey,
 	}
+
+	// Pre-sort rules once at initialization for performance
+	e.sortedRules = make([]config.RetentionRule, len(cfg.Rules))
+	copy(e.sortedRules, cfg.Rules)
+	sort.Slice(e.sortedRules, func(i, j int) bool {
+		return e.sortedRules[i].Priority > e.sortedRules[j].Priority
+	})
+
+	return e
 }
 
 // EvaluateEvent evaluates a single event against retention rules
@@ -33,9 +43,6 @@ func (e *Engine) EvaluateEvent(ctx context.Context, event *nostr.Event) (*Retent
 	if e.config == nil || !e.config.Enabled {
 		return nil, fmt.Errorf("advanced retention not enabled")
 	}
-
-	// Sort rules by priority (highest first)
-	rules := e.getSortedRules()
 
 	// Create evaluation context
 	evalCtx := &EvalContext{
@@ -45,8 +52,8 @@ func (e *Engine) EvaluateEvent(ctx context.Context, event *nostr.Event) (*Retent
 		OwnerPubkey: e.ownerPubkey,
 	}
 
-	// Evaluate rules in order until one matches
-	for _, rule := range rules {
+	// Evaluate rules in order until one matches (use pre-sorted rules)
+	for _, rule := range e.sortedRules {
 		matches, err := e.evaluateConditions(evalCtx, rule.Conditions)
 		if err != nil {
 			// Log error but continue to next rule
@@ -74,9 +81,15 @@ func (e *Engine) EvaluateEvent(ctx context.Context, event *nostr.Event) (*Retent
 	}, nil
 }
 
-// EvaluateBatch evaluates multiple events in a batch
+// EvaluateBatch evaluates multiple events in a batch (optimized version)
 func (e *Engine) EvaluateBatch(ctx context.Context, events []*nostr.Event) ([]*RetentionDecision, error) {
 	decisions := make([]*RetentionDecision, 0, len(events))
+
+	// TODO: Potential optimization - prefetch aggregates and graph data in batch
+	// This would reduce database roundtrips significantly
+	// For now, evaluate individually but could add:
+	// - e.storage.GetAggregatesBatch(eventIDs)
+	// - e.socialGraph.GetDistancesBatch(pubkeys)
 
 	for _, event := range events {
 		decision, err := e.EvaluateEvent(ctx, event)
@@ -88,18 +101,6 @@ func (e *Engine) EvaluateBatch(ctx context.Context, events []*nostr.Event) ([]*R
 	}
 
 	return decisions, nil
-}
-
-// getSortedRules returns rules sorted by priority (highest first)
-func (e *Engine) getSortedRules() []config.RetentionRule {
-	rules := make([]config.RetentionRule, len(e.config.Rules))
-	copy(rules, e.config.Rules)
-
-	sort.Slice(rules, func(i, j int) bool {
-		return rules[i].Priority > rules[j].Priority
-	})
-
-	return rules
 }
 
 // evaluateConditions evaluates all conditions in a rule
