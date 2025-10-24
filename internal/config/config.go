@@ -109,9 +109,57 @@ type Discovery struct {
 // Sync contains synchronization settings
 type Sync struct {
 	Enabled   bool      `yaml:"enabled"`
-	Kinds     []int     `yaml:"kinds"`
+	Kinds     SyncKinds `yaml:"kinds"`
 	Scope     SyncScope `yaml:"scope"`
 	Retention Retention `yaml:"retention"`
+}
+
+// SyncKinds defines granular control over which event kinds to sync
+type SyncKinds struct {
+	Profiles    bool  `yaml:"profiles"`     // kind 0
+	Notes       bool  `yaml:"notes"`        // kind 1
+	ContactList bool  `yaml:"contact_list"` // kind 3
+	Reposts     bool  `yaml:"reposts"`      // kind 6
+	Reactions   bool  `yaml:"reactions"`    // kind 7
+	Zaps        bool  `yaml:"zaps"`         // kind 9735
+	Articles    bool  `yaml:"articles"`     // kind 30023
+	RelayList   bool  `yaml:"relay_list"`   // kind 10002
+	Allowlist   []int `yaml:"allowlist"`    // Additional kinds to sync
+}
+
+// ToIntSlice converts SyncKinds to a slice of kind integers
+func (sk *SyncKinds) ToIntSlice() []int {
+	var kinds []int
+
+	if sk.Profiles {
+		kinds = append(kinds, 0)
+	}
+	if sk.Notes {
+		kinds = append(kinds, 1)
+	}
+	if sk.ContactList {
+		kinds = append(kinds, 3)
+	}
+	if sk.Reposts {
+		kinds = append(kinds, 6)
+	}
+	if sk.Reactions {
+		kinds = append(kinds, 7)
+	}
+	if sk.Zaps {
+		kinds = append(kinds, 9735)
+	}
+	if sk.Articles {
+		kinds = append(kinds, 30023)
+	}
+	if sk.RelayList {
+		kinds = append(kinds, 10002)
+	}
+
+	// Add allowlist kinds
+	kinds = append(kinds, sk.Allowlist...)
+
+	return kinds
 }
 
 // SyncScope defines synchronization scope
@@ -232,6 +280,117 @@ type Layout struct {
 	Pages    map[string]interface{} `yaml:"pages,omitempty"`
 }
 
+// Display contains display and rendering control options
+type Display struct {
+	Feed   FeedDisplay   `yaml:"feed"`
+	Detail DetailDisplay `yaml:"detail"`
+	Limits DisplayLimits `yaml:"limits"`
+}
+
+// FeedDisplay controls what appears in feed/list views
+type FeedDisplay struct {
+	ShowInteractions bool `yaml:"show_interactions"`
+	ShowReactions    bool `yaml:"show_reactions"`
+	ShowZaps         bool `yaml:"show_zaps"`
+	ShowReplies      bool `yaml:"show_replies"`
+}
+
+// DetailDisplay controls what appears in individual note/detail views
+type DetailDisplay struct {
+	ShowInteractions bool `yaml:"show_interactions"`
+	ShowReactions    bool `yaml:"show_reactions"`
+	ShowZaps         bool `yaml:"show_zaps"`
+	ShowReplies      bool `yaml:"show_replies"`
+	ShowThread       bool `yaml:"show_thread"`
+}
+
+// DisplayLimits controls length and truncation
+type DisplayLimits struct {
+	SummaryLength       int `yaml:"summary_length"`
+	MaxContentLength    int `yaml:"max_content_length"`
+	MaxThreadDepth      int `yaml:"max_thread_depth"`
+	MaxRepliesInFeed    int `yaml:"max_replies_in_feed"`
+	TruncateIndicator   string `yaml:"truncate_indicator"`
+}
+
+// Presentation contains visual presentation and layout options
+type Presentation struct {
+	Headers    Headers    `yaml:"headers"`
+	Footers    Footers    `yaml:"footers"`
+	Separators Separators `yaml:"separators"`
+}
+
+// Headers defines header content for pages
+type Headers struct {
+	Global    HeaderConfig            `yaml:"global"`
+	PerPage   map[string]HeaderConfig `yaml:"per_page,omitempty"`
+}
+
+// HeaderConfig defines a single header configuration
+type HeaderConfig struct {
+	Enabled   bool   `yaml:"enabled"`
+	Content   string `yaml:"content"`
+	FilePath  string `yaml:"file_path"`
+}
+
+// Footers defines footer content for pages
+type Footers struct {
+	Global    FooterConfig            `yaml:"global"`
+	PerPage   map[string]FooterConfig `yaml:"per_page,omitempty"`
+}
+
+// FooterConfig defines a single footer configuration
+type FooterConfig struct {
+	Enabled   bool   `yaml:"enabled"`
+	Content   string `yaml:"content"`
+	FilePath  string `yaml:"file_path"`
+}
+
+// Separators defines visual separators
+type Separators struct {
+	Item    SeparatorConfig `yaml:"item"`
+	Section SeparatorConfig `yaml:"section"`
+}
+
+// SeparatorConfig defines a separator configuration
+type SeparatorConfig struct {
+	Gopher string `yaml:"gopher"`
+	Gemini string `yaml:"gemini"`
+	Finger string `yaml:"finger"`
+}
+
+// Behavior contains behavioral settings for queries and filtering
+type Behavior struct {
+	ContentFiltering ContentFiltering  `yaml:"content_filtering"`
+	SortPreferences  SortPreferences   `yaml:"sort_preferences"`
+	Pagination       PaginationConfig  `yaml:"pagination"`
+}
+
+// ContentFiltering defines content filtering rules
+type ContentFiltering struct {
+	Enabled              bool     `yaml:"enabled"`
+	MinReactions         int      `yaml:"min_reactions"`
+	MinZapSats           int      `yaml:"min_zap_sats"`
+	MinEngagement        int      `yaml:"min_engagement"` // Combined score
+	HideNoInteractions   bool     `yaml:"hide_no_interactions"`
+	AllowedContentTypes  []string `yaml:"allowed_content_types"`
+}
+
+// SortPreferences defines sorting options
+type SortPreferences struct {
+	Notes    string `yaml:"notes"`    // chronological|engagement|zaps|reactions
+	Articles string `yaml:"articles"`
+	Replies  string `yaml:"replies"`
+	Mentions string `yaml:"mentions"`
+}
+
+// PaginationConfig defines pagination settings
+type PaginationConfig struct {
+	Enabled          bool `yaml:"enabled"`
+	ItemsPerPage     int  `yaml:"items_per_page"`
+	MaxPages         int  `yaml:"max_pages"`
+}
+
 // Load reads and parses a configuration file
 func Load(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
@@ -337,7 +496,17 @@ func Default() *Config {
 			MaxRelaysPerAuthor: 8,
 		},
 		Sync: Sync{
-			Kinds: []int{0, 1, 3, 6, 7, 9735, 30023, 10002},
+			Kinds: SyncKinds{
+				Profiles:    true,
+				Notes:       true,
+				ContactList: true,
+				Reposts:     true,
+				Reactions:   true,
+				Zaps:        true,
+				Articles:    true,
+				RelayList:   true,
+				Allowlist:   []int{},
+			},
 			Scope: SyncScope{
 				Mode:                  "foaf",
 				Depth:                 2,
@@ -430,6 +599,79 @@ func Default() *Config {
 			Sections: make(map[string]interface{}),
 			Pages:    make(map[string]interface{}),
 		},
+		Display: Display{
+			Feed: FeedDisplay{
+				ShowInteractions: true,
+				ShowReactions:    true,
+				ShowZaps:         true,
+				ShowReplies:      true,
+			},
+			Detail: DetailDisplay{
+				ShowInteractions: true,
+				ShowReactions:    true,
+				ShowZaps:         true,
+				ShowReplies:      true,
+				ShowThread:       true,
+			},
+			Limits: DisplayLimits{
+				SummaryLength:     100,
+				MaxContentLength:  5000,
+				MaxThreadDepth:    10,
+				MaxRepliesInFeed:  3,
+				TruncateIndicator: "...",
+			},
+		},
+		Presentation: Presentation{
+			Headers: Headers{
+				Global: HeaderConfig{
+					Enabled:  false,
+					Content:  "",
+					FilePath: "",
+				},
+				PerPage: make(map[string]HeaderConfig),
+			},
+			Footers: Footers{
+				Global: FooterConfig{
+					Enabled:  false,
+					Content:  "",
+					FilePath: "",
+				},
+				PerPage: make(map[string]FooterConfig),
+			},
+			Separators: Separators{
+				Item: SeparatorConfig{
+					Gopher: "",
+					Gemini: "",
+					Finger: "",
+				},
+				Section: SeparatorConfig{
+					Gopher: "---",
+					Gemini: "---",
+					Finger: "---",
+				},
+			},
+		},
+		Behavior: Behavior{
+			ContentFiltering: ContentFiltering{
+				Enabled:             false,
+				MinReactions:        0,
+				MinZapSats:          0,
+				MinEngagement:       0,
+				HideNoInteractions:  false,
+				AllowedContentTypes: []string{},
+			},
+			SortPreferences: SortPreferences{
+				Notes:    "chronological",
+				Articles: "chronological",
+				Replies:  "chronological",
+				Mentions: "chronological",
+			},
+			Pagination: PaginationConfig{
+				Enabled:      false,
+				ItemsPerPage: 50,
+				MaxPages:     10,
+			},
+		},
 	}
 }
 
@@ -515,6 +757,47 @@ func Validate(cfg *Config) error {
 	// Validate log level
 	if !validLogLevels[cfg.Logging.Level] {
 		return fmt.Errorf("invalid log level: %s (must be one of: debug, info, warn, error)", cfg.Logging.Level)
+	}
+
+	// Validate display limits
+	if cfg.Display.Limits.SummaryLength < 10 || cfg.Display.Limits.SummaryLength > 1000 {
+		return fmt.Errorf("display.limits.summary_length must be between 10 and 1000")
+	}
+	if cfg.Display.Limits.MaxContentLength < 100 || cfg.Display.Limits.MaxContentLength > 100000 {
+		return fmt.Errorf("display.limits.max_content_length must be between 100 and 100000")
+	}
+	if cfg.Display.Limits.MaxThreadDepth < 1 || cfg.Display.Limits.MaxThreadDepth > 100 {
+		return fmt.Errorf("display.limits.max_thread_depth must be between 1 and 100")
+	}
+
+	// Validate sort preferences
+	validSortModes := map[string]bool{
+		"chronological": true,
+		"engagement":    true,
+		"zaps":          true,
+		"reactions":     true,
+	}
+	if !validSortModes[cfg.Behavior.SortPreferences.Notes] {
+		return fmt.Errorf("invalid sort mode for notes: %s", cfg.Behavior.SortPreferences.Notes)
+	}
+	if !validSortModes[cfg.Behavior.SortPreferences.Articles] {
+		return fmt.Errorf("invalid sort mode for articles: %s", cfg.Behavior.SortPreferences.Articles)
+	}
+	if !validSortModes[cfg.Behavior.SortPreferences.Replies] {
+		return fmt.Errorf("invalid sort mode for replies: %s", cfg.Behavior.SortPreferences.Replies)
+	}
+	if !validSortModes[cfg.Behavior.SortPreferences.Mentions] {
+		return fmt.Errorf("invalid sort mode for mentions: %s", cfg.Behavior.SortPreferences.Mentions)
+	}
+
+	// Validate pagination
+	if cfg.Behavior.Pagination.Enabled {
+		if cfg.Behavior.Pagination.ItemsPerPage < 1 || cfg.Behavior.Pagination.ItemsPerPage > 500 {
+			return fmt.Errorf("behavior.pagination.items_per_page must be between 1 and 500")
+		}
+		if cfg.Behavior.Pagination.MaxPages < 1 || cfg.Behavior.Pagination.MaxPages > 100 {
+			return fmt.Errorf("behavior.pagination.max_pages must be between 1 and 100")
+		}
 	}
 
 	return nil

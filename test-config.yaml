@@ -54,6 +54,16 @@ relays:
 
 sync:
   enabled: true
+  kinds:
+    profiles: true
+    notes: true
+    contact_list: true
+    reposts: false
+    reactions: true
+    zaps: true
+    articles: true
+    relay_list: true
+    allowlist: []
   scope:
     mode: self
   interval_minutes: 60
@@ -65,3 +75,56 @@ inbox:
   include_reactions: true
   include_zaps: true
   include_reposts: false
+
+display:
+  feed:
+    show_interactions: true
+    show_reactions: true
+    show_zaps: true
+    show_replies: true
+  detail:
+    show_interactions: true
+    show_reactions: true
+    show_zaps: true
+    show_replies: true
+    show_thread: true
+  limits:
+    summary_length: 100
+    max_content_length: 5000
+    max_thread_depth: 10
+    max_replies_in_feed: 3
+    truncate_indicator: "..."
+
+presentation:
+  headers:
+    global:
+      enabled: false
+  footers:
+    global:
+      enabled: false
+  separators:
+    item:
+      gopher: ""
+      gemini: ""
+      finger: ""
+    section:
+      gopher: "---"
+      gemini: "---"
+      finger: "---"
+
+behavior:
+  content_filtering:
+    enabled: false
+    min_reactions: 0
+    min_zap_sats: 0
+    min_engagement: 0
+    hide_no_interactions: false
+  sort_preferences:
+    notes: "chronological"
+    articles: "chronological"
+    replies: "chronological"
+    mentions: "chronological"
+  pagination:
+    enabled: false
+    items_per_page: 50
+    max_pages: 10
