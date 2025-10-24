@@ -29,8 +29,10 @@ func (r *Renderer) RenderHome() string {
 	sb.WriteString("# Nopher - Nostr Gateway\n\n")
 	sb.WriteString("Browse Nostr content via Gemini protocol\n\n")
 	sb.WriteString("## Navigation\n\n")
-	sb.WriteString("=> /outbox Outbox (My Notes)\n")
-	sb.WriteString("=> /inbox Inbox (Replies & Mentions)\n")
+	sb.WriteString("=> /notes Notes\n")
+	sb.WriteString("=> /articles Articles\n")
+	sb.WriteString("=> /replies Replies\n")
+	sb.WriteString("=> /mentions Mentions\n")
 	sb.WriteString("=> /search Search\n")
 	sb.WriteString("=> /diagnostics Diagnostics\n")
 	sb.WriteString("\n")
@@ -174,7 +176,16 @@ func (r *Renderer) renderAggregates(agg *aggregates.EventAggregates) string {
 	}
 
 	if agg.ReactionTotal > 0 {
-		parts = append(parts, fmt.Sprintf("%d reactions", agg.ReactionTotal))
+		// Show total reactions with breakdown
+		if len(agg.ReactionCounts) > 0 {
+			var reactionParts []string
+			for emoji, count := range agg.ReactionCounts {
+				reactionParts = append(reactionParts, fmt.Sprintf("%s %d", emoji, count))
+			}
+			parts = append(parts, fmt.Sprintf("%d reactions (%s)", agg.ReactionTotal, strings.Join(reactionParts, ", ")))
+		} else {
+			parts = append(parts, fmt.Sprintf("%d reactions", agg.ReactionTotal))
+		}
 	}
 
 	if agg.ZapSatsTotal > 0 {

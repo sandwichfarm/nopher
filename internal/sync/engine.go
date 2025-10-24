@@ -121,18 +121,27 @@ func (e *Engine) getOwnerPubkey() (string, error) {
 
 // bootstrap performs initial discovery and graph building
 func (e *Engine) bootstrap() error {
+	fmt.Printf("[SYNC] Starting bootstrap process...\n")
 	ownerPubkey, err := e.getOwnerPubkey()
 	if err != nil {
 		return err
 	}
+	fmt.Printf("[SYNC] Owner pubkey (hex): %s\n", ownerPubkey)
 
 	// Step 1: Fetch owner's profile, contacts, and relay hints from seeds
+	fmt.Printf("[SYNC] Step 1: Bootstrapping from seed relays...\n")
 	if err := e.discovery.BootstrapFromSeeds(e.ctx, ownerPubkey); err != nil {
 		return fmt.Errorf("failed to bootstrap from seeds: %w", err)
 	}
+	fmt.Printf("[SYNC] ✓ Bootstrap from seeds complete\n")
 
 	// Step 2: Fetch owner's contact list (kind 3) to build initial graph
 	seedRelays := e.nostrClient.GetSeedRelays()
+	fmt.Printf("[SYNC] Step 2: Fetching contact list from %d seed relays\n", len(seedRelays))
+	for i, relay := range seedRelays {
+		fmt.Printf("[SYNC]   Seed relay %d: %s\n", i+1, relay)
+	}
+
 	filter := nostr.Filter{
 		Kinds:   []int{3},
 		Authors: []string{ownerPubkey},
@@ -143,29 +152,52 @@ func (e *Engine) bootstrap() error {
 	if err != nil {
 		return fmt.Errorf("failed to fetch contact list: %w", err)
 	}
+	fmt.Printf("[SYNC] Fetched %d contact list events\n", len(events))
 
 	if len(events) > 0 {
 		// Process the contact list to build the graph
+		fmt.Printf("[SYNC] Processing contact list (event ID: %s)\n", events[0].ID)
 		if err := e.graph.ProcessContactList(e.ctx, events[0], ownerPubkey); err != nil {
 			return fmt.Errorf("failed to process contact list: %w", err)
 		}
+		fmt.Printf("[SYNC] ✓ Contact list processed\n")
+	} else {
+		fmt.Printf("[SYNC] ⚠ No contact list found - will sync owner events only\n")
 	}
 
 	// Step 3: Get authors in scope
+	fmt.Printf("[SYNC] Step 3: Getting authors in scope...\n")
 	authors, err := e.graph.GetAuthorsInScope(e.ctx, ownerPubkey)
 	if err != nil {
 		return fmt.Errorf("failed to get authors in scope: %w", err)
 	}
+	fmt.Printf("[SYNC] Authors in scope: %d\n", len(authors))
+	if len(authors) <= 5 {
+		for i, author := range authors {
+			fmt.Printf("[SYNC]   Author %d: %s\n", i+1, author[:16]+"...")
+		}
+	} else {
+		fmt.Printf("[SYNC]   (First 5 authors shown)\n")
+		for i := 0; i < 5; i++ {
+			fmt.Printf("[SYNC]   Author %d: %s\n", i+1, authors[i][:16]+"...")
+		}
+	}
 
 	// Step 4: Discover relay hints for all authors in scope
+	fmt.Printf("[SYNC] Step 4: Discovering relay hints...\n")
 	ownerRelays, err := e.discovery.GetRelaysForPubkey(e.ctx, ownerPubkey)
 	if err != nil || len(ownerRelays) == 0 {
 		ownerRelays = seedRelays // Fallback to seeds
+		fmt.Printf("[SYNC] Using seed relays as fallback (%d relays)\n", len(ownerRelays))
+	} else {
+		fmt.Printf("[SYNC] Using owner's relays (%d relays)\n", len(ownerRelays))
 	}
 
 	if err := e.discovery.DiscoverRelayHintsForPubkeys(e.ctx, authors, ownerRelays); err != nil {
 		return fmt.Errorf("failed to discover relay hints: %w", err)
 	}
+	fmt.Printf("[SYNC] ✓ Relay hints discovered\n")
+	fmt.Printf("[SYNC] ✓ Bootstrap complete!\n\n")
 
 	return nil
 }
@@ -192,6 +224,7 @@ func (e *Engine) continuousSync() {
 
 // syncOnce performs a single sync iteration
 func (e *Engine) syncOnce() error {
+	fmt.Printf("[SYNC] Starting sync iteration...\n")
 	ownerPubkey, err := e.getOwnerPubkey()
 	if err != nil {
 		return err
@@ -202,35 +235,52 @@ func (e *Engine) syncOnce() error {
 	if err != nil {
 		return fmt.Errorf("failed to get authors: %w", err)
 	}
+	fmt.Printf("[SYNC] Syncing for %d authors\n", len(authors))
 
 	// Get relays to sync from
 	relays := e.getActiveRelays(authors)
 	if len(relays) == 0 {
+		fmt.Printf("[SYNC] ⚠ No active relays found!\n")
 		return fmt.Errorf("no active relays")
 	}
+	fmt.Printf("[SYNC] Active relays: %d\n", len(relays))
 
 	// Build filters with cursors
 	kinds := e.filterBuilder.GetConfiguredKinds()
-	for _, relay := range relays {
+	fmt.Printf("[SYNC] Configured event kinds: %v\n", kinds)
+
+	for i, relay := range relays {
+		fmt.Printf("[SYNC] Processing relay %d/%d: %s\n", i+1, len(relays), relay)
+
 		// Get since cursor for this relay
 		since, err := e.cursors.GetSinceCursorForRelay(e.ctx, relay, kinds)
 		if err != nil {
+			fmt.Printf("[SYNC]   ⚠ Failed to get cursor: %v\n", err)
 			continue
+		}
+		if since > 0 {
+			fmt.Printf("[SYNC]   Since cursor: %d (%s)\n", since, time.Unix(int64(since), 0).Format(time.RFC3339))
+		} else {
+			fmt.Printf("[SYNC]   Since cursor: 0 (fetching all history)\n")
 		}
 
 		// Build filters
 		filters := e.filterBuilder.BuildFilters(authors, since)
+		fmt.Printf("[SYNC]   Built %d filters\n", len(filters))
 
 		// Add mention filter if configured
 		if e.config.Sync.Scope.IncludeDirectMentions {
 			mentionFilter := e.filterBuilder.BuildMentionFilter(ownerPubkey, since)
 			filters = append(filters, mentionFilter)
+			fmt.Printf("[SYNC]   Added mention filter (total: %d filters)\n", len(filters))
 		}
 
 		// Subscribe and collect events
+		fmt.Printf("[SYNC]   Subscribing to relay with %d filters...\n", len(filters))
 		go e.subscribeRelay(relay, filters)
 	}
 
+	fmt.Printf("[SYNC] ✓ Sync iteration dispatched\n\n")
 	return nil
 }
 
@@ -239,14 +289,27 @@ func (e *Engine) subscribeRelay(relay string, filters []nostr.Filter) {
 	ctx, cancel := context.WithTimeout(e.ctx, 30*time.Second)
 	defer cancel()
 
+	fmt.Printf("[SYNC] Subscribing to %s...\n", relay)
 	eventChan := e.nostrClient.SubscribeEvents(ctx, []string{relay}, filters)
 
+	eventCount := 0
 	for event := range eventChan {
+		eventCount++
+		if eventCount == 1 {
+			fmt.Printf("[SYNC] ✓ Receiving events from %s\n", relay)
+		}
 		select {
 		case e.eventChan <- event:
 		case <-e.ctx.Done():
+			fmt.Printf("[SYNC] Subscription to %s cancelled (context done)\n", relay)
 			return
 		}
+	}
+
+	if eventCount > 0 {
+		fmt.Printf("[SYNC] ✓ Received %d events from %s\n", eventCount, relay)
+	} else {
+		fmt.Printf("[SYNC] No events received from %s\n", relay)
 	}
 }
 
@@ -254,12 +317,22 @@ func (e *Engine) subscribeRelay(relay string, filters []nostr.Filter) {
 func (e *Engine) ingestEvents() {
 	defer e.wg.Done()
 
+	fmt.Printf("[SYNC] Event ingestion worker started\n")
+	eventCount := 0
+
 	for event := range e.eventChan {
+		eventCount++
+		if eventCount%10 == 1 {
+			fmt.Printf("[SYNC] Processing event %d (kind %d, author: %s)\n", eventCount, event.Kind, event.PubKey[:16]+"...")
+		}
+
 		if err := e.processEvent(event); err != nil {
 			// Log error but continue
-			fmt.Printf("Event processing error: %v\n", err)
+			fmt.Printf("[SYNC] ⚠ Event processing error: %v\n", err)
 		}
 	}
+
+	fmt.Printf("[SYNC] Event ingestion worker stopped (processed %d events)\n", eventCount)
 }
 
 // processEvent handles a single event
@@ -268,6 +341,7 @@ func (e *Engine) processEvent(event *nostr.Event) error {
 	if err := e.storage.StoreEvent(e.ctx, event); err != nil {
 		return fmt.Errorf("failed to store event: %w", err)
 	}
+	fmt.Printf("[SYNC]   ✓ Stored event %s (kind %d)\n", event.ID[:16]+"...", event.Kind)
 
 	// Handle special event kinds
 	switch event.Kind {
@@ -393,6 +467,21 @@ func (e *Engine) getActiveRelays(authors []string) []string {
 	relays := make([]string, 0, len(relaySet))
 	for relay := range relaySet {
 		relays = append(relays, relay)
+	}
+
+	// Fallback to seed relays if no relays discovered
+	if len(relays) == 0 {
+		fmt.Printf("[SYNC] No relay hints found, falling back to seed relays\n")
+		relays = e.nostrClient.GetSeedRelays()
+	} else {
+		// Also include seed relays as backup
+		fmt.Printf("[SYNC] Adding seed relays as backup to discovered relays\n")
+		seedRelays := e.nostrClient.GetSeedRelays()
+		for _, seed := range seedRelays {
+			if !relaySet[seed] {
+				relays = append(relays, seed)
+			}
+		}
 	}
 
 	return relays

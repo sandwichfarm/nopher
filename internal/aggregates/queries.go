@@ -2,9 +2,11 @@ package aggregates
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
 	"github.com/nbd-wtf/go-nostr"
+	"github.com/nbd-wtf/go-nostr/nip19"
 	"github.com/sandwich/nopher/internal/config"
 	"github.com/sandwich/nopher/internal/storage"
 )
@@ -25,11 +27,25 @@ func NewQueryHelper(st *storage.Storage, cfg *config.Config, mgr *Manager) *Quer
 	}
 }
 
+// getOwnerHex decodes the owner's npub to hex pubkey
+func (qh *QueryHelper) getOwnerHex() (string, error) {
+	if _, hex, err := nip19.Decode(qh.config.Identity.Npub); err != nil {
+		return "", fmt.Errorf("failed to decode npub: %w", err)
+	} else {
+		return hex.(string), nil
+	}
+}
+
 // GetOutboxNotes returns notes authored by the owner
 func (qh *QueryHelper) GetOutboxNotes(ctx context.Context, limit int) ([]*EnrichedEvent, error) {
+	ownerHex, err := qh.getOwnerHex()
+	if err != nil {
+		return nil, err
+	}
+
 	filter := nostr.Filter{
 		Kinds:   []int{1}, // Notes
-		Authors: []string{qh.config.Identity.Npub},
+		Authors: []string{ownerHex},
 		Limit:   limit,
 	}
 
@@ -43,11 +59,16 @@ func (qh *QueryHelper) GetOutboxNotes(ctx context.Context, limit int) ([]*Enrich
 
 // GetInboxReplies returns replies to the owner's posts or mentions of the owner
 func (qh *QueryHelper) GetInboxReplies(ctx context.Context, limit int) ([]*EnrichedEvent, error) {
+	ownerHex, err := qh.getOwnerHex()
+	if err != nil {
+		return nil, err
+	}
+
 	// Query notes that mention the owner
 	filter := nostr.Filter{
 		Kinds: []int{1},
 		Tags: nostr.TagMap{
-			"p": []string{qh.config.Identity.Npub},
+			"p": []string{ownerHex},
 		},
 		Limit: limit * 2, // Get more since we'll filter
 	}
@@ -60,7 +81,7 @@ func (qh *QueryHelper) GetInboxReplies(ctx context.Context, limit int) ([]*Enric
 	// Filter to only actual replies (not just mentions)
 	replies := make([]*nostr.Event, 0)
 	for _, event := range events {
-		if qh.manager.IsMentioning(ctx, event, qh.config.Identity.Npub) {
+		if qh.manager.IsMentioning(ctx, event, ownerHex) {
 			replies = append(replies, event)
 		}
 	}
@@ -241,4 +262,131 @@ type EnrichedEvent struct {
 type ThreadView struct {
 	Root    *EnrichedEvent
 	Replies []*EnrichedEvent
+}
+
+// === Public Section-Based Query Methods ===
+// These map to user-facing sections as per design docs
+
+// GetNotes returns owner's notes (kind 1, non-replies only)
+func (qh *QueryHelper) GetNotes(ctx context.Context, limit int) ([]*EnrichedEvent, error) {
+	ownerHex, err := qh.getOwnerHex()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get all owner's kind 1 events
+	filter := nostr.Filter{
+		Kinds:   []int{1},
+		Authors: []string{ownerHex},
+		Limit:   limit * 2, // Get more since we'll filter out replies
+	}
+
+	events, err := qh.storage.QueryEvents(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter out replies - only root notes
+	notes := make([]*nostr.Event, 0)
+	for _, event := range events {
+		threadInfo, err := ParseThreadInfo(event)
+		if err != nil {
+			continue
+		}
+		if !threadInfo.IsReply() {
+			notes = append(notes, event)
+			if len(notes) >= limit {
+				break
+			}
+		}
+	}
+
+	return qh.enrichEvents(ctx, notes)
+}
+
+// GetArticles returns owner's long-form articles (kind 30023)
+func (qh *QueryHelper) GetArticles(ctx context.Context, limit int) ([]*EnrichedEvent, error) {
+	ownerHex, err := qh.getOwnerHex()
+	if err != nil {
+		return nil, err
+	}
+
+	filter := nostr.Filter{
+		Kinds:   []int{30023},
+		Authors: []string{ownerHex},
+		Limit:   limit,
+	}
+
+	events, err := qh.storage.QueryEvents(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return qh.enrichEvents(ctx, events)
+}
+
+// GetReplies returns replies to owner's content
+// This queries for events that mention the owner and are actual replies
+func (qh *QueryHelper) GetReplies(ctx context.Context, limit int) ([]*EnrichedEvent, error) {
+	ownerHex, err := qh.getOwnerHex()
+	if err != nil {
+		return nil, err
+	}
+
+	// Query notes that mention the owner
+	filter := nostr.Filter{
+		Kinds: []int{1},
+		Tags: nostr.TagMap{
+			"p": []string{ownerHex},
+		},
+		Limit: limit * 2, // Get more since we'll filter
+	}
+
+	events, err := qh.storage.QueryEvents(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter to only actual replies (have e tags)
+	replies := make([]*nostr.Event, 0)
+	for _, event := range events {
+		threadInfo, err := ParseThreadInfo(event)
+		if err != nil {
+			continue
+		}
+		// A reply must have a ReplyToID (e tag)
+		if threadInfo.IsReply() && qh.manager.IsMentioning(ctx, event, ownerHex) {
+			replies = append(replies, event)
+			if len(replies) >= limit {
+				break
+			}
+		}
+	}
+
+	return qh.enrichEvents(ctx, replies)
+}
+
+// GetMentions returns posts that mention the owner (including non-reply mentions)
+func (qh *QueryHelper) GetMentions(ctx context.Context, limit int) ([]*EnrichedEvent, error) {
+	ownerHex, err := qh.getOwnerHex()
+	if err != nil {
+		return nil, err
+	}
+
+	// Query notes that mention the owner
+	filter := nostr.Filter{
+		Kinds: []int{1},
+		Tags: nostr.TagMap{
+			"p": []string{ownerHex},
+		},
+		Limit: limit,
+	}
+
+	events, err := qh.storage.QueryEvents(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	// Return all mentions (both replies and non-reply mentions)
+	return qh.enrichEvents(ctx, events)
 }

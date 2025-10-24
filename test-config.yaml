@@ -46,6 +46,9 @@ relays:
   seeds:
     - wss://relay.damus.io
     - wss://nos.lol
+    - wss://purplepag.es
+    - wss://user.kindpag.es
+    - wss://profiles.nostr1.com
   discovery:
     enabled: false
 

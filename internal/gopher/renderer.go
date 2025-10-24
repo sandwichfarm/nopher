@@ -110,7 +110,16 @@ func (r *Renderer) renderAggregates(agg *aggregates.EventAggregates) string {
 	}
 
 	if agg.ReactionTotal > 0 {
-		parts = append(parts, fmt.Sprintf("%d reactions", agg.ReactionTotal))
+		// Show total reactions with breakdown
+		if len(agg.ReactionCounts) > 0 {
+			var reactionParts []string
+			for emoji, count := range agg.ReactionCounts {
+				reactionParts = append(reactionParts, fmt.Sprintf("%s %d", emoji, count))
+			}
+			parts = append(parts, fmt.Sprintf("%d reactions (%s)", agg.ReactionTotal, strings.Join(reactionParts, ", ")))
+		} else {
+			parts = append(parts, fmt.Sprintf("%d reactions", agg.ReactionTotal))
+		}
 	}
 
 	if agg.ZapSatsTotal > 0 {

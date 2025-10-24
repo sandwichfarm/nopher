@@ -47,11 +47,17 @@ func (r *Router) Route(u *url.URL) []byte {
 	section := parts[0]
 
 	switch section {
-	case "outbox":
-		return r.handleOutbox(ctx, parts[1:], u.Query())
+	case "notes":
+		return r.handleNotes(ctx, parts[1:], u.Query())
 
-	case "inbox":
-		return r.handleInbox(ctx, parts[1:], u.Query())
+	case "articles":
+		return r.handleArticles(ctx, parts[1:], u.Query())
+
+	case "replies":
+		return r.handleReplies(ctx, parts[1:], u.Query())
+
+	case "mentions":
+		return r.handleMentions(ctx, parts[1:], u.Query())
 
 	case "note":
 		if len(parts) >= 2 {
@@ -76,6 +82,13 @@ func (r *Router) Route(u *url.URL) []byte {
 
 	case "diagnostics":
 		return r.handleDiagnostics(ctx)
+
+	// Legacy support - redirect to new endpoints
+	case "outbox":
+		return r.handleNotes(ctx, parts[1:], u.Query())
+
+	case "inbox":
+		return r.handleReplies(ctx, parts[1:], u.Query())
 
 	default:
 		return FormatErrorResponse(StatusNotFound, fmt.Sprintf("Unknown path: %s", path))
@@ -107,17 +120,69 @@ func (r *Router) handleOutbox(ctx context.Context, parts []string, query url.Val
 	return FormatSuccessResponse(gemtext)
 }
 
-// handleInbox handles inbox listing
+// handleInbox handles inbox listing (legacy - redirects to replies)
 func (r *Router) handleInbox(ctx context.Context, parts []string, query url.Values) []byte {
-	// Query inbox replies
+	return r.handleReplies(ctx, parts, query)
+}
+
+// handleNotes handles notes listing (kind 1, non-replies)
+func (r *Router) handleNotes(ctx context.Context, parts []string, query url.Values) []byte {
+	// Check if viewing a specific note
+	if len(parts) > 0 && parts[0] != "" {
+		return r.handleNote(ctx, parts[0])
+	}
+
+	// Query notes
 	queryHelper := r.server.GetQueryHelper()
-	replies, err := queryHelper.GetInboxReplies(ctx, 50)
+	notes, err := queryHelper.GetNotes(ctx, 50)
 	if err != nil {
-		return FormatErrorResponse(StatusTemporaryFailure, fmt.Sprintf("Error loading inbox: %v", err))
+		return FormatErrorResponse(StatusTemporaryFailure, fmt.Sprintf("Error loading notes: %v", err))
+	}
+
+	// Render note list
+	gemtext := r.renderer.RenderNoteList(notes, "Notes", r.geminiURL("/"))
+	return FormatSuccessResponse(gemtext)
+}
+
+// handleArticles handles articles listing (kind 30023)
+func (r *Router) handleArticles(ctx context.Context, parts []string, query url.Values) []byte {
+	// Query articles
+	queryHelper := r.server.GetQueryHelper()
+	articles, err := queryHelper.GetArticles(ctx, 50)
+	if err != nil {
+		return FormatErrorResponse(StatusTemporaryFailure, fmt.Sprintf("Error loading articles: %v", err))
+	}
+
+	// Render article list
+	gemtext := r.renderer.RenderNoteList(articles, "Articles", r.geminiURL("/"))
+	return FormatSuccessResponse(gemtext)
+}
+
+// handleReplies handles replies listing
+func (r *Router) handleReplies(ctx context.Context, parts []string, query url.Values) []byte {
+	// Query replies
+	queryHelper := r.server.GetQueryHelper()
+	replies, err := queryHelper.GetReplies(ctx, 50)
+	if err != nil {
+		return FormatErrorResponse(StatusTemporaryFailure, fmt.Sprintf("Error loading replies: %v", err))
 	}
 
 	// Render reply list
-	gemtext := r.renderer.RenderNoteList(replies, "Inbox - Replies & Mentions", r.geminiURL("/"))
+	gemtext := r.renderer.RenderNoteList(replies, "Replies", r.geminiURL("/"))
+	return FormatSuccessResponse(gemtext)
+}
+
+// handleMentions handles mentions listing
+func (r *Router) handleMentions(ctx context.Context, parts []string, query url.Values) []byte {
+	// Query mentions
+	queryHelper := r.server.GetQueryHelper()
+	mentions, err := queryHelper.GetMentions(ctx, 50)
+	if err != nil {
+		return FormatErrorResponse(StatusTemporaryFailure, fmt.Sprintf("Error loading mentions: %v", err))
+	}
+
+	// Render mention list
+	gemtext := r.renderer.RenderNoteList(mentions, "Mentions", r.geminiURL("/"))
 	return FormatSuccessResponse(gemtext)
 }
 

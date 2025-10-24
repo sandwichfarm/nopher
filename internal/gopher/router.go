@@ -45,11 +45,17 @@ func (r *Router) Route(selector string) []byte {
 	section := parts[0]
 
 	switch section {
-	case "outbox":
-		return r.handleOutbox(ctx, parts[1:])
+	case "notes":
+		return r.handleNotes(ctx, parts[1:])
 
-	case "inbox":
-		return r.handleInbox(ctx, parts[1:])
+	case "articles":
+		return r.handleArticles(ctx, parts[1:])
+
+	case "replies":
+		return r.handleReplies(ctx, parts[1:])
+
+	case "mentions":
+		return r.handleMentions(ctx, parts[1:])
 
 	case "note":
 		if len(parts) >= 2 {
@@ -72,6 +78,13 @@ func (r *Router) Route(selector string) []byte {
 	case "diagnostics":
 		return r.handleDiagnostics(ctx)
 
+	// Legacy support - redirect to new endpoints
+	case "outbox":
+		return r.handleNotes(ctx, parts[1:])
+
+	case "inbox":
+		return r.handleReplies(ctx, parts[1:])
+
 	default:
 		return r.errorResponse(fmt.Sprintf("Unknown selector: %s", selector))
 	}
@@ -83,8 +96,10 @@ func (r *Router) handleRoot(ctx context.Context) []byte {
 
 	gmap.AddWelcome("Nopher - Nostr Gateway", "Browse Nostr content via Gopher protocol")
 
-	gmap.AddDirectory("Outbox (My Notes)", "/outbox")
-	gmap.AddDirectory("Inbox (Replies & Mentions)", "/inbox")
+	gmap.AddDirectory("Notes", "/notes")
+	gmap.AddDirectory("Articles", "/articles")
+	gmap.AddDirectory("Replies", "/replies")
+	gmap.AddDirectory("Mentions", "/mentions")
 	gmap.AddSpacer()
 	gmap.AddDirectory("Diagnostics", "/diagnostics")
 	gmap.AddSpacer()
@@ -142,22 +157,120 @@ func (r *Router) handleOutbox(ctx context.Context, parts []string) []byte {
 	return gmap.Bytes()
 }
 
-// handleInbox handles inbox listing
+// handleInbox handles inbox listing (legacy - redirects to replies)
 func (r *Router) handleInbox(ctx context.Context, parts []string) []byte {
+	return r.handleReplies(ctx, parts)
+}
+
+// handleNotes handles notes listing (kind 1, non-replies)
+func (r *Router) handleNotes(ctx context.Context, parts []string) []byte {
 	gmap := NewGophermap(r.host, r.port)
 
-	// Query inbox replies
+	// Check if viewing a specific note
+	if len(parts) > 0 && parts[0] != "" {
+		return r.handleNote(ctx, parts[0])
+	}
+
+	// Query notes
 	queryHelper := r.server.GetQueryHelper()
-	replies, err := queryHelper.GetInboxReplies(ctx, 50)
+	notes, err := queryHelper.GetNotes(ctx, 50)
 	if err != nil {
-		gmap.AddError(fmt.Sprintf("Error loading inbox: %v", err))
+		gmap.AddError(fmt.Sprintf("Error loading notes: %v", err))
+		gmap.AddSpacer()
+		gmap.AddDirectory("← Back to Home", "/")
+		return gmap.Bytes()
+	}
+
+	// Render note list
+	lines := r.renderer.RenderNoteList(notes, "Notes")
+	gmap.AddInfoBlock(lines)
+
+	// Add note links
+	if len(notes) > 0 {
+		gmap.AddSpacer()
+		gmap.AddInfo("Read notes:")
+		gmap.AddSpacer()
+		for i, note := range notes {
+			// Extract first line for display
+			content := note.Event.Content
+			if len(content) > 60 {
+				content = content[:57] + "..."
+			}
+			firstLine := strings.Split(content, "\n")[0]
+
+			gmap.AddTextFile(
+				fmt.Sprintf("%d. %s", i+1, firstLine),
+				fmt.Sprintf("/note/%s", note.Event.ID),
+			)
+		}
+	}
+
+	gmap.AddSpacer()
+	gmap.AddDirectory("← Back to Home", "/")
+
+	return gmap.Bytes()
+}
+
+// handleArticles handles articles listing (kind 30023)
+func (r *Router) handleArticles(ctx context.Context, parts []string) []byte {
+	gmap := NewGophermap(r.host, r.port)
+
+	// Query articles
+	queryHelper := r.server.GetQueryHelper()
+	articles, err := queryHelper.GetArticles(ctx, 50)
+	if err != nil {
+		gmap.AddError(fmt.Sprintf("Error loading articles: %v", err))
+		gmap.AddSpacer()
+		gmap.AddDirectory("← Back to Home", "/")
+		return gmap.Bytes()
+	}
+
+	// Render article list
+	lines := r.renderer.RenderNoteList(articles, "Articles")
+	gmap.AddInfoBlock(lines)
+
+	// Add article links
+	if len(articles) > 0 {
+		gmap.AddSpacer()
+		gmap.AddInfo("Read articles:")
+		gmap.AddSpacer()
+		for i, article := range articles {
+			// Extract title or first line for display
+			content := article.Event.Content
+			if len(content) > 60 {
+				content = content[:57] + "..."
+			}
+			firstLine := strings.Split(content, "\n")[0]
+
+			gmap.AddTextFile(
+				fmt.Sprintf("%d. %s", i+1, firstLine),
+				fmt.Sprintf("/note/%s", article.Event.ID),
+			)
+		}
+	}
+
+	gmap.AddSpacer()
+	gmap.AddDirectory("← Back to Home", "/")
+
+	return gmap.Bytes()
+}
+
+// handleReplies handles replies listing
+func (r *Router) handleReplies(ctx context.Context, parts []string) []byte {
+	gmap := NewGophermap(r.host, r.port)
+
+	// Query replies
+	queryHelper := r.server.GetQueryHelper()
+	replies, err := queryHelper.GetReplies(ctx, 50)
+	if err != nil {
+		gmap.AddError(fmt.Sprintf("Error loading replies: %v", err))
 		gmap.AddSpacer()
 		gmap.AddDirectory("← Back to Home", "/")
 		return gmap.Bytes()
 	}
 
 	// Render reply list
-	lines := r.renderer.RenderNoteList(replies, "Inbox - Replies & Mentions")
+	lines := r.renderer.RenderNoteList(replies, "Replies")
 	gmap.AddInfoBlock(lines)
 
 	// Add reply links
@@ -176,6 +289,50 @@ func (r *Router) handleInbox(ctx context.Context, parts []string) []byte {
 			gmap.AddTextFile(
 				fmt.Sprintf("%d. %s", i+1, firstLine),
 				fmt.Sprintf("/note/%s", reply.Event.ID),
+			)
+		}
+	}
+
+	gmap.AddSpacer()
+	gmap.AddDirectory("← Back to Home", "/")
+
+	return gmap.Bytes()
+}
+
+// handleMentions handles mentions listing
+func (r *Router) handleMentions(ctx context.Context, parts []string) []byte {
+	gmap := NewGophermap(r.host, r.port)
+
+	// Query mentions
+	queryHelper := r.server.GetQueryHelper()
+	mentions, err := queryHelper.GetMentions(ctx, 50)
+	if err != nil {
+		gmap.AddError(fmt.Sprintf("Error loading mentions: %v", err))
+		gmap.AddSpacer()
+		gmap.AddDirectory("← Back to Home", "/")
+		return gmap.Bytes()
+	}
+
+	// Render mention list
+	lines := r.renderer.RenderNoteList(mentions, "Mentions")
+	gmap.AddInfoBlock(lines)
+
+	// Add mention links
+	if len(mentions) > 0 {
+		gmap.AddSpacer()
+		gmap.AddInfo("Read mentions:")
+		gmap.AddSpacer()
+		for i, mention := range mentions {
+			// Extract first line for display
+			content := mention.Event.Content
+			if len(content) > 60 {
+				content = content[:57] + "..."
+			}
+			firstLine := strings.Split(content, "\n")[0]
+
+			gmap.AddTextFile(
+				fmt.Sprintf("%d. %s", i+1, firstLine),
+				fmt.Sprintf("/note/%s", mention.Event.ID),
 			)
 		}
 	}

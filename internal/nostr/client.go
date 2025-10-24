@@ -89,15 +89,35 @@ func (c *Client) SubscribeEvents(ctx context.Context, relays []string, filters n
 	go func() {
 		defer close(eventChan)
 
+		fmt.Printf("[NOSTR CLIENT] Starting SubMany for %d relays with %d filters\n", len(relays), len(filters))
+		for i, relay := range relays {
+			fmt.Printf("[NOSTR CLIENT]   Relay %d: %s\n", i+1, relay)
+		}
+
+		eventCount := 0
 		for relayEvent := range c.pool.SubMany(ctx, relays, filters) {
 			if relayEvent.Event != nil {
+				eventCount++
+				if eventCount == 1 {
+					fmt.Printf("[NOSTR CLIENT] ✓ First event received from %s\n", relayEvent.Relay.URL)
+				}
+				if eventCount%10 == 0 {
+					fmt.Printf("[NOSTR CLIENT] Received %d events so far...\n", eventCount)
+				}
+
 				select {
 				case eventChan <- relayEvent.Event:
 				case <-ctx.Done():
+					fmt.Printf("[NOSTR CLIENT] Context cancelled after receiving %d events\n", eventCount)
 					return
 				}
+			} else if relayEvent.Relay != nil {
+				// Log relay connection events
+				fmt.Printf("[NOSTR CLIENT] Relay event from %s (no event data)\n", relayEvent.Relay.URL)
 			}
 		}
+
+		fmt.Printf("[NOSTR CLIENT] SubMany channel closed. Total events received: %d\n", eventCount)
 	}()
 
 	return eventChan
