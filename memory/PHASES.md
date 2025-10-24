@@ -860,32 +860,37 @@ Create reusable profile parsing utilities:
 
 ## Phase 20: Advanced Configurable Retention
 
-**Status**: 📋 Future Enhancement
+**Status**: ✅ Complete
 
 **Goal**: Extend the simple retention system (Phase 12) with sophisticated rule-based retention capabilities.
 
 **Overview**:
 
-Phase 12 implemented simple time-based retention (`keep_days` configuration). Phase 20 would add an advanced, multi-dimensional retention system on top of this foundation.
+Phase 20 implemented an advanced, multi-dimensional retention system on top of the Phase 12 foundation. Events are evaluated against priority-ordered rules with sophisticated conditions and actions.
 
-**Proposed Features**:
+**Implemented Features**:
 - **Rule Engine**: Priority-based rule matching with configurable conditions
 - **Multi-Dimensional Conditions**:
   - Social distance (FOAF, mutual, specific pubkeys)
   - Engagement thresholds (reactions, zaps, replies)
   - Content characteristics (kind, size, age)
   - Reference-based (replies to owner, mentions)
+  - Logical operators (AND/OR/NOT)
 - **Sophisticated Caps**: Global and per-kind storage limits with score-based pruning
-- **Flexible Actions**: Retain forever, retain until date, or delete
+- **Flexible Actions**: Retain forever, retain until date, or delete with grace period
 - **Protected Events**: Mark important events as never-delete
+- **Background Workers**: Periodic re-evaluation and pruning schedulers
+- **Performance Optimizations**: Pre-sorted rules cache, optimized evaluation
+- **Diagnostics Integration**: Retention stats in diagnostics endpoint
 
-**Why Not Yet Implemented**:
-- Phase 12 simple retention meets current needs
-- Would add significant complexity
-- Requires careful design to avoid performance impact
-- Optional enhancement, not core requirement
+**Key Implementation Files**:
+- `internal/config/retention.go` - Configuration schema
+- `internal/storage/retention_metadata.go` - Database layer
+- `internal/retention/engine.go` - Rule evaluation engine
+- `internal/ops/retention.go` - Operations and background workers
+- `cmd/nophr/main.go` - Integration
 
-**Documentation**: See `memory/PHASE_20_ADVANCED_RETENTION.md` for complete specification.
+**Documentation**: See `memory/PHASE20_COMPLETION.md` for complete implementation details.
 
 **Dependencies**: Phase 12 (Simple Retention) - Complete
 
@@ -893,15 +898,15 @@ Phase 12 implemented simple time-based retention (`keep_days` configuration). Ph
 
 ## Summary (Updated)
 
-**Total Phases**: 19 (Complete), 20+ (Future)
-**Status**: Core Features Complete
+**Total Phases**: 20 (Complete), 21+ (Future)
+**Status**: Core Features Complete + Advanced Retention
 
 **Phase Breakdown**:
-- ✅ Phases 0-19: Complete
-- 📋 Phase 20: Advanced Retention (Future Enhancement)
+- ✅ Phases 0-20: Complete
+- ⏭️ Phase 13 (Publisher): Skipped (not needed)
 - 🚧 Future: Additional features and optimizations
 
-**Current Status**: All core features implemented and operational
+**Current Status**: All core features + advanced retention implemented and operational
 
 **Architecture Highlights**:
 - Multi-protocol support (Gopher, Gemini, Finger)
@@ -909,3 +914,5 @@ Phase 12 implemented simple time-based retention (`keep_days` configuration). Ph
 - Aggregate computation and caching
 - Flexible content filtering and sorting
 - Customizable presentation system
+- Advanced retention with rule-based evaluation
+- Background workers for maintenance
