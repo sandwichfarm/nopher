@@ -1,0 +1,244 @@
+package aggregates
+
+import (
+	"context"
+	"sort"
+
+	"github.com/nbd-wtf/go-nostr"
+	"github.com/sandwich/nopher/internal/config"
+	"github.com/sandwich/nopher/internal/storage"
+)
+
+// QueryHelper provides helper methods for inbox/outbox queries
+type QueryHelper struct {
+	storage *storage.Storage
+	config  *config.Config
+	manager *Manager
+}
+
+// NewQueryHelper creates a new query helper
+func NewQueryHelper(st *storage.Storage, cfg *config.Config, mgr *Manager) *QueryHelper {
+	return &QueryHelper{
+		storage: st,
+		config:  cfg,
+		manager: mgr,
+	}
+}
+
+// GetOutboxNotes returns notes authored by the owner
+func (qh *QueryHelper) GetOutboxNotes(ctx context.Context, limit int) ([]*EnrichedEvent, error) {
+	filter := nostr.Filter{
+		Kinds:   []int{1}, // Notes
+		Authors: []string{qh.config.Identity.Npub},
+		Limit:   limit,
+	}
+
+	events, err := qh.storage.QueryEvents(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return qh.enrichEvents(ctx, events)
+}
+
+// GetInboxReplies returns replies to the owner's posts or mentions of the owner
+func (qh *QueryHelper) GetInboxReplies(ctx context.Context, limit int) ([]*EnrichedEvent, error) {
+	// Query notes that mention the owner
+	filter := nostr.Filter{
+		Kinds: []int{1},
+		Tags: nostr.TagMap{
+			"p": []string{qh.config.Identity.Npub},
+		},
+		Limit: limit * 2, // Get more since we'll filter
+	}
+
+	events, err := qh.storage.QueryEvents(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter to only actual replies (not just mentions)
+	replies := make([]*nostr.Event, 0)
+	for _, event := range events {
+		if qh.manager.IsMentioning(ctx, event, qh.config.Identity.Npub) {
+			replies = append(replies, event)
+		}
+	}
+
+	// Apply limit
+	if len(replies) > limit {
+		replies = replies[:limit]
+	}
+
+	return qh.enrichEvents(ctx, replies)
+}
+
+// GetInboxReactions returns reactions to the owner's posts
+func (qh *QueryHelper) GetInboxReactions(ctx context.Context, limit int) ([]*EnrichedEvent, error) {
+	// First get owner's notes
+	ownerNotes, err := qh.GetOutboxNotes(ctx, 100)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(ownerNotes) == 0 {
+		return []*EnrichedEvent{}, nil
+	}
+
+	// Get IDs of owner's notes
+	noteIDs := make([]string, 0, len(ownerNotes))
+	for _, note := range ownerNotes {
+		noteIDs = append(noteIDs, note.Event.ID)
+	}
+
+	// Query reactions to those notes
+	filter := nostr.Filter{
+		Kinds: []int{7},
+		Tags: nostr.TagMap{
+			"e": noteIDs,
+		},
+		Limit: limit,
+	}
+
+	events, err := qh.storage.QueryEvents(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return qh.enrichEvents(ctx, events)
+}
+
+// GetThreadReplies returns all replies in a thread
+func (qh *QueryHelper) GetThreadReplies(ctx context.Context, rootEventID string) ([]*EnrichedEvent, error) {
+	filter := nostr.Filter{
+		Kinds: []int{1},
+		Tags: nostr.TagMap{
+			"e": []string{rootEventID},
+		},
+	}
+
+	events, err := qh.storage.QueryEvents(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return qh.enrichEvents(ctx, events)
+}
+
+// GetThreadByEvent returns the full thread for a given event
+func (qh *QueryHelper) GetThreadByEvent(ctx context.Context, eventID string) (*ThreadView, error) {
+	// Get the event
+	filter := nostr.Filter{
+		IDs: []string{eventID},
+	}
+
+	events, err := qh.storage.QueryEvents(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(events) == 0 {
+		return nil, nil
+	}
+
+	event := events[0]
+
+	// Determine root
+	rootID, err := qh.manager.GetThreadRoot(ctx, event)
+	if err != nil {
+		rootID = eventID // Use event itself as root
+	}
+
+	// Get root event
+	rootFilter := nostr.Filter{
+		IDs: []string{rootID},
+	}
+
+	rootEvents, err := qh.storage.QueryEvents(ctx, rootFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	var root *nostr.Event
+	if len(rootEvents) > 0 {
+		root = rootEvents[0]
+	} else {
+		root = event // Fallback
+	}
+
+	// Get all replies in thread
+	replies, err := qh.GetThreadReplies(ctx, rootID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ThreadView{
+		Root:    qh.enrichEvent(ctx, root),
+		Replies: replies,
+	}, nil
+}
+
+// enrichEvents adds aggregate data to events
+func (qh *QueryHelper) enrichEvents(ctx context.Context, events []*nostr.Event) ([]*EnrichedEvent, error) {
+	enriched := make([]*EnrichedEvent, 0, len(events))
+	for _, event := range events {
+		enriched = append(enriched, qh.enrichEvent(ctx, event))
+	}
+	return enriched, nil
+}
+
+// enrichEvent adds aggregate data to a single event
+func (qh *QueryHelper) enrichEvent(ctx context.Context, event *nostr.Event) *EnrichedEvent {
+	agg, _ := qh.manager.GetEventAggregates(ctx, event.ID)
+	if agg == nil {
+		agg = &EventAggregates{EventID: event.ID}
+	}
+
+	return &EnrichedEvent{
+		Event:      event,
+		Aggregates: agg,
+	}
+}
+
+// GetPopularNotes returns notes sorted by interaction score
+func (qh *QueryHelper) GetPopularNotes(ctx context.Context, limit int) ([]*EnrichedEvent, error) {
+	// Get recent notes
+	filter := nostr.Filter{
+		Kinds: []int{1},
+		Limit: limit * 10, // Get more to sort
+	}
+
+	events, err := qh.storage.QueryEvents(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	enriched, err := qh.enrichEvents(ctx, events)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sort by interaction score
+	sort.Slice(enriched, func(i, j int) bool {
+		return enriched[i].Aggregates.InteractionScore() > enriched[j].Aggregates.InteractionScore()
+	})
+
+	// Apply limit
+	if len(enriched) > limit {
+		enriched = enriched[:limit]
+	}
+
+	return enriched, nil
+}
+
+// EnrichedEvent contains an event with its aggregate data
+type EnrichedEvent struct {
+	Event      *nostr.Event
+	Aggregates *EventAggregates
+}
+
+// ThreadView represents a full thread with root and replies
+type ThreadView struct {
+	Root    *EnrichedEvent
+	Replies []*EnrichedEvent
+}
