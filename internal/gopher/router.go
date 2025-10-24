@@ -8,6 +8,7 @@ import (
 
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sandwich/nopher/internal/aggregates"
+	"github.com/sandwich/nopher/internal/sections"
 )
 
 const itemsPerPage = 9 // Gopher clients use single-digit hotkeys (1-9)
@@ -98,8 +99,22 @@ func paginateItems[T any](items []T, page int) []T {
 func (r *Router) Route(selector string) []byte {
 	ctx := context.Background()
 
-	// Empty selector = root/home
-	if selector == "" || selector == "/" {
+	// Normalize path
+	path := selector
+	if path == "" {
+		path = "/"
+	}
+
+	// Check if sections are registered for this path (sections override defaults)
+	if r.server.GetSectionManager() != nil {
+		sections := r.server.GetSectionManager().GetSectionsByPath(path)
+		if len(sections) > 0 {
+			return r.handleSections(ctx, sections, path)
+		}
+	}
+
+	// Empty selector = root/home (default behavior when no section registered)
+	if path == "/" {
 		return r.handleRoot(ctx)
 	}
 
@@ -769,4 +784,175 @@ func getSummary(content string, maxLen int) string {
 	}
 
 	return summary
+}
+
+// handleSection renders a custom section
+func (r *Router) handleSection(ctx context.Context, section *sections.Section, path string) []byte {
+	gmap := NewGophermap(r.host, r.port)
+
+	// Parse page number from path
+	page := 1
+	// TODO: Extract page from path if needed
+
+	// Add header if configured
+	r.addHeaderToGophermap(gmap, section.Name)
+
+	// Get section page
+	sectionPage, err := r.server.GetSectionManager().GetPage(ctx, section.Name, page)
+	if err != nil {
+		gmap.AddError(fmt.Sprintf("Error loading section: %v", err))
+		gmap.AddSpacer()
+		gmap.AddDirectory("⌂ Home", "/")
+		return gmap.Bytes()
+	}
+
+	// Title
+	gmap.AddInfo(section.Title)
+	if section.Description != "" {
+		gmap.AddInfo(section.Description)
+	}
+	gmap.AddSpacer()
+
+	// Render events
+	if len(sectionPage.Events) > 0 {
+		for _, event := range sectionPage.Events {
+			// Extract first line for display
+			content := event.Content
+			if len(content) > 60 {
+				content = content[:57] + "..."
+			}
+			firstLine := strings.Split(content, "\n")[0]
+
+			linkText := firstLine
+
+			// Add author and timestamp if configured
+			if section.ShowAuthors && section.ShowDates {
+				gmap.AddInfo(fmt.Sprintf("   By %s - %s",
+					truncatePubkey(event.PubKey),
+					formatTimestamp(event.CreatedAt)))
+			} else if section.ShowAuthors {
+				gmap.AddInfo(fmt.Sprintf("   By %s", truncatePubkey(event.PubKey)))
+			} else if section.ShowDates {
+				gmap.AddInfo(fmt.Sprintf("   %s", formatTimestamp(event.CreatedAt)))
+			}
+
+			// Add the clickable link
+			gmap.AddTextFile(linkText, fmt.Sprintf("/note/%s", event.ID))
+			gmap.AddSpacer()
+		}
+	} else {
+		gmap.AddInfo("No content yet.")
+		gmap.AddSpacer()
+	}
+
+	// Add "more" link if configured
+	if section.MoreLink != nil {
+		// Get the target section to determine its path
+		targetSection, err := r.server.GetSectionManager().GetSection(section.MoreLink.SectionRef)
+		if err == nil && targetSection.Path != "" {
+			gmap.AddSpacer()
+			gmap.AddDirectory(fmt.Sprintf("→ %s", section.MoreLink.Text), targetSection.Path)
+		}
+	}
+
+	// Add pagination links
+	if sectionPage.TotalPages > 1 {
+		r.addPaginationLinks(gmap, path, page, int(sectionPage.TotalItems))
+	} else {
+		gmap.AddSpacer()
+		gmap.AddDirectory("⌂ Home", "/")
+	}
+
+	// Add footer if configured
+	r.addFooterToGophermap(gmap, section.Name)
+
+	return gmap.Bytes()
+}
+
+// handleSections renders multiple sections on a single page (e.g., homepage with multiple filtered views)
+func (r *Router) handleSections(ctx context.Context, sections []*sections.Section, path string) []byte {
+	gmap := NewGophermap(r.host, r.port)
+
+	// Add header if first section has one configured
+	if len(sections) > 0 {
+		r.addHeaderToGophermap(gmap, sections[0].Name)
+	}
+
+	// Render each section in order
+	for i, section := range sections {
+		// Get section page (always page 1 for multi-section views)
+		sectionPage, err := r.server.GetSectionManager().GetPage(ctx, section.Name, 1)
+		if err != nil {
+			gmap.AddError(fmt.Sprintf("Error loading section %s: %v", section.Name, err))
+			gmap.AddSpacer()
+			continue
+		}
+
+		// Section title and description
+		if section.Title != "" {
+			gmap.AddInfo(section.Title)
+		}
+		if section.Description != "" {
+			gmap.AddInfo(section.Description)
+		}
+		gmap.AddSpacer()
+
+		// Render events from section
+		if len(sectionPage.Events) > 0 {
+			for _, event := range sectionPage.Events {
+				// Extract first line for display
+				content := event.Content
+				if len(content) > 60 {
+					content = content[:57] + "..."
+				}
+				firstLine := strings.Split(content, "\n")[0]
+
+				linkText := firstLine
+
+				// Add author and timestamp if configured
+				if section.ShowAuthors && section.ShowDates {
+					gmap.AddInfo(fmt.Sprintf("   By %s - %s",
+						truncatePubkey(event.PubKey),
+						formatTimestamp(event.CreatedAt)))
+				} else if section.ShowAuthors {
+					gmap.AddInfo(fmt.Sprintf("   By %s", truncatePubkey(event.PubKey)))
+				} else if section.ShowDates {
+					gmap.AddInfo(fmt.Sprintf("   %s", formatTimestamp(event.CreatedAt)))
+				}
+
+				// Add the clickable link
+				gmap.AddTextFile(linkText, fmt.Sprintf("/note/%s", event.ID))
+				gmap.AddSpacer()
+			}
+		} else {
+			gmap.AddInfo("No content yet.")
+			gmap.AddSpacer()
+		}
+
+		// Add "more" link if configured
+		if section.MoreLink != nil {
+			targetSection, err := r.server.GetSectionManager().GetSection(section.MoreLink.SectionRef)
+			if err == nil && targetSection.Path != "" {
+				gmap.AddDirectory(fmt.Sprintf("→ %s", section.MoreLink.Text), targetSection.Path)
+				gmap.AddSpacer()
+			}
+		}
+
+		// Add separator between sections (except after last)
+		if i < len(sections)-1 {
+			gmap.AddInfo("─────────────────────────────────────────")
+			gmap.AddSpacer()
+		}
+	}
+
+	// Add home link at bottom
+	gmap.AddSpacer()
+	gmap.AddDirectory("⌂ Home", "/")
+
+	// Add footer if last section has one configured
+	if len(sections) > 0 {
+		r.addFooterToGophermap(gmap, sections[len(sections)-1].Name)
+	}
+
+	return gmap.Bytes()
 }

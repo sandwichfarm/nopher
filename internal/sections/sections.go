@@ -12,6 +12,7 @@ import (
 // Section defines a content section with filtering and pagination
 type Section struct {
 	Name        string
+	Path        string // URL path (e.g., "/diy", "/philosophy", "/" for homepage)
 	Title       string
 	Description string
 	Filters     FilterSet
@@ -21,6 +22,14 @@ type Section struct {
 	ShowDates   bool
 	ShowAuthors bool
 	GroupBy     GroupField
+	MoreLink    *MoreLink // Optional link to full paginated view
+	Order       int       // Display order when multiple sections share a path (lower numbers first)
+}
+
+// MoreLink defines a "more" link to a full paginated section view
+type MoreLink struct {
+	Text       string // Link text (e.g., "More DIY posts", "View all articles")
+	SectionRef string // Name of the section to link to (must be registered)
 }
 
 // FilterSet contains multiple filter criteria
@@ -123,6 +132,37 @@ func (m *Manager) GetSection(name string) (*Section, error) {
 		return nil, fmt.Errorf("section not found: %s", name)
 	}
 	return section, nil
+}
+
+// GetSectionByPath retrieves a section by its URL path (deprecated - use GetSectionsByPath for multiple sections)
+func (m *Manager) GetSectionByPath(path string) (*Section, error) {
+	for _, section := range m.sections {
+		if section.Path == path {
+			return section, nil
+		}
+	}
+	return nil, fmt.Errorf("no section registered for path: %s", path)
+}
+
+// GetSectionsByPath retrieves all sections for a given path, sorted by Order field
+func (m *Manager) GetSectionsByPath(path string) []*Section {
+	var matched []*Section
+	for _, section := range m.sections {
+		if section.Path == path {
+			matched = append(matched, section)
+		}
+	}
+
+	// Sort by Order field (lower numbers first)
+	for i := 0; i < len(matched)-1; i++ {
+		for j := 0; j < len(matched)-i-1; j++ {
+			if matched[j].Order > matched[j+1].Order {
+				matched[j], matched[j+1] = matched[j+1], matched[j]
+			}
+		}
+	}
+
+	return matched
 }
 
 // ListSections returns all registered sections
@@ -302,40 +342,9 @@ func DefaultSections() []*Section {
 	}
 }
 
-// InboxSection creates an inbox section for a specific pubkey
-func InboxSection(ownerPubkey string) *Section {
-	return &Section{
-		Name:        "inbox",
-		Title:       "Inbox",
-		Description: "Mentions, replies, and interactions",
-		Filters: FilterSet{
-			Tags: map[string][]string{
-				"p": {ownerPubkey},
-			},
-			Kinds: []int{1, 7, 9735}, // Notes, reactions, zaps
-		},
-		SortBy:    SortByCreatedAt,
-		SortOrder: SortDesc,
-		Limit:     50,
-		ShowDates: true,
-		ShowAuthors: true,
-	}
-}
-
-// OutboxSection creates an outbox section for a specific pubkey
-func OutboxSection(ownerPubkey string) *Section {
-	return &Section{
-		Name:        "outbox",
-		Title:       "Outbox",
-		Description: "Your published content",
-		Filters: FilterSet{
-			Authors: []string{ownerPubkey},
-			Kinds:   []int{1, 30023}, // Notes and articles
-		},
-		SortBy:    SortByCreatedAt,
-		SortOrder: SortDesc,
-		Limit:     20,
-		ShowDates: true,
-		ShowAuthors: false,
-	}
-}
+// NOTE: "inbox" and "outbox" are INTERNAL source identifiers, not user-facing paths.
+// The router already provides /notes, /replies, /mentions, /articles paths.
+// Sections are for CUSTOM filtered views (e.g., /art, /dev, /following).
+//
+// These helper functions are deprecated and should not be used.
+// They were based on a misunderstanding of the architecture.

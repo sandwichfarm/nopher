@@ -11,17 +11,19 @@ import (
 
 	"github.com/sandwich/nopher/internal/aggregates"
 	"github.com/sandwich/nopher/internal/config"
+	"github.com/sandwich/nopher/internal/sections"
 	"github.com/sandwich/nopher/internal/storage"
 )
 
 // Server implements a Gopher protocol server (RFC 1436)
 type Server struct {
-	config      *config.GopherProtocol
-	fullConfig  *config.Config
-	storage     *storage.Storage
-	router      *Router
-	host        string
-	queryHelper *aggregates.QueryHelper
+	config         *config.GopherProtocol
+	fullConfig     *config.Config
+	storage        *storage.Storage
+	router         *Router
+	host           string
+	queryHelper    *aggregates.QueryHelper
+	sectionManager *sections.Manager
 
 	listener net.Listener
 	wg       sync.WaitGroup
@@ -42,6 +44,11 @@ func New(cfg *config.GopherProtocol, fullCfg *config.Config, st *storage.Storage
 		cancel:      cancel,
 		queryHelper: aggregates.NewQueryHelper(st, fullCfg, aggMgr),
 	}
+
+	// Initialize sections manager (opt-in for custom filtered views)
+	// Sections are available but not auto-registered
+	// Users can configure custom sections via config for filtered views
+	s.sectionManager = sections.NewManager(st)
 
 	// Initialize router
 	s.router = NewRouter(s, host, cfg.Port)
@@ -158,4 +165,9 @@ func (s *Server) GetHost() string {
 // GetQueryHelper returns the query helper instance
 func (s *Server) GetQueryHelper() *aggregates.QueryHelper {
 	return s.queryHelper
+}
+
+// GetSectionManager returns the section manager instance
+func (s *Server) GetSectionManager() *sections.Manager {
+	return s.sectionManager
 }
