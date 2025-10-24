@@ -17,30 +17,18 @@ Nopher is a personal gateway that serves your Nostr content via legacy internet 
 
 ## Status
 
-🚧 **Phase 0 Complete - Bootstrap Phase**
+⚠️ **Early Development** - Not yet ready for production use.
 
-The project structure is in place and ready for implementation:
-- ✅ Go module initialized
-- ✅ Directory structure created
-- ✅ Build/test/lint scripts ready
-- ✅ CI/CD pipelines configured
-- ✅ Docker support ready
-- ✅ Example configuration available
+Current implementation status:
+- Configuration system with YAML parsing and validation
+- Storage layer with Khatru integration and SQLite backend
+- Custom tables for relay hints, social graph, sync state, and aggregates
 
-Next: Phase 1 (Configuration System)
-
-See `memory/PHASES.md` for the complete implementation roadmap.
+Protocol servers (Gopher, Gemini, Finger) are not yet implemented.
 
 ## Quick Start
 
 ### Installation
-
-#### Download Binary
-
-```bash
-# Coming soon - releases not yet available
-# curl -fsSL https://get.nopher.io | sh
-```
 
 #### Build from Source
 
@@ -56,30 +44,17 @@ make build
 ./dist/nopher --version
 ```
 
-### Configuration
+### Generate Configuration
 
 ```bash
-# Copy example config
-cp configs/nopher.example.yaml nopher.yaml
+# Generate example configuration
+./dist/nopher init > nopher.yaml
 
 # Edit with your npub and seed relays
 vim nopher.yaml
 
-# Set your nsec (NEVER in config file!)
-export NOPHER_NSEC="nsec1..."
-
-# Run
+# Validate configuration (note: protocol servers not yet implemented)
 ./dist/nopher --config nopher.yaml
-```
-
-### Docker
-
-```bash
-# Build image
-make docker
-
-# Or use docker-compose
-docker-compose up -d
 ```
 
 ## Development
@@ -137,10 +112,10 @@ For detailed architecture, see `memory/architecture.md`.
 
 ## Documentation
 
-- `memory/PHASES.md` - Implementation phases and roadmap
 - `memory/configuration.md` - Configuration reference
 - `memory/architecture.md` - System architecture
-- `AGENTS.md` - Guidelines for AI agents and contributors
+- `memory/storage_model.md` - Storage layer design
+- `AGENTS.md` - Guidelines for contributors and AI agents
 
 ## Contributing
 

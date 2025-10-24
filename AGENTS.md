@@ -30,7 +30,16 @@ Core Principles
    - Keep memory/ in sync with implementation
    - Update PHASES.md if phase definition changes
 
-5. **Code Quality and Architecture**
+5. **Documentation Philosophy**
+   - User-facing docs (README.md, CONTRIBUTING.md, docs/) reflect current source state only
+   - No project management status in user-facing documentation
+   - No phase completion checklists or future roadmaps in user docs
+   - Keep implementation plans and SDLC tracking in memory/ only
+   - Status sections describe what works NOW, not what's planned
+   - docs/ contains guides for features that actually exist
+   - See "Documentation Guidelines" section below
+
+6. **Code Quality and Architecture**
    - Write modular, DRY (Don't Repeat Yourself) code
    - Keep files small and focused (<500 lines ideal, <1000 max)
    - Separate concerns into distinct packages
@@ -793,6 +802,108 @@ Good:
 Bad:
 - "Should change caching" (no reasoning)
 - "This way is better" (no justification)
+
+Documentation Guidelines
+
+User-Facing Documentation (README.md, CONTRIBUTING.md, docs/)
+
+These documents are for end users, operators, and contributors. They describe what exists and works NOW.
+
+**Applies to:**
+- README.md (project overview and quick start)
+- CONTRIBUTING.md (contribution guidelines)
+- docs/ (any user-facing documentation like deployment guides, troubleshooting, API references, tutorials, etc.)
+
+**What to Include:**
+- Current functionality that actually works
+- Installation instructions for the current state
+- Configuration examples that work now
+- How-to guides for implemented features
+- Troubleshooting for real issues users might encounter
+- Architecture overview (conceptual, not implementation status)
+- Links to design docs for those interested in internals
+
+**What NOT to Include:**
+- Phase completion checklists (❌ "Phase 0 Complete")
+- "Next steps" or future implementation plans
+- "Coming soon" features or roadmaps
+- SDLC status updates or project management info
+- Checklists of what's done vs. what's pending
+- Implementation plans or timelines
+
+**Status Sections:**
+- State what IS implemented and working
+- Be clear about what's NOT yet functional
+- Use language like "Early Development - Not yet ready for production"
+- Example: "Current implementation includes configuration and storage layers. Protocol servers not yet implemented."
+
+**Example docs/ structure (when created):**
+```
+docs/
+├── deployment.md       # How to deploy what's implemented
+├── configuration.md    # User guide to config options that work
+├── troubleshooting.md  # Real issues users can encounter now
+└── api-reference.md    # Document APIs that actually exist
+```
+
+Design Documentation (memory/)
+
+These documents are for developers and describe the technical design, implementation plan, and future roadmap.
+
+**Applies to:**
+- memory/PHASES.md (implementation roadmap and completion criteria)
+- memory/architecture.md (technical design decisions)
+- memory/configuration.md (config schema and design rationale)
+- All other memory/*.md files
+
+**What to Include:**
+- Detailed design decisions and rationale
+- Implementation phases and roadmaps
+- Future plans and features
+- Technical specifications
+- Completion criteria for phases
+- SDLC tracking and project management
+
+**This is where SDLC content belongs:**
+- memory/PHASES.md for implementation roadmap
+- memory/*.md for design decisions
+- Keep project management separate from user docs
+
+Example README Status Section
+
+**Good:**
+```markdown
+## Status
+
+⚠️ **Early Development** - Not yet ready for production use.
+
+Current implementation status:
+- Configuration system with YAML parsing and validation
+- Storage layer with Khatru integration and SQLite backend
+- Custom tables for relay hints, social graph, sync state, and aggregates
+
+Protocol servers (Gopher, Gemini, Finger) are not yet implemented.
+```
+
+**Bad:**
+```markdown
+## Status
+
+🚧 **Phase 2 Complete - Storage Layer**
+
+The project is progressing well:
+- ✅ Phase 0: Bootstrap complete
+- ✅ Phase 1: Configuration system complete
+- ✅ Phase 2: Storage layer complete
+- ⏳ Phase 3: Relay discovery (next)
+- 🔲 Phase 4-16: Planned
+
+Next: Phase 3 (Nostr Client and Relay Discovery)
+
+See `memory/PHASES.md` for the complete implementation roadmap.
+```
+
+Why? The "good" example tells users what works RIGHT NOW. The "bad" example is project management tracking that belongs in memory/PHASES.md, not user-facing docs.
 
 Quick Reference
 
