@@ -45,7 +45,7 @@ func (r *Renderer) RenderHome() string {
 	sb.WriteString("\n")
 	sb.WriteString("Powered by Nopher\n")
 
-	return sb.String()
+	return r.applyHeadersFooters(sb.String(), "home")
 }
 
 // RenderNote renders a note event as gemtext
@@ -205,12 +205,24 @@ func (r *Renderer) RenderThread(root *aggregates.EnrichedEvent, replies []*aggre
 func (r *Renderer) RenderNoteList(notes []*aggregates.EnrichedEvent, title, homeURL string) string {
 	var sb strings.Builder
 
+	// Determine page name from title for headers/footers
+	// Map common titles to page names
+	pageName := "notes" // default
+	titleLower := strings.ToLower(title)
+	if strings.Contains(titleLower, "article") {
+		pageName = "articles"
+	} else if strings.Contains(titleLower, "repl") {
+		pageName = "replies"
+	} else if strings.Contains(titleLower, "mention") {
+		pageName = "mentions"
+	}
+
 	sb.WriteString(fmt.Sprintf("# %s\n\n", title))
 
 	if len(notes) == 0 {
 		sb.WriteString("No notes yet.\n\n")
 		sb.WriteString(fmt.Sprintf("=> %s Back to Home\n", homeURL))
-		return sb.String()
+		return r.applyHeadersFooters(sb.String(), pageName)
 	}
 
 	for i, note := range notes {
@@ -233,7 +245,7 @@ func (r *Renderer) RenderNoteList(notes []*aggregates.EnrichedEvent, title, home
 
 	sb.WriteString(fmt.Sprintf("=> %s Back to Home\n", homeURL))
 
-	return sb.String()
+	return r.applyHeadersFooters(sb.String(), pageName)
 }
 
 // renderAggregates renders interaction stats (for feed view)
