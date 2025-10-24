@@ -430,9 +430,9 @@ openssl req -x509 -newkey rsa:4096 -nodes \
 
 ## Next Steps
 
-- Read the [Configuration Guide](../memory/configuration.md)
-- Learn about [Layouts and Sections](../memory/layouts_sections.md)
-- See [Architecture Overview](../memory/architecture.md)
+- Read the [Configuration Guide](configuration.md)
+- Learn about [Sections](configuration.md#sections)
+- See [Architecture Overview](architecture.md)
 
 ## Support
 

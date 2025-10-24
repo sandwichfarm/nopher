@@ -526,7 +526,7 @@ sync:
 - Invalid advanced config falls back to simple mode with warning
 - Simple mode remains fully functional
 
-**See also:** [memory/PHASE20_COMPLETION.md](../memory/PHASE20_COMPLETION.md) for complete specification
+ 
 
  
 

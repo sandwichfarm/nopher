@@ -345,16 +345,75 @@ func (e *Engine) syncOnce() error {
 			fmt.Printf("[SYNC]   Added mention filter (total: %d filters)\n", len(filters))
 		}
 
-		// Subscribe and collect events
-		fmt.Printf("[SYNC]   Subscribing to relay with %d filters...\n", len(filters))
-		go e.subscribeRelay(relay, filters)
+		// Try negentropy sync first, fall back to REQ if unsupported
+		go e.syncRelayWithFallback(relay, filters)
 	}
 
 	fmt.Printf("[SYNC] ✓ Sync iteration dispatched\n\n")
 	return nil
 }
 
-// subscribeRelay subscribes to a relay with the given filters
+// syncRelayWithFallback tries negentropy sync first, falls back to REQ if unsupported
+func (e *Engine) syncRelayWithFallback(relay string, filters []nostr.Filter) {
+	// Check if negentropy is enabled
+	if !e.config.Sync.Performance.UseNegentropy {
+		// Negentropy disabled, use traditional REQ
+		e.subscribeRelay(relay, filters)
+		return
+	}
+
+	// Optimization: For negentropy, combine all filters into one complete-set filter
+	// Negentropy excels at reconciling complete datasets, not incremental syncs
+	// Extract all unique authors and kinds from the filters
+	authorSet := make(map[string]bool)
+	kindSet := make(map[int]bool)
+
+	for _, filter := range filters {
+		for _, author := range filter.Authors {
+			authorSet[author] = true
+		}
+		for _, kind := range filter.Kinds {
+			kindSet[kind] = true
+		}
+	}
+
+	// Convert sets to slices
+	authors := make([]string, 0, len(authorSet))
+	for author := range authorSet {
+		authors = append(authors, author)
+	}
+	kinds := make([]int, 0, len(kindSet))
+	for kind := range kindSet {
+		kinds = append(kinds, kind)
+	}
+
+	// Build optimized negentropy filter (no since cursor, complete dataset)
+	negentropyFilter := nostr.Filter{
+		Authors: authors,
+		Kinds:   kinds,
+		// No 'since' - negentropy figures out what's missing efficiently
+	}
+
+	fmt.Printf("[SYNC] Trying negentropy for %s (%d authors, %d kinds, complete set)\n", relay, len(authors), len(kinds))
+
+	// Try negentropy with the optimized complete-set filter
+	success, err := e.NegentropySync(e.ctx, relay, negentropyFilter)
+	if err != nil {
+		// Hard error - log and fall back to REQ
+		fmt.Printf("[SYNC] ⚠ Negentropy error for %s: %v (falling back to REQ)\n", relay, err)
+	} else if success {
+		// Negentropy succeeded - we're done!
+		fmt.Printf("[SYNC] ✓ Negentropy sync complete for %s\n", relay)
+		return
+	}
+
+	// Fall back to traditional REQ-based sync (always enabled for reliability)
+	// REQ uses cursor-based incremental sync (efficient for traditional subscriptions)
+	fmt.Printf("[SYNC] Using traditional REQ for %s\n", relay)
+	e.subscribeRelay(relay, filters)
+}
+
+// subscribeRelay subscribes to a relay with the given filters (traditional REQ-based sync)
 func (e *Engine) subscribeRelay(relay string, filters []nostr.Filter) {
 	ctx, cancel := context.WithTimeout(e.ctx, 30*time.Second)
 	defer cancel()

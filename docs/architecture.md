@@ -86,6 +86,8 @@ nophr is a **personal Nostr gateway** that serves content via legacy internet pr
 └──────────────────────────────────────────────────────────────┘
 ```
 
+Note: This build supports SQLite for the database backend. LMDB is not supported in this build.
+
 ---
 
 ## Component Breakdown
@@ -1066,7 +1068,6 @@ nophr/
 │
 ├── memory/                  # Design documentation
 │   ├── README.md
-│   ├── PHASES.md
 │   ├── architecture.md
 │   └── ...
 │
@@ -1494,11 +1495,7 @@ For AI agents working on this project, see [AGENTS.md](../AGENTS.md).
 ## References
 
 **Design documentation:**
-- [memory/architecture.md](../memory/architecture.md) - Original design
-- [memory/PHASES.md](../memory/PHASES.md) - Implementation roadmap
-- [memory/storage_model.md](../memory/storage_model.md) - Storage design
-- [memory/sync_scope.md](../memory/sync_scope.md) - Sync design
-- [memory/ui_export.md](../memory/ui_export.md) - Protocol rendering
+ 
 
 **External:**
 - Khatru: https://github.com/fiatjaf/khatru

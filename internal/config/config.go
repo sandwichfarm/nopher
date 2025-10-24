@@ -119,7 +119,8 @@ type Sync struct {
 
 // SyncPerformance contains performance tuning options
 type SyncPerformance struct {
-	Workers int `yaml:"workers"` // Number of parallel event processing workers (default: 4)
+	Workers       int  `yaml:"workers"`        // Number of parallel event processing workers (default: 4)
+	UseNegentropy bool `yaml:"use_negentropy"` // Enable NIP-77 negentropy sync (default: true); always falls back to REQ if unsupported
 }
 
 // SyncKinds defines granular control over which event kinds to sync
@@ -592,7 +593,8 @@ func Default() *Config {
 				PruneOnStart: true,
 			},
 			Performance: SyncPerformance{
-				Workers: 4, // Default: 4 parallel event processing workers
+				Workers:       4,    // Default: 4 parallel event processing workers
+				UseNegentropy: true, // Default: enable NIP-77 negentropy (always falls back to REQ if unsupported)
 			},
 		},
 		Inbox: Inbox{

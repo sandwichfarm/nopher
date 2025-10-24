@@ -3,7 +3,7 @@
 **Date:** 2025-10-24  
 **Tester:** Claude (AI Agent)  
 **Npub:** npub1uac67zc9er54ln0kl6e4qp2y6ta3enfcg7ywnayshvlw9r5w6ehsqq99rx  
-**Test Environment:** Arch Linux, Go 1.23
+**Test Environment:** Arch Linux, Go 1.25
 
 ## Executive Summary
 

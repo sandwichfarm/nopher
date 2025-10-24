@@ -141,3 +141,32 @@ func (fb *FilterBuilder) GetConfiguredKinds() []int {
 	// Default kinds
 	return []int{0, 1, 3, 6, 7, 9735, 30023, 10002}
 }
+
+// BuildNegentropyFilter creates an optimized filter for negentropy sync
+// Negentropy excels at reconciling complete datasets, so we:
+// - Don't use 'since' cursors (negentropy figures out what's missing)
+// - Combine all kinds into a single filter (efficient for large datasets)
+// - Let negentropy handle the reconciliation
+func (fb *FilterBuilder) BuildNegentropyFilter(authors []string) nostr.Filter {
+	if len(authors) == 0 {
+		return nostr.Filter{}
+	}
+
+	kinds := fb.config.Kinds.ToIntSlice()
+	if len(kinds) == 0 {
+		kinds = []int{0, 1, 3, 6, 7, 9735, 30023, 10002}
+	}
+
+	filter := nostr.Filter{
+		Authors: authors,
+		Kinds:   kinds,
+		// No 'since' - negentropy reconciles complete sets efficiently
+	}
+
+	// Apply max authors limit if configured
+	if fb.config.Scope.MaxAuthors > 0 && len(authors) > fb.config.Scope.MaxAuthors {
+		filter.Authors = authors[:fb.config.Scope.MaxAuthors]
+	}
+
+	return filter
+}

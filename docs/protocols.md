@@ -571,7 +571,7 @@ Nostr content (often markdown) is converted to protocol-specific formats:
 - Preserve bare URLs optionally
 - Truncate to ~500 chars
 
-See [markdown_conversion.md](../memory/markdown_conversion.md) for detailed rules.
+ 
 
 ### NIP-19 Entity Resolution
 
@@ -800,8 +800,7 @@ Configure rate limiting in security settings; see `docs/security.md`. You can al
 - Markdown: `internal/markdown/gopher.go`, `internal/markdown/gemini.go`, `internal/markdown/finger.go`
 
 **Design docs:**
-- [memory/ui_export.md](../memory/ui_export.md) - Protocol rendering specs
-- [memory/markdown_conversion.md](../memory/markdown_conversion.md) - Conversion rules
+ 
 
 ---
 

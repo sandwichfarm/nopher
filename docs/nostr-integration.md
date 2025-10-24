@@ -609,7 +609,7 @@ Features include:
 - Score-based pruning (keep popular events longer)
 - Protected events (never delete)
 
-See [memory/PHASE20_COMPLETION.md](../memory/PHASE20_COMPLETION.md) for details.
+ 
 
 ---
 
@@ -758,10 +758,7 @@ journalctl -u nophr -f
 - Cursors: `internal/sync/cursors.go`
 
 **Design docs:**
-- [memory/relay_discovery.md](../memory/relay_discovery.md)
-- [memory/sync_scope.md](../memory/sync_scope.md)
-- [memory/inbox_outbox.md](../memory/inbox_outbox.md)
-- [memory/sequence_seed_discovery_sync.md](../memory/sequence_seed_discovery_sync.md)
+ 
 
 ---
 

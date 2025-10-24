@@ -570,7 +570,7 @@ Khatru supports custom eventstore backends. See [eventstore documentation](https
 - **eventstore:** https://github.com/fiatjaf/eventstore
 - **SQLite:** https://www.sqlite.org/
 - **LMDB:** https://www.symas.com/lmdb
-- **Design docs:** [memory/storage_model.md](../memory/storage_model.md)
+ 
 
 ---
 
