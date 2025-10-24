@@ -160,10 +160,32 @@ func (d *Discovery) DiscoverRelayHintsForPubkeys(ctx context.Context, pubkeys []
 	return nil
 }
 
-// GetRelaysForPubkey returns the relay URLs where a pubkey can be found
-// Prefers read relays, but falls back to write relays if needed
-func (d *Discovery) GetRelaysForPubkey(ctx context.Context, pubkey string) ([]string, error) {
-	// First try read relays
+// GetOutboxRelays returns where a pubkey PUBLISHES content (write relays)
+// This is where you query to read someone's posts
+func (d *Discovery) GetOutboxRelays(ctx context.Context, pubkey string) ([]string, error) {
+	// First try write relays (outbox) - where they publish
+	relays, err := d.storage.GetWriteRelays(ctx, pubkey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get write relays: %w", err)
+	}
+
+	if len(relays) > 0 {
+		return relays, nil
+	}
+
+	// Fall back to read relays as backup
+	relays, err = d.storage.GetReadRelays(ctx, pubkey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get read relays: %w", err)
+	}
+
+	return relays, nil
+}
+
+// GetInboxRelays returns where a pubkey RECEIVES interactions (read relays)
+// This is where you query to find mentions/replies/reactions TO someone
+func (d *Discovery) GetInboxRelays(ctx context.Context, pubkey string) ([]string, error) {
+	// First try read relays (inbox) - where they receive interactions
 	relays, err := d.storage.GetReadRelays(ctx, pubkey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get read relays: %w", err)
@@ -173,13 +195,20 @@ func (d *Discovery) GetRelaysForPubkey(ctx context.Context, pubkey string) ([]st
 		return relays, nil
 	}
 
-	// Fall back to write relays (they might publish there too)
+	// Fall back to write relays as backup
 	relays, err = d.storage.GetWriteRelays(ctx, pubkey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get write relays: %w", err)
 	}
 
 	return relays, nil
+}
+
+// GetRelaysForPubkey returns relays for a pubkey (backwards compatibility)
+// Deprecated: Use GetOutboxRelays() or GetInboxRelays() for clarity
+func (d *Discovery) GetRelaysForPubkey(ctx context.Context, pubkey string) ([]string, error) {
+	// For backwards compatibility, return outbox relays (most common use case)
+	return d.GetOutboxRelays(ctx, pubkey)
 }
 
 // RefreshRelayHints refreshes relay hints that are older than the given duration

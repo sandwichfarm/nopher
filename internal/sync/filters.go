@@ -170,3 +170,52 @@ func (fb *FilterBuilder) BuildNegentropyFilter(authors []string) nostr.Filter {
 
 	return filter
 }
+
+// BuildInboxFilter creates a filter for interactions directed at the owner
+// This queries the owner's INBOX (read relays) for:
+// - Mentions (#p tag with owner pubkey)
+// - Replies (kind 1 with #e or #p tags)
+// - Reactions (kind 7)
+// - Reposts (kind 6)
+// - Zaps (kind 9735)
+func (fb *FilterBuilder) BuildInboxFilter(ownerPubkey string, since int64) nostr.Filter {
+	// Interaction kinds that can mention/tag the owner
+	kinds := []int{1, 6, 7, 9735} // notes, reposts, reactions, zaps
+
+	// Only include kinds that are enabled in config
+	configKinds := fb.config.Kinds.ToIntSlice()
+	if len(configKinds) > 0 {
+		// Filter to only enabled interaction kinds
+		enabledMap := make(map[int]bool)
+		for _, k := range configKinds {
+			enabledMap[k] = true
+		}
+
+		filteredKinds := make([]int, 0, len(kinds))
+		for _, k := range kinds {
+			if enabledMap[k] {
+				filteredKinds = append(filteredKinds, k)
+			}
+		}
+		kinds = filteredKinds
+	}
+
+	if len(kinds) == 0 {
+		// No interaction kinds enabled, return empty filter
+		return nostr.Filter{}
+	}
+
+	filter := nostr.Filter{
+		Kinds: kinds,
+		Tags: nostr.TagMap{
+			"p": []string{ownerPubkey}, // Mentions/interactions to us
+		},
+	}
+
+	if since > 0 {
+		sinceTs := nostr.Timestamp(since)
+		filter.Since = &sinceTs
+	}
+
+	return filter
+}

@@ -224,12 +224,13 @@ func (e *Engine) bootstrap() error {
 
 	// Step 4: Discover relay hints for all authors in scope
 	fmt.Printf("[SYNC] Step 4: Discovering relay hints...\n")
-	ownerRelays, err := e.discovery.GetRelaysForPubkey(e.ctx, ownerPubkey)
+	// Get owner's outbox relays to search for authors' relay hints
+	ownerRelays, err := e.discovery.GetOutboxRelays(e.ctx, ownerPubkey)
 	if err != nil || len(ownerRelays) == 0 {
 		ownerRelays = seedRelays // Fallback to seeds
 		fmt.Printf("[SYNC] Using seed relays as fallback (%d relays)\n", len(ownerRelays))
 	} else {
-		fmt.Printf("[SYNC] Using owner's relays (%d relays)\n", len(ownerRelays))
+		fmt.Printf("[SYNC] Using owner's outbox relays (%d relays)\n", len(ownerRelays))
 	}
 
 	if err := e.discovery.DiscoverRelayHintsForPubkeys(e.ctx, authors, ownerRelays); err != nil {
@@ -319,8 +320,9 @@ func (e *Engine) syncOnce() error {
 	kinds := e.filterBuilder.GetConfiguredKinds()
 	fmt.Printf("[SYNC] Configured event kinds: %v\n", kinds)
 
+	// STEP 1: Sync authors' posts from their OUTBOX (write relays)
 	for i, relay := range relays {
-		fmt.Printf("[SYNC] Processing relay %d/%d: %s\n", i+1, len(relays), relay)
+		fmt.Printf("[SYNC] Processing outbox relay %d/%d: %s\n", i+1, len(relays), relay)
 
 		// Get since cursor for this relay
 		since, err := e.cursors.GetSinceCursorForRelay(e.ctx, relay, kinds)
@@ -334,19 +336,20 @@ func (e *Engine) syncOnce() error {
 			fmt.Printf("[SYNC]   Since cursor: 0 (fetching all history)\n")
 		}
 
-		// Build filters
+		// Build filters for authors' posts (outbox)
 		filters := e.filterBuilder.BuildFilters(authors, since)
-		fmt.Printf("[SYNC]   Built %d filters\n", len(filters))
-
-		// Add mention filter if configured
-		if e.config.Sync.Scope.IncludeDirectMentions {
-			mentionFilter := e.filterBuilder.BuildMentionFilter(ownerPubkey, since)
-			filters = append(filters, mentionFilter)
-			fmt.Printf("[SYNC]   Added mention filter (total: %d filters)\n", len(filters))
-		}
+		fmt.Printf("[SYNC]   Built %d filters for outbox\n", len(filters))
 
 		// Try negentropy sync first, fall back to REQ if unsupported
 		go e.syncRelayWithFallback(relay, filters)
+	}
+
+	// STEP 2: Sync interactions TO US from OUR INBOX (read relays)
+	if e.config.Sync.Scope.IncludeDirectMentions {
+		if err := e.syncOwnerInbox(ownerPubkey, kinds); err != nil {
+			fmt.Printf("[SYNC] ⚠ Inbox sync failed: %v\n", err)
+			// Don't fail the whole sync if inbox fails
+		}
 	}
 
 	fmt.Printf("[SYNC] ✓ Sync iteration dispatched\n\n")
@@ -411,6 +414,57 @@ func (e *Engine) syncRelayWithFallback(relay string, filters []nostr.Filter) {
 	// REQ uses cursor-based incremental sync (efficient for traditional subscriptions)
 	fmt.Printf("[SYNC] Using traditional REQ for %s\n", relay)
 	e.subscribeRelay(relay, filters)
+}
+
+// syncOwnerInbox syncs interactions directed at the owner from their INBOX (read relays)
+// This queries for mentions, replies, reactions, and zaps TO the owner
+func (e *Engine) syncOwnerInbox(ownerPubkey string, kinds []int) error {
+	fmt.Printf("[SYNC] Starting inbox sync for owner...\n")
+
+	// Get owner's INBOX relays (read relays where they receive interactions)
+	inboxRelays, err := e.discovery.GetInboxRelays(e.ctx, ownerPubkey)
+	if err != nil {
+		return fmt.Errorf("failed to get inbox relays: %w", err)
+	}
+
+	if len(inboxRelays) == 0 {
+		fmt.Printf("[SYNC] ⚠ No inbox relays found for owner, using seed relays as fallback\n")
+		inboxRelays = e.nostrClient.GetSeedRelays()
+	}
+
+	fmt.Printf("[SYNC] Owner inbox relays: %d\n", len(inboxRelays))
+
+	// Get since cursor for inbox sync
+	// Use a special "inbox" cursor key to track inbox sync separately
+	since := nostr.Timestamp(0)
+	for _, relay := range inboxRelays {
+		relaySince, err := e.cursors.GetSinceCursorForRelay(e.ctx, relay, kinds)
+		if err == nil && relaySince > 0 {
+			if since == 0 || nostr.Timestamp(relaySince) < since {
+				since = nostr.Timestamp(relaySince)
+			}
+		}
+	}
+
+	// Build inbox filter (mentions, replies, reactions, zaps TO owner)
+	inboxFilter := e.filterBuilder.BuildInboxFilter(ownerPubkey, int64(since))
+	if len(inboxFilter.Kinds) == 0 {
+		fmt.Printf("[SYNC] No interaction kinds enabled for inbox, skipping\n")
+		return nil
+	}
+
+	fmt.Printf("[SYNC] Inbox filter kinds: %v\n", inboxFilter.Kinds)
+	if since > 0 {
+		fmt.Printf("[SYNC] Inbox since cursor: %d (%s)\n", since, time.Unix(int64(since), 0).Format(time.RFC3339))
+	}
+
+	// Sync from each inbox relay
+	for i, relay := range inboxRelays {
+		fmt.Printf("[SYNC] Processing inbox relay %d/%d: %s\n", i+1, len(inboxRelays), relay)
+		go e.syncRelayWithFallback(relay, []nostr.Filter{inboxFilter})
+	}
+
+	return nil
 }
 
 // subscribeRelay subscribes to a relay with the given filters (traditional REQ-based sync)
@@ -592,12 +646,13 @@ func (e *Engine) refreshReplaceables() error {
 	return nil
 }
 
-// getActiveRelays returns the list of active relays to sync from
+// getActiveRelays returns the list of active OUTBOX relays to sync authors' posts from
 func (e *Engine) getActiveRelays(authors []string) []string {
 	relaySet := make(map[string]bool)
 
 	for _, author := range authors {
-		relays, err := e.discovery.GetRelaysForPubkey(e.ctx, author)
+		// Get author's OUTBOX (write relays) where they publish content
+		relays, err := e.discovery.GetOutboxRelays(e.ctx, author)
 		if err != nil {
 			continue
 		}

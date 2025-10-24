@@ -50,3 +50,21 @@ Operations:
 - diagnostics.md (monitoring and diagnostics)
 - security_privacy.md (security and privacy features)
 - retention_advanced.md (Advanced configurable retention system; implemented in Phase 20 — see PHASE20_COMPLETION.md)
+
+Design References
+- architecture.md — Overall system design
+- storage_model.md — Storage model and custom tables
+- configuration.md — Config schema and validation notes
+- layouts_sections.md — Sections, filters, pages
+- ui_export.md — Protocol rendering design (Gopher/Gemini/Finger)
+- markdown_conversion.md — Markdown→protocol conversion rules
+- relay_discovery.md — NIP-65 relay discovery
+- sync_scope.md — Social graph and scope
+- sequence_seed_discovery_sync.md — Discovery→sync flow
+- inbox_outbox.md — Aggregates and interaction model
+- caching.md, cache_keys_hashing.md — Caching strategy and keys
+- diagnostics.md, operations.md, distribution.md — Ops and packaging
+- security_privacy.md — Security and privacy
+- nips.md — Nostr specs used
+- roadmap.md — High-level roadmap (internal)
+- PHASES.md — Implementation phases (internal)
