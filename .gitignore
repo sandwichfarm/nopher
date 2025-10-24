@@ -1,0 +1,50 @@
+# Binaries
+dist/
+nopher
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test and coverage
+*.test
+*.out
+coverage.txt
+coverage.html
+
+# Go workspace
+vendor/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Configuration and data (keep examples)
+nopher.yaml
+data/
+*.db
+*.lmdb
+
+# Certificates
+certs/
+*.pem
+*.key
+*.crt
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+
+# GoReleaser
+goreleaser.yml.lock

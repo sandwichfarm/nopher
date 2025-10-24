@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  nopher:
+    build: .
+    image: nopher:latest
+    container_name: nopher
+    ports:
+      - "70:70"      # Gopher
+      - "1965:1965"  # Gemini
+      - "79:79"      # Finger
+    volumes:
+      - ./configs/nopher.example.yaml:/etc/nopher/nopher.yaml:ro
+      - nopher-data:/var/lib/nopher
+      - nopher-certs:/etc/nopher/certs:ro
+    environment:
+      - NOPHER_NSEC=${NOPHER_NSEC:-}
+    restart: unless-stopped
+    networks:
+      - nopher-net
+
+volumes:
+  nopher-data:
+    driver: local
+  nopher-certs:
+    driver: local
+
+networks:
+  nopher-net:
+    driver: bridge

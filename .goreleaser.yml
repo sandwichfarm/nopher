@@ -1,0 +1,191 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - id: nopher
+    main: ./cmd/nopher
+    binary: nopher
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - freebsd
+      - openbsd
+    goarch:
+      - amd64
+      - arm64
+      - arm
+    goarm:
+      - "7"
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+      - -X main.builtBy=goreleaser
+    mod_timestamp: '{{ .CommitTimestamp }}'
+
+archives:
+  - id: nopher-archive
+    format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- .Arch }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - configs/nopher.example.yaml
+      - docs/**/*
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - '^chore:'
+      - '^style:'
+      - Merge pull request
+      - Merge branch
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: 'Bug Fixes'
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: 'Performance Improvements'
+      regexp: '^.*?perf(\([[:word:]]+\))??!?:.+$'
+      order: 2
+    - title: Others
+      order: 999
+
+release:
+  github:
+    owner: sandwich
+    name: nopher
+  draft: false
+  prerelease: auto
+  name_template: "{{.ProjectName}} v{{.Version}}"
+  header: |
+    ## Nopher {{.Version}}
+
+    Release of Nopher {{.Version}}
+  footer: |
+    **Full Changelog**: https://github.com/sandwichfarm/nopher/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+brews:
+  - name: nopher
+    repository:
+      owner: sandwich
+      name: homebrew-nopher
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    directory: Formula
+    homepage: https://github.com/sandwichfarm/nopher
+    description: "Nostr to Gopher/Gemini/Finger gateway"
+    license: MIT
+    test: |
+      system "#{bin}/nopher", "--version"
+    install: |
+      bin.install "nopher"
+      etc.install "configs/nopher.example.yaml" => "nopher.example.yaml"
+
+nfpms:
+  - id: nopher-packages
+    package_name: nopher
+    homepage: https://github.com/sandwichfarm/nopher
+    maintainer: Sandwich <sandwich@example.com>
+    description: Nostr to Gopher/Gemini/Finger gateway
+    license: MIT
+    formats:
+      - deb
+      - rpm
+      - apk
+    bindir: /usr/bin
+    contents:
+      - src: configs/nopher.example.yaml
+        dst: /etc/nopher/nopher.example.yaml
+        type: config
+      - src: scripts/systemd/nopher.service
+        dst: /etc/systemd/system/nopher.service
+        type: config
+    scripts:
+      postinstall: scripts/postinstall.sh
+    overrides:
+      deb:
+        dependencies:
+          - ca-certificates
+      rpm:
+        dependencies:
+          - ca-certificates
+
+dockers:
+  - image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:{{ .Version }}-amd64"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:latest-amd64"
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+
+  - image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:{{ .Version }}-arm64"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:latest-arm64"
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+
+docker_manifests:
+  - name_template: ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:{{ .Version }}
+    image_templates:
+      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:{{ .Version }}-amd64
+      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:{{ .Version }}-arm64
+
+  - name_template: ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:latest
+    image_templates:
+      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:latest-amd64
+      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:latest-arm64
+
+signs:
+  - cmd: gpg
+    args:
+      - "--batch"
+      - "--local-user"
+      - "{{ .Env.GPG_FINGERPRINT }}"
+      - "--output"
+      - "${signature}"
+      - "--detach-sign"
+      - "${artifact}"
+    artifacts: checksum
+    output: true

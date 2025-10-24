@@ -1,0 +1,6 @@
+mode: atomic
+github.com/sandwich/nopher/cmd/nopher/main.go:16.13,23.18 3 0
+github.com/sandwich/nopher/cmd/nopher/main.go:23.18,29.3 5 0
+github.com/sandwich/nopher/cmd/nopher/main.go:31.2,31.23 1 0
+github.com/sandwich/nopher/cmd/nopher/main.go:31.23,40.3 8 0
+github.com/sandwich/nopher/cmd/nopher/main.go:42.2,44.12 3 0
