@@ -92,10 +92,10 @@ func (fb *FilterBuilder) BuildThreadFilter(ownerEventIDs []string, since int64) 
 	return filter
 }
 
-// BuildReplaceableFilter creates a filter for replaceable events (kinds 0, 3, 10002)
+// BuildReplaceableFilter creates a filter for replaceable events (kinds 0, 3, 10002, 30023)
 // These are fetched without since cursors to ensure we have the latest versions
 func (fb *FilterBuilder) BuildReplaceableFilter(authors []string) nostr.Filter {
-	replaceableKinds := []int{0, 3, 10002}
+	replaceableKinds := []int{0, 3, 10002, 30023}
 
 	filter := nostr.Filter{
 		Authors: authors,
