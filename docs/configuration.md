@@ -272,6 +272,7 @@ Event synchronization scope and retention.
 
 ```yaml
 sync:
+  enabled: true  # Enable/disable sync engine
   kinds: [0, 1, 3, 6, 7, 9735, 30023, 10002]
   scope:
     mode: "foaf"
@@ -285,6 +286,31 @@ sync:
     keep_days: 365
     prune_on_start: true
 ```
+
+### sync.enabled
+
+**Type:** Boolean
+**Default:** `true`
+
+Enable or disable the sync engine.
+
+```yaml
+sync:
+  enabled: true   # Sync engine runs, pulls events from relays
+  # enabled: false  # Sync engine disabled, no new events synced
+```
+
+**When disabled:**
+- No events are synced from remote relays
+- Only serves existing events from database
+- Useful for read-only deployments or maintenance
+
+**When enabled:**
+- Sync engine starts and connects to relays
+- Events are pulled based on scope configuration
+- Relay discovery runs periodically
+
+**Status:** ✅ VERIFIED (integrated in main.go)
 
 ### sync.kinds
 
@@ -356,7 +382,97 @@ Data retention and pruning.
 - Kind 0 (profiles) and kind 3 (follows) never pruned
 - Replaceable events (kind 10002, 30023) keep only latest
 
-**Status:** 🟡 IMPLEMENTED (code in internal/sync/)
+**Status:** ✅ VERIFIED (code in internal/sync/)
+
+### sync.retention.advanced (Phase 17)
+
+**Advanced configurable retention system** - sophisticated, multi-dimensional retention rules.
+
+```yaml
+sync:
+  retention:
+    keep_days: 365
+    prune_on_start: true
+
+    advanced:
+      enabled: false              # Must explicitly enable
+      mode: "rules"               # rules|caps
+
+      evaluation:
+        on_ingest: true           # Evaluate new events immediately
+        re_eval_interval_hours: 168  # Re-evaluate weekly
+        batch_size: 1000
+
+      global_caps:
+        max_total_events: 1000000
+        max_storage_mb: 5000
+        max_events_per_kind:
+          1: 100000               # Max 100k notes
+          30023: 10000            # Max 10k articles
+
+      rules:
+        - name: "protect_owner"
+          priority: 1000
+          conditions:
+            author_is_owner: true
+          action:
+            retain: true          # Never delete
+
+        - name: "close_network"
+          priority: 800
+          conditions:
+            social_distance_max: 1
+            kinds: [1, 30023]
+          action:
+            retain_days: 365
+
+        - name: "default"
+          priority: 100
+          conditions:
+            all: true
+          action:
+            retain_days: 90
+```
+
+**Key features:**
+
+| Feature | Description |
+|---------|-------------|
+| **Rule-based** | Define retention rules with conditions and priorities |
+| **Multi-dimensional** | Filter by kind, author, social distance, interaction count, etc. |
+| **Cap enforcement** | Hard limits on total events, storage, per-kind counts |
+| **Score-based pruning** | When caps exceeded, delete lowest-scored events first |
+| **Protected events** | Mark events that should never be deleted |
+| **Incremental evaluation** | Evaluate on ingestion + periodic re-evaluation |
+
+**Condition types (gates):**
+- `author_is_owner` - Event is from owner
+- `social_distance_max` - FOAF distance ≤ N
+- `kinds` - Event kind matches list
+- `min_interactions` - Has at least N replies/reactions/zaps
+- `age_days_max` - Event age ≤ N days
+- `content_length_min` - Content ≥ N chars
+- `is_thread_root` - Is root of thread
+- `has_replies` - Has at least one reply
+
+**Action types:**
+- `retain: true` - Never delete (protected)
+- `retain_days: N` - Keep for N days
+- `retain: false` - Eligible for deletion
+
+**Priority:**
+- Higher priority rules match first
+- If multiple rules match, highest priority wins
+- Default rule (lowest priority) catches all
+
+**Backward compatibility:**
+- If `advanced.enabled: false`, uses simple `keep_days` only
+- Invalid advanced config falls back to simple mode with warning
+- Simple mode remains fully functional
+
+**See also:** [memory/PHASE_17_RETENTION.md](../memory/PHASE_17_RETENTION.md) for complete specification
+
+**Status:** 📋 PLANNED (Phase 17)
 
 ---
 

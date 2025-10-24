@@ -1,6 +1,6 @@
 # Nostr Integration Guide
 
-**Status:** 🟡 IMPLEMENTED (Code complete, integration testing in progress)
+**Status:** ✅ VERIFIED (Integrated and working)
 
 Complete guide to how Nopher integrates with Nostr: relay discovery, event synchronization, social graph computation, and interaction aggregation.
 
@@ -165,9 +165,21 @@ If relay hints are missing/stale:
 
 ## Sync Engine
 
-**Status:** 🟡 IMPLEMENTED (`internal/sync/engine.go`)
+**Status:** ✅ VERIFIED (Integrated in cmd/nopher/main.go, controlled by `sync.enabled`)
 
 The sync engine pulls events from remote Nostr relays and stores them locally.
+
+**Configuration:**
+```yaml
+sync:
+  enabled: true  # Enable/disable sync engine
+```
+
+When enabled, the sync engine:
+- Starts automatically on Nopher startup
+- Connects to relays based on discovery
+- Syncs events matching configured scope
+- Updates cursors to track progress
 
 ### Architecture
 

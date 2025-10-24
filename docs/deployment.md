@@ -4,6 +4,22 @@
 
 Complete guide to deploying Nopher in production: system configuration, port binding, TLS certificates, systemd services, and monitoring.
 
+## Quick Install
+
+The fastest way to deploy Nopher:
+
+```bash
+# Download and run installer
+curl -sSL https://nopher.io/install.sh | sh
+
+# The installer will:
+# - Download the latest release for your platform
+# - Install to /usr/local/bin/nopher
+# - Create example configuration
+```
+
+**For detailed installation options** (Docker, packages, building from source), see [INSTALLATION.md](INSTALLATION.md).
+
 ## Prerequisites
 
 - Linux server (Ubuntu 20.04+, Debian 11+, or similar)
@@ -15,11 +31,13 @@ Complete guide to deploying Nopher in production: system configuration, port bin
 
 ## Table of Contents
 
+- [Quick Install](#quick-install)
 - [System Requirements](#system-requirements)
 - [Port Binding](#port-binding)
 - [TLS Certificates](#tls-certificates)
 - [Systemd Service](#systemd-service)
 - [Reverse Proxy](#reverse-proxy)
+- [Docker Deployment](#docker-deployment)
 - [Monitoring](#monitoring)
 - [Backups](#backups)
 - [Updates](#updates)
@@ -431,40 +449,215 @@ Restart=always
 WantedBy=multi-user.target
 ```
 
-### Gemini Proxy (stunnel)
+### Nginx Reverse Proxy
 
-Terminate TLS with stunnel, forward to Nopher:
+Example nginx configuration for Gemini TLS termination.
 
-**Install stunnel:**
+**Install nginx:**
 ```bash
-sudo apt install stunnel4
+sudo apt install nginx
 ```
 
-**Configure:**
+**Configuration:** `/etc/nginx/nginx.conf` or `/etc/nginx/conf.d/nopher.conf`
 
-`/etc/stunnel/nopher.conf`:
-```ini
-[gemini]
-accept = 1965
-connect = localhost:11965
-cert = /opt/nopher/certs/cert.pem
-key = /opt/nopher/certs/key.pem
+```nginx
+# Gemini protocol (port 1965 with TLS)
+stream {
+    upstream gemini_backend {
+        server localhost:11965;
+    }
+
+    server {
+        listen 1965 ssl;
+
+        ssl_certificate /etc/ssl/certs/nopher.crt;
+        ssl_certificate_key /etc/ssl/private/nopher.key;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+
+        proxy_pass gemini_backend;
+        proxy_ssl off;
+    }
+}
+
+# Optional: HTTP endpoint for monitoring/health checks
+http {
+    server {
+        listen 8080;
+        server_name _;
+
+        location /health {
+            access_log off;
+            return 200 "OK\n";
+            add_header Content-Type text/plain;
+        }
+    }
+}
 ```
 
-**Enable:**
+**See also:** `examples/nginx.conf` in the repository.
+
+### Caddy Reverse Proxy
+
+Caddy automatically handles TLS certificates via Let's Encrypt.
+
+**Install Caddy:**
 ```bash
-sudo systemctl enable stunnel4
-sudo systemctl start stunnel4
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update
+sudo apt install caddy
 ```
 
-**Configure Nopher (no TLS):**
+**Configuration:** `/etc/caddy/Caddyfile`
+
+```
+# Gemini protocol with automatic HTTPS
+gemini.example.com:1965 {
+    reverse_proxy localhost:11965
+    tls {
+        protocols tls1.2 tls1.3
+    }
+}
+
+# Optional: Web-based status/monitoring page
+status.example.com {
+    reverse_proxy localhost:8080
+}
+```
+
+**Restart Caddy:**
+```bash
+sudo systemctl restart caddy
+```
+
+**See also:** `examples/Caddyfile` in the repository.
+
+---
+
+## Docker Deployment
+
+Deploy Nopher using Docker and Docker Compose.
+
+### Using Docker Compose (Recommended)
+
+Nopher includes a production-ready `docker-compose.yml`:
+
+```bash
+# Clone repository
+git clone https://github.com/sandwichfarm/nopher.git
+cd nopher
+
+# Copy and edit configuration
+cp configs/nopher.example.yaml configs/nopher.yaml
+nano configs/nopher.yaml
+
+# Set environment variables
+export NOPHER_NSEC="nsec1..."  # Never commit this!
+export NOPHER_LOG_LEVEL="info"
+
+# Start services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f nopher
+
+# Stop services
+docker-compose down
+```
+
+### Docker Compose Features
+
+The included `docker-compose.yml` provides:
+
+**Main service:**
+- Nopher server with all three protocols
+- Persistent volumes for data and certs
+- Health checks
+- Security hardening (no-new-privileges, minimal capabilities)
+- Environment variable configuration
+
+**Optional services** (uncomment to enable):
+
+**Redis cache:**
 ```yaml
-protocols:
-  gemini:
-    port: 11965
-    tls:
-      auto_generate: false
+redis:
+  image: redis:7-alpine
+  command: redis-server --appendonly yes --maxmemory 512mb
 ```
+
+**Caddy reverse proxy:**
+```yaml
+caddy:
+  image: caddy:2-alpine
+  ports:
+    - "443:443"
+  volumes:
+    - ./examples/Caddyfile:/etc/caddy/Caddyfile:ro
+```
+
+### Docker Compose Configuration
+
+**Environment variables:**
+
+Create `.env` file:
+```bash
+NOPHER_NSEC=nsec1...
+NOPHER_REDIS_URL=redis://redis:6379
+NOPHER_LOG_LEVEL=info
+```
+
+**Volumes:**
+- `nopher-data` - Database and sync state (persistent)
+- `nopher-certs` - TLS certificates (persistent)
+- `nopher-logs` - Application logs (optional)
+
+### Standalone Docker
+
+Run Nopher directly with Docker:
+
+```bash
+# Pull image (when available)
+docker pull ghcr.io/sandwichfarm/nopher:latest
+
+# Or build locally
+docker build -t nopher:latest .
+
+# Run container
+docker run -d \
+  --name nopher \
+  -p 70:70 \
+  -p 79:79 \
+  -p 1965:1965 \
+  -v ./nopher.yaml:/etc/nopher/nopher.yaml:ro \
+  -v nopher-data:/var/lib/nopher \
+  -e NOPHER_NSEC="nsec1..." \
+  ghcr.io/sandwichfarm/nopher:latest
+```
+
+### Docker Security
+
+The Docker deployment includes security hardening:
+
+```yaml
+security_opt:
+  - no-new-privileges:true  # Prevent privilege escalation
+cap_drop:
+  - ALL                      # Drop all capabilities
+cap_add:
+  - NET_BIND_SERVICE         # Only allow binding to ports
+read_only: true              # Read-only filesystem
+tmpfs:
+  - /tmp                     # Writable /tmp
+```
+
+### Multi-Architecture Support
+
+Docker images support multiple architectures:
+- `amd64` (x86_64)
+- `arm64` (ARM 64-bit)
+- `arm/v7` (ARM 32-bit)
 
 ---
 

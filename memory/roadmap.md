@@ -64,3 +64,17 @@ Implementation Plan
 - Write systemd service files and reverse proxy examples.
 - Embed default configs and templates using //go:embed.
 - Generate checksums and GPG signatures for releases.
+
+17) Advanced Configurable Retention (NEW FEATURE)
+- Multi-dimensional retention with configurable rules and priorities.
+- Retention gates: time, size, quantity, kind, social distance, references.
+- Global caps: max_total_events, max_storage_mb, per-kind limits.
+- Priority-based rule evaluation with first-match semantics.
+- Protected events (owner, high-priority) never deleted by caps.
+- Score-based deletion when caps exceeded.
+- Incremental evaluation: on ingestion and periodic re-evaluation.
+- New retention_metadata table (additive, doesn't modify existing schema).
+- Backward compatible: simple keep_days retention unchanged.
+- Opt-in: advanced.enabled must be explicitly set to true.
+- Detailed diagnostics: per-rule stats, storage utilization, pruning reports.
+- See memory/retention_advanced.md and memory/PHASE_17_RETENTION.md for full specification.

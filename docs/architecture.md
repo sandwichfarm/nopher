@@ -202,7 +202,7 @@ Validate() → Check required fields, formats
 - Backoff/retry logic
 - Health tracking
 
-**Status:** 🟡 Phase 3 implemented
+**Status:** ✅ Phase 3 complete
 
 ---
 
@@ -247,7 +247,7 @@ Validate() → Check required fields, formats
    └→ Trigger aggregates
 ```
 
-**Status:** 🟡 Phase 4 implemented
+**Status:** ✅ Phase 4 complete (integrated in main.go)
 
 ---
 
@@ -926,7 +926,20 @@ func (s *Server) Start() {
 - Optimized builds
 - Docker images (multi-arch)
 - Systemd service files
-- One-line installer script
+- ✅ One-line installer script (completed - `scripts/install.sh`)
+- ✅ Enhanced Docker Compose (completed - with Redis, Caddy options)
+- ✅ Reverse proxy examples (completed - nginx, Caddy configs)
+
+### Phase 17: Advanced Retention
+
+- Rule-based retention system
+- Multi-dimensional conditions (kind, author, social distance, interactions)
+- Global caps enforcement (max events, storage, per-kind limits)
+- Score-based pruning (when caps exceeded)
+- Protected events (never delete)
+- Incremental evaluation (on ingestion + periodic)
+
+**Status:** 📋 Planned - Full specification available in [memory/PHASE_17_RETENTION.md](../memory/PHASE_17_RETENTION.md)
 
 ---
 

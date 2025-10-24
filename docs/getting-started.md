@@ -1,6 +1,6 @@
 # Getting Started with Nopher
 
-**Status:** ✅ VERIFIED (Configuration and storage) / 🟡 IMPLEMENTED (Protocol servers need verification)
+**Status:** ✅ VERIFIED (Configuration, storage, and sync engine) / 🟡 IMPLEMENTED (Protocol servers undergoing verification)
 
 Nopher is a personal gateway that serves your Nostr content via legacy internet protocols: Gopher (RFC 1436), Gemini, and Finger (RFC 742).
 
@@ -8,12 +8,31 @@ This guide covers installation, initial configuration, and first run.
 
 ## Prerequisites
 
-- **Go 1.23 or later** - for building from source
+**For one-line install:** curl or wget
+
+**For building from source:**
+- **Go 1.23 or later**
 - **Make** - for build automation
 - **Git** - for cloning the repository
 - **golangci-lint** (optional) - for running linters during development
 
 ## Installation
+
+### Quick Install (Recommended)
+
+Use the one-line installer:
+
+```bash
+curl -sSL https://nopher.io/install.sh | sh
+```
+
+This will:
+- Detect your platform and architecture
+- Download the latest release
+- Install to `/usr/local/bin/nopher`
+- Create example configuration
+
+**For more installation options** (Docker, packages, etc.), see [INSTALLATION.md](INSTALLATION.md).
 
 ### Build from Source
 
@@ -107,14 +126,23 @@ Initializing storage...
   Storage: sqlite initialized
 Initializing aggregates manager...
   Aggregates manager ready
-```
+Initializing sync engine...
+  Sync engine started
+Starting Gopher server on localhost:70...
+  Gopher server ready
+Starting Gemini server on localhost:1965...
+  Gemini server ready
+Starting Finger server on port 79...
+  Finger server ready
 
-At this point, Nopher will attempt to start protocol servers.
+✓ All services started successfully!
+```
 
 **Current Status:**
 - ✅ Configuration loading works
 - ✅ Storage initialization works
-- 🟡 Protocol servers (Gopher/Gemini/Finger) implemented but undergoing verification
+- ✅ Sync engine integrated and working
+- 🟡 Protocol servers (Gopher/Gemini/Finger) implemented, undergoing verification
 
 ## Understanding the Configuration
 
@@ -126,15 +154,15 @@ The generated configuration includes many sections:
 | `identity` | Your npub/nsec | ✅ Verified |
 | `protocols` | Enable/disable Gopher, Gemini, Finger | 🟡 Implemented |
 | `relays` | Seed relays and connection policies | ✅ Verified |
-| `discovery` | Relay discovery settings (NIP-65) | 🟡 Implemented |
-| `sync` | Event synchronization scope | 🟡 Implemented |
-| `inbox` | Aggregation of replies/reactions/zaps | ✅ Verified (aggregates) |
+| `discovery` | Relay discovery settings (NIP-65) | ✅ Verified |
+| `sync` | Event synchronization (enabled/scope/retention) | ✅ Verified |
+| `inbox` | Aggregation of replies/reactions/zaps | ✅ Verified |
 | `outbox` | Publishing settings (future) | 📋 Planned |
 | `storage` | Database backend (SQLite/LMDB) | ✅ Verified |
 | `rendering` | Protocol-specific rendering options | 🟡 Implemented |
 | `caching` | Response caching | 📋 Planned |
 | `logging` | Log level configuration | ✅ Verified |
-| `layout` | Custom sections and pages | 🚧 In Progress |
+| `layout` | Custom sections and pages | 🟡 Implemented |
 
 For complete configuration documentation, see [configuration.md](configuration.md).
 
