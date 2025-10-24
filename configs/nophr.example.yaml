@@ -10,7 +10,7 @@ identity:
   # Your Nostr public key (required)
   npub: "npub1..."
   # IMPORTANT: Never put nsec in this file!
-  # Set via environment variable: NOPHER_NSEC=nsec1...
+  # Set via environment variable: NOPHR_NSEC=nsec1...
 
 protocols:
   gopher:

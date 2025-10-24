@@ -370,7 +370,7 @@ ReadWritePaths=/opt/nophr
 LimitNOFILE=65536
 
 # Environment
-Environment="NOPHER_NSEC_FILE=/opt/nophr/nsec"
+Environment="NOPHR_NSEC_FILE=/opt/nophr/nsec"
 
 [Install]
 WantedBy=multi-user.target
@@ -556,8 +556,8 @@ cp configs/nophr.example.yaml configs/nophr.yaml
 nano configs/nophr.yaml
 
 # Set environment variables
-export NOPHER_NSEC="nsec1..."  # Never commit this!
-export NOPHER_LOG_LEVEL="info"
+export NOPHR_NSEC="nsec1..."  # Never commit this!
+export NOPHR_LOG_LEVEL="info"
 
 # Start services
 docker-compose up -d
@@ -605,9 +605,9 @@ caddy:
 
 Create `.env` file:
 ```bash
-NOPHER_NSEC=nsec1...
-NOPHER_REDIS_URL=redis://redis:6379
-NOPHER_LOG_LEVEL=info
+NOPHR_NSEC=nsec1...
+NOPHR_REDIS_URL=redis://redis:6379
+NOPHR_LOG_LEVEL=info
 ```
 
 **Volumes:**
@@ -634,7 +634,7 @@ docker run -d \
   -p 1965:1965 \
   -v ./nophr.yaml:/etc/nophr/nophr.yaml:ro \
   -v nophr-data:/var/lib/nophr \
-  -e NOPHER_NSEC="nsec1..." \
+  -e NOPHR_NSEC="nsec1..." \
   ghcr.io/sandwichfarm/nophr:latest
 ```
 
@@ -759,12 +759,12 @@ caching:
 ```
 
 ```bash
-export NOPHER_REDIS_URL="redis://:your_password@localhost:6379/0"
+export NOPHR_REDIS_URL="redis://:your_password@localhost:6379/0"
 ```
 
 **Remote Redis server:**
 ```bash
-export NOPHER_REDIS_URL="redis://:password@redis.example.com:6379/0"
+export NOPHR_REDIS_URL="redis://:password@redis.example.com:6379/0"
 ```
 
 ### Redis Security
@@ -803,7 +803,7 @@ tls-ca-cert-file /path/to/ca.crt
 ```
 
 ```bash
-export NOPHER_REDIS_URL="rediss://:password@redis.example.com:6380/0"
+export NOPHR_REDIS_URL="rediss://:password@redis.example.com:6380/0"
 ```
 
 ### Monitoring Redis
@@ -848,11 +848,11 @@ sudo systemctl enable --now redis
 **nophr instances** (all pointing to same Redis):
 ```bash
 # Instance 1
-export NOPHER_REDIS_URL="redis://:password@redis.example.com:6379/0"
+export NOPHR_REDIS_URL="redis://:password@redis.example.com:6379/0"
 ./nophr --config nophr.yaml
 
 # Instance 2 (same Redis URL)
-export NOPHER_REDIS_URL="redis://:password@redis.example.com:6379/0"
+export NOPHR_REDIS_URL="redis://:password@redis.example.com:6379/0"
 ./nophr --config nophr.yaml
 ```
 
@@ -881,8 +881,8 @@ sudo ufw allow 6379
 # Test Redis password
 redis-cli -a your_password ping
 
-# Verify NOPHER_REDIS_URL includes password
-echo $NOPHER_REDIS_URL
+# Verify NOPHR_REDIS_URL includes password
+echo $NOPHR_REDIS_URL
 ```
 
 **Memory issues:**

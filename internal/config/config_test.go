@@ -329,11 +329,11 @@ func TestLoadNonExistentFile(t *testing.T) {
 
 func TestEnvOverrides(t *testing.T) {
 	// Set environment variables
-	os.Setenv("NOPHER_NSEC", "nsec1test")
-	os.Setenv("NOPHER_REDIS_URL", "redis://localhost:6379")
+	os.Setenv("NOPHR_NSEC", "nsec1test")
+	os.Setenv("NOPHR_REDIS_URL", "redis://localhost:6379")
 	defer func() {
-		os.Unsetenv("NOPHER_NSEC")
-		os.Unsetenv("NOPHER_REDIS_URL")
+		os.Unsetenv("NOPHR_NSEC")
+		os.Unsetenv("NOPHR_REDIS_URL")
 	}()
 
 	tmpDir := t.TempDir()

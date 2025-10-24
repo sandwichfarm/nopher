@@ -6,7 +6,7 @@ site:
 identity:
   npub: "npub1owner...
 "
-  # NOPHER_NSEC=... in environment
+  # NOPHR_NSEC=... in environment
 
 relays:
   seeds:

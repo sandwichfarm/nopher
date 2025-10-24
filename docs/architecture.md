@@ -103,7 +103,7 @@ nophr is a **personal Nostr gateway** that serves content via legacy internet pr
 
 **Features:**
 - YAML parsing with validation
-- Environment variable overrides (`NOPHER_*`)
+- Environment variable overrides (`NOPHR_*`)
 - Defaults for all options
 - Secrets via env only (never in files)
 
@@ -113,7 +113,7 @@ config.yaml
     ↓
 Load() → Unmarshal YAML
     ↓
-applyEnvOverrides() → Apply NOPHER_* env vars
+applyEnvOverrides() → Apply NOPHR_* env vars
     ↓
 Validate() → Check required fields, formats
     ↓
@@ -683,7 +683,7 @@ Token Bucket:
 ```go
 // Secrets never touch disk
 sm := security.NewSecretManager()
-nsec, _ := sm.LoadNsecFromEnv()  // NOPHER_NSEC only
+nsec, _ := sm.LoadNsecFromEnv()  // NOPHR_NSEC only
 
 // Automatic redaction
 ss := security.NewSecureString("secret123")
@@ -1317,11 +1317,11 @@ func (s *Server) Start() {
 
 **nsec (private key):**
 - NEVER in config files
-- Only via `NOPHER_NSEC` environment variable
+- Only via `NOPHR_NSEC` environment variable
 - Never logged, never serialized
 
 **Redis URL:**
-- Via `NOPHER_REDIS_URL` environment variable
+- Via `NOPHR_REDIS_URL` environment variable
 - Keep out of config files if contains password
 
 ### Port Binding

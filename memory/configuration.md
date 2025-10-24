@@ -2,7 +2,7 @@ Configuration
 
 Principles
 - Config-first: everything is configurable; sensible defaults are provided.
-- Env overrides: any config key may be overridden by env vars (prefix NOPHER_...).
+- Env overrides: any config key may be overridden by env vars (prefix NOPHR_...).
 - Secrets: never store secrets in files. Keep nsec and DB credentials in env only.
 
 Top-level keys (schema outline)
@@ -27,7 +27,7 @@ site:
 
 identity:
   npub: "npub1..."           # Required
-  # NOPHER_NSEC in env only
+  # NOPHR_NSEC in env only
 
 protocols:
   gopher:

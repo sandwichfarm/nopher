@@ -32,11 +32,11 @@ services:
     environment:
       # IMPORTANT: Never commit your nsec to version control!
       # Set this via .env file or pass at runtime
-      - NOPHER_NSEC=${NOPHER_NSEC}
+      - NOPHR_NSEC=${NOPHR_NSEC}
       # Optional: Redis URL if using Redis cache
-      - NOPHER_REDIS_URL=${NOPHER_REDIS_URL:-}
+      - NOPHR_REDIS_URL=${NOPHR_REDIS_URL:-}
       # Optional: Override log level
-      - NOPHER_LOG_LEVEL=${NOPHER_LOG_LEVEL:-info}
+      - NOPHR_LOG_LEVEL=${NOPHR_LOG_LEVEL:-info}
 
     # Security hardening
     security_opt:

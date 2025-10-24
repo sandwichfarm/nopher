@@ -240,7 +240,7 @@ nophr handles secrets (private keys) securely:
 
 ```bash
 # Set environment variable
-export NOPHER_NSEC="nsec1..."
+export NOPHR_NSEC="nsec1..."
 
 # Start nophr (will load from env)
 ./nophr
@@ -462,7 +462,7 @@ Never put secrets in config files:
 
 ```bash
 # Good
-export NOPHER_NSEC="nsec1..."
+export NOPHR_NSEC="nsec1..."
 
 # Bad - never do this
 echo "nsec: nsec1..." >> config.yaml

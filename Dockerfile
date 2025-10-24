@@ -15,29 +15,29 @@ COPY . .
 RUN apk add --no-cache gcc musl-dev sqlite-dev
 RUN CGO_ENABLED=1 GOOS=linux go build -a \
     -ldflags="-s -w" \
-    -o nopher cmd/nophr/main.go
+    -o nophr cmd/nophr/main.go
 
 # Runtime stage
 FROM alpine:latest
 
 RUN apk --no-cache add ca-certificates tzdata
 
-RUN addgroup -g 1000 nopher && \
-    adduser -D -u 1000 -G nopher nopher
+RUN addgroup -g 1000 nophr && \
+    adduser -D -u 1000 -G nophr nophr
 
 WORKDIR /app
 
-COPY --from=builder /build/nopher /usr/local/bin/nopher
-COPY configs/nopher.example.yaml /etc/nopher/nopher.example.yaml
+COPY --from=builder /build/nophr /usr/local/bin/nophr
+COPY configs/nophr.example.yaml /etc/nophr/nophr.example.yaml
 
-RUN mkdir -p /var/lib/nopher /etc/nopher/certs && \
-    chown -R nopher:nopher /var/lib/nopher /etc/nopher
+RUN mkdir -p /var/lib/nophr /etc/nophr/certs && \
+    chown -R nophr:nophr /var/lib/nophr /etc/nophr
 
-USER nopher
+USER nophr
 
-VOLUME ["/var/lib/nopher", "/etc/nopher"]
+VOLUME ["/var/lib/nophr", "/etc/nophr"]
 
 EXPOSE 70 1965 79
 
-ENTRYPOINT ["/usr/local/bin/nopher"]
-CMD ["--config", "/etc/nopher/nopher.yaml"]
+ENTRYPOINT ["/usr/local/bin/nophr"]
+CMD ["--config", "/etc/nophr/nophr.yaml"]

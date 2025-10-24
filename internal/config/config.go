@@ -475,17 +475,17 @@ func Load(path string) (*Config, error) {
 
 // applyEnvOverrides applies environment variable overrides to config
 func applyEnvOverrides(cfg *Config) error {
-	// NOPHER_NSEC is the most important one - never in file
-	if nsec := os.Getenv("NOPHER_NSEC"); nsec != "" {
+	// NOPHR_NSEC is the most important one - never in file
+	if nsec := os.Getenv("NOPHR_NSEC"); nsec != "" {
 		cfg.Identity.Nsec = nsec
 	}
 
 	// Redis URL from env if using redis
-	if redisURL := os.Getenv("NOPHER_REDIS_URL"); redisURL != "" {
+	if redisURL := os.Getenv("NOPHR_REDIS_URL"); redisURL != "" {
 		cfg.Caching.RedisURL = redisURL
 	}
 
-	// Allow overriding any config via NOPHER_ prefix
+	// Allow overriding any config via NOPHR_ prefix
 	// This is a simplified implementation - full version would use reflection
 	// to handle all nested fields automatically
 

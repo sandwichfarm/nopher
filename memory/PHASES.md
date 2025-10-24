@@ -55,7 +55,7 @@ Goal: Implement configuration loading with validation and env overrides.
 Deliverables:
 - Config struct matching memory/configuration.md schema
 - YAML parsing with validation
-- Environment variable override support (NOPHER_*)
+- Environment variable override support (NOPHR_*)
 - Config initialization command (nophr init)
 - Embedded example config via //go:embed
 - Unit tests for config loading

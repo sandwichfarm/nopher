@@ -75,18 +75,18 @@ Your Nostr identity (public and private keys).
 ```yaml
 identity:
   npub: "npub1..." # Your Nostr public key (REQUIRED)
-  # nsec is NEVER in config - use NOPHER_NSEC env var
+  # nsec is NEVER in config - use NOPHR_NSEC env var
 ```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `npub` | string | **Yes** | Your Nostr public key (npub1...) |
-| `nsec` | string | No | **NEVER IN FILE** - Set via `NOPHER_NSEC` env var |
+| `nsec` | string | No | **NEVER IN FILE** - Set via `NOPHR_NSEC` env var |
 
 **Security:**
 - ✅ `npub` goes in config file (public key, safe to share)
 - ❌ `nsec` NEVER in config file (private key, keep secret!)
-- ✅ Set `nsec` via environment: `export NOPHER_NSEC="nsec1..."`
+- ✅ Set `nsec` via environment: `export NOPHR_NSEC="nsec1..."`
 
 **Get your npub:**
 - From any Nostr client (profile settings)
@@ -100,7 +100,7 @@ identity:
 
 ```bash
 # Set private key for publishing (optional, future feature)
-export NOPHER_NSEC="nsec1x2y3z4..."
+export NOPHR_NSEC="nsec1x2y3z4..."
 ```
 
 ---
@@ -704,7 +704,7 @@ Response caching configuration for dramatic performance improvements.
 caching:
   enabled: true
   engine: "memory"  # or "redis"
-  redis_url: ""  # Set via NOPHER_REDIS_URL env var
+  redis_url: ""  # Set via NOPHR_REDIS_URL env var
   max_size_mb: 100  # Memory cache size limit
   default_ttl_seconds: 300
   cleanup_interval_seconds: 60
@@ -734,7 +734,7 @@ caching:
 |-------|------|---------|-------------|
 | `enabled` | bool | `true` | Master switch for caching |
 | `engine` | string | `memory` | Cache backend (`memory` or `redis`) |
-| `redis_url` | string | `""` | Redis URL (via `NOPHER_REDIS_URL` env) |
+| `redis_url` | string | `""` | Redis URL (via `NOPHR_REDIS_URL` env) |
 | `max_size_mb` | int | `100` | Memory cache size limit (MB) |
 | `default_ttl_seconds` | int | `300` | Default cache TTL (5 minutes) |
 | `cleanup_interval_seconds` | int | `60` | Expired entry cleanup interval |
@@ -878,7 +878,7 @@ Cache Statistics:
 
 **Environment Variable:**
 ```bash
-export NOPHER_REDIS_URL="redis://localhost:6379/0"
+export NOPHR_REDIS_URL="redis://localhost:6379/0"
 ```
 
 **Redis URL Format:**
@@ -889,13 +889,13 @@ redis://[user:password@]host:port[/database]
 **Examples:**
 ```bash
 # Local Redis, no auth
-export NOPHER_REDIS_URL="redis://localhost:6379/0"
+export NOPHR_REDIS_URL="redis://localhost:6379/0"
 
 # Remote Redis with password
-export NOPHER_REDIS_URL="redis://:mypassword@redis.example.com:6379/0"
+export NOPHR_REDIS_URL="redis://:mypassword@redis.example.com:6379/0"
 
 # Redis with username and password
-export NOPHER_REDIS_URL="redis://user:pass@redis.example.com:6379/0"
+export NOPHR_REDIS_URL="redis://user:pass@redis.example.com:6379/0"
 ```
 
 **See also:** [deployment.md](deployment.md#redis-setup) for Redis installation and configuration.
@@ -926,7 +926,7 @@ logging:
 **Example:**
 ```bash
 # Debug mode for troubleshooting
-NOPHER_LOG_LEVEL=debug nophr --config nophr.yaml
+NOPHR_LOG_LEVEL=debug nophr --config nophr.yaml
 ```
 
 **Status:** ✅ VERIFIED (validated in internal/config/config.go)
@@ -1727,19 +1727,19 @@ Pagination settings (future feature).
 
 ## Environment Variable Overrides
 
-Any configuration value can be overridden with `NOPHER_*` environment variables.
+Any configuration value can be overridden with `NOPHR_*` environment variables.
 
 **Important overrides:**
 
 | Variable | Overrides | Example |
 |----------|-----------|---------|
-| `NOPHER_NSEC` | `identity.nsec` | `nsec1abc...` |
-| `NOPHER_REDIS_URL` | `caching.redis_url` | `redis://localhost:6379` |
+| `NOPHR_NSEC` | `identity.nsec` | `nsec1abc...` |
+| `NOPHR_REDIS_URL` | `caching.redis_url` | `redis://localhost:6379` |
 
 **Example:**
 ```bash
-export NOPHER_NSEC="nsec1..."
-export NOPHER_REDIS_URL="redis://localhost:6379"
+export NOPHR_NSEC="nsec1..."
+export NOPHR_REDIS_URL="redis://localhost:6379"
 nophr --config nophr.yaml
 ```
 

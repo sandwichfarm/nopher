@@ -74,9 +74,9 @@ func (sm *SecretManager) Redact(secret string) string {
 
 // LoadNsecFromEnv loads the Nostr secret key from environment
 func (sm *SecretManager) LoadNsecFromEnv() (string, error) {
-	nsec := os.Getenv("NOPHER_NSEC")
+	nsec := os.Getenv("NOPHR_NSEC")
 	if nsec == "" {
-		return "", fmt.Errorf("NOPHER_NSEC environment variable not set")
+		return "", fmt.Errorf("NOPHR_NSEC environment variable not set")
 	}
 
 	// Validate nsec format
@@ -85,7 +85,7 @@ func (sm *SecretManager) LoadNsecFromEnv() (string, error) {
 	}
 
 	// Store in memory
-	sm.Set("NOPHER_NSEC", nsec)
+	sm.Set("NOPHR_NSEC", nsec)
 
 	return nsec, nil
 }

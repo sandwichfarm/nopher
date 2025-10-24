@@ -102,10 +102,10 @@ relays:
 If you want to publish content (future feature), set your private key via environment variable:
 
 ```bash
-export NOPHER_NSEC="nsec1..."  # Your Nostr private key (NEVER in config file!)
+export NOPHR_NSEC="nsec1..."  # Your Nostr private key (NEVER in config file!)
 ```
 
-**Security Note:** Never put `nsec` in the config file. Always use the `NOPHER_NSEC` environment variable.
+**Security Note:** Never put `nsec` in the config file. Always use the `NOPHR_NSEC` environment variable.
 
 ## Validate Configuration
 

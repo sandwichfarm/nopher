@@ -331,7 +331,7 @@ security:
 
   # Secret management
   secrets:
-    env_prefix: "NOPHER_"
+    env_prefix: "NOPHR_"
     require_nsec: true
 ```
 
@@ -339,10 +339,10 @@ security:
 
 ```bash
 # Required for publishing events
-export NOPHER_NSEC="nsec1..."
+export NOPHR_NSEC="nsec1..."
 
 # Optional secrets
-export NOPHER_REDIS_PASSWORD="..."
+export NOPHR_REDIS_PASSWORD="..."
 ```
 
 ## Integration Points
@@ -564,7 +564,7 @@ security:
 # nsec: "nsec1..."  # Remove this!
 
 # New (environment)
-export NOPHER_NSEC="nsec1..."
+export NOPHR_NSEC="nsec1..."
 ```
 
 3. **Test rate limits**:

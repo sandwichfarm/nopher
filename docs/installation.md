@@ -88,7 +88,7 @@ cp configs/nophr.example.yaml configs/nophr.yaml
 nano configs/nophr.yaml
 
 # Set your NSEC (never commit this!)
-export NOPHER_NSEC="nsec1..."
+export NOPHR_NSEC="nsec1..."
 
 # Start the services
 docker-compose up -d
@@ -114,7 +114,7 @@ docker run -d \
   -p 79:79 \
   -v ./nophr.yaml:/etc/nophr/nophr.yaml:ro \
   -v nophr-data:/var/lib/nophr \
-  -e NOPHER_NSEC="nsec1..." \
+  -e NOPHR_NSEC="nsec1..." \
   ghcr.io/sandwichfarm/nophr:latest
 ```
 
@@ -134,7 +134,7 @@ docker run -d \
   -p 1965:1965 \
   -p 79:79 \
   -v ./nophr.yaml:/etc/nophr/nophr.yaml:ro \
-  -e NOPHER_NSEC="nsec1..." \
+  -e NOPHR_NSEC="nsec1..." \
   nophr:latest
 ```
 
@@ -183,7 +183,7 @@ sudo cp /etc/nophr/nophr.example.yaml /etc/nophr/nophr.yaml
 sudo nano /etc/nophr/nophr.yaml
 
 # Set your NSEC (secure method)
-echo 'NOPHER_NSEC="nsec1..."' | sudo tee /etc/default/nophr
+echo 'NOPHR_NSEC="nsec1..."' | sudo tee /etc/default/nophr
 
 # Enable and start service
 sudo systemctl enable nophr
@@ -317,13 +317,13 @@ Sensitive values should be set via environment variables:
 
 ```bash
 # Required: Your Nostr secret key
-export NOPHER_NSEC="nsec1..."
+export NOPHR_NSEC="nsec1..."
 
 # Optional: Redis URL for caching
-export NOPHER_REDIS_URL="redis://localhost:6379"
+export NOPHR_REDIS_URL="redis://localhost:6379"
 
 # Optional: Log level override
-export NOPHER_LOG_LEVEL="debug"
+export NOPHR_LOG_LEVEL="debug"
 ```
 
 ### File Locations

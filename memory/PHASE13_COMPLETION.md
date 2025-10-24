@@ -288,7 +288,7 @@ sudo apt install ./nophr_0.1.0_amd64.deb
 
 # Configure
 sudo vim /etc/nophr/nophr.yaml
-echo 'NOPHER_NSEC="nsec1..."' | sudo tee /etc/default/nophr
+echo 'NOPHR_NSEC="nsec1..."' | sudo tee /etc/default/nophr
 
 # Start service
 sudo systemctl enable --now nophr
@@ -300,7 +300,7 @@ git clone https://github.com/sandwichfarm/nophr.git
 cd nophr
 cp configs/nophr.example.yaml configs/nophr.yaml
 # Edit config...
-export NOPHER_NSEC="nsec1..."
+export NOPHR_NSEC="nsec1..."
 docker-compose up -d
 ```
 

@@ -129,7 +129,7 @@ services:
       - ./data:/var/lib/nophr
       - ./certs:/etc/nophr/certs:ro
     environment:
-      - NOPHER_NSEC=${NOPHER_NSEC}
+      - NOPHR_NSEC=${NOPHR_NSEC}
     restart: unless-stopped
 ```
 

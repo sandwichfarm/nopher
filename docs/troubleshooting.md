@@ -741,7 +741,7 @@ logging:
 
 **Or via environment:**
 ```bash
-NOPHER_LOG_LEVEL=debug nophr --config nophr.yaml
+NOPHR_LOG_LEVEL=debug nophr --config nophr.yaml
 ```
 
 **Restart:**

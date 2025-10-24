@@ -22,7 +22,7 @@ Normalization
 Hash
 - cfg = hex(SHA-256("ver="+app_version+"\n"+normalized_json))[0:12]
 - Length (12) is configurable; use 16 for very large deployments.
-- Optionally include a salt via NOPHER_CACHE_SALT to segregate shared Redis across multiple tenants.
+- Optionally include a salt via NOPHR_CACHE_SALT to segregate shared Redis across multiple tenants.
 
 Theme and Layout Hashes (sub-hashes)
 - theme_h = hex(SHA-256(theme_name + JSON(theme_options)))[0:8]
