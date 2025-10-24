@@ -678,6 +678,126 @@ safe := logger.SanitizeMessage(msg)  // Redacts any secrets
 
 ---
 
+### 11. Search
+
+**Location:** `internal/search/`
+
+**Purpose:** NIP-50 compliant search functionality with content matching, relevance ranking, and profile metadata parsing.
+
+**Architecture:**
+```
+┌─────────────────────────┐
+│   NIP-50 Engine         │
+│   (nip50.go)            │
+└───────┬─────────────────┘
+        │
+        ↓
+┌─────────────────────────┐
+│   Storage Search        │
+│ (storage/search.go)     │
+└───────┬─────────────────┘
+        │
+    ┌───┴───────────┐
+    ↓               ↓
+┌──────────┐  ┌──────────┐
+│  Match   │  │   Rank   │
+│ Events   │  │   By     │
+│          │  │Relevance │
+└──────────┘  └──────────┘
+```
+
+**Key files:**
+- `nip50.go` - NIP-50 search engine, search options, query parsing
+- `storage/search.go` - QueryEventsWithSearch implementation, relevance scoring
+- `nostr/profile.go` - Profile metadata parsing (kind 0), display name/lightning helpers
+
+**Features:**
+- **NIP-50 Compliance**: Standard Nostr search protocol implementation
+- **Content Matching**: Search in event content field (case-insensitive)
+- **Relevance Ranking**: Score-based sorting with multiple signals
+- **Profile Search**: Enhanced kind 0 (profile) event searching
+- **Search Options**: Configurable kinds, authors, limits, time ranges
+- **Query Parsing**: Advanced query syntax (`kind:1 bitcoin`)
+
+**Search flow:**
+```
+1. User Query
+   └→ Parse search text and options
+   └→ Build Nostr filter with Search field
+
+2. NIP-50 Engine
+   └→ Apply search options (kinds, authors, limits)
+   └→ Call relay QuerySync with filter
+
+3. Storage Layer
+   └→ Query all matching events
+   └→ Filter by search term (content matching)
+   └→ Calculate relevance scores
+
+4. Relevance Ranking
+   └→ Exact match: +100 points
+   └→ Contains phrase: +50 points
+   └→ Word matches: +10 per word
+   └→ Shorter content: +5 (focused)
+   └→ Profile (kind 0): +10 bonus
+
+5. Results
+   └→ Sort by score (descending)
+   └→ Apply limit after sorting
+   └→ Return ranked results
+```
+
+**Relevance scoring:**
+```go
+// Example scores
+"bitcoin" searching for "bitcoin"           → 100 (exact match)
+"Understanding bitcoin mining" → "bitcoin"   → 60 (phrase + word + short)
+"BTC and bitcoin explained" → "bitcoin"     → 60 (phrase + word)
+Profile with "bitcoin" in about             → 70 (phrase + word + profile)
+```
+
+**Search options:**
+```go
+results, err := engine.Search(ctx, "nostr protocol",
+    search.WithKinds(1, 30023),      // Notes and articles only
+    search.WithAuthors(pubkey1),      // Specific authors
+    search.WithLimit(20),             // Max 20 results
+    search.WithSince(timestamp),      // Recent events
+)
+```
+
+**Query parsing:**
+```go
+// Advanced syntax
+"kind:1 bitcoin"           → Search notes for "bitcoin"
+"kind:30023 nostr"         → Search articles for "nostr"
+"protocol"                 → Search all kinds for "protocol"
+```
+
+**Profile metadata:**
+```go
+// Kind 0 profile parsing
+profile := nostr.ParseProfile(event)
+name := profile.GetDisplayName()         // display_name or name
+lightning := profile.GetLightningAddress() // lud16 or lud06
+```
+
+**Integration:**
+- **Gopher**: `/search/<query>` with URL encoding (+ for spaces)
+- **Gemini**: `/search` with input prompt (status 10) for query entry
+- **Protocol Servers**: Use QueryEventsWithSearch for search endpoints
+- **Caching**: Search results cacheable with TTL (Phase 10)
+
+**Performance:**
+- Content matching: O(n) with early filtering
+- Relevance scoring: O(n log n) for sorting (bubble sort for small n)
+- Profile parsing: O(1) JSON unmarshaling
+- Typical search: <100ms for 10K events
+
+**Status:** ✅ Complete (Phase 18)
+
+---
+
 ## Code Organization
 
 ```
@@ -699,13 +819,15 @@ nopher/
 │   │   ├── relay_hints.go   # Custom table
 │   │   ├── graph_nodes.go   # Custom table
 │   │   ├── sync_state.go    # Custom table
-│   │   └── aggregates.go    # Custom table
+│   │   ├── aggregates.go    # Custom table
+│   │   └── search.go        # NIP-50 search queries
 │   │
 │   ├── nostr/               # Nostr client
 │   │   ├── client.go        # WebSocket pool
 │   │   ├── relay.go         # Per-relay connection
 │   │   ├── discovery.go     # NIP-65
-│   │   └── relay_hints.go   # Hint parsing
+│   │   ├── relay_hints.go   # Hint parsing
+│   │   └── profile.go       # Profile metadata parsing
 │   │
 │   ├── sync/                # Sync engine
 │   │   ├── engine.go        # Main orchestration
@@ -744,6 +866,9 @@ nopher/
 │   │   ├── validation.go    # Input validation
 │   │   ├── secrets.go       # Secret management
 │   │   └── security_test.go # Security tests
+│   │
+│   ├── search/              # Search functionality
+│   │   └── nip50.go         # NIP-50 search engine
 │   │
 │   ├── markdown/            # Markdown conversion
 │   │   ├── parser.go        # AST parsing

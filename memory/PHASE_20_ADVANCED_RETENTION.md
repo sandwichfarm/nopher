@@ -1,6 +1,6 @@
-Phase 17: Advanced Configurable Retention
+Phase 20: Advanced Configurable Retention
 
-Status: NEW FEATURE - Extends completed implementation
+Status: FUTURE FEATURE - Extends Phase 12 simple retention
 
 Overview
 

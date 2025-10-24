@@ -76,6 +76,8 @@ Gopher uses "selectors" (paths) to navigate content:
 | `/articles` | Long-form articles (kind 30023) |
 | `/replies` | Replies to your content |
 | `/mentions` | Posts mentioning you |
+| `/search` | Search interface |
+| `/search/<query>` | Search results (NIP-50) |
 | `/archive` | Time-based archives (by year/month) |
 | `/event/<id>` | Individual event detail |
 | `/thread/<id>` | Thread view |
@@ -97,6 +99,7 @@ i	fake	example.com	70
 1Articles	/articles	example.com	70
 1Replies	/replies	example.com	70
 1Mentions	/mentions	example.com	70
+1Search	/search	example.com	70
 .
 ```
 
@@ -144,6 +147,7 @@ i	fake	localhost	70
 1Articles (7 items)	/articles	localhost	70
 1Replies (8 items)	/replies	localhost	70
 1Mentions (15 items)	/mentions	localhost	70
+1Search	/search	localhost	70
 1Archive	/archive	localhost	70
 iDiagnostics	/diagnostics	localhost	70
 .
@@ -151,6 +155,16 @@ iDiagnostics	/diagnostics	localhost	70
 $ echo "/notes" | nc localhost 70
 1[2025-10-24] Just published my Gopher server!	/event/abc123	localhost	70
 1[2025-10-23] Testing markdown conversion	/event/def456	localhost	70
+...
+
+$ echo "/search/nostr+protocol" | nc localhost 70
+iSearch Results: "nostr protocol"	fake	localhost	70
+i==============	fake	localhost	70
+i	fake	localhost	70
+iFound 5 results:	fake	localhost	70
+i	fake	localhost	70
+0[Note] Introduction to the Nostr protocol	/note/xyz789	localhost	70
+0[Article] Understanding Nostr relays	/note/abc456	localhost	70
 ...
 ```
 
@@ -230,6 +244,7 @@ rendering:
 | `/articles` | Long-form articles (kind 30023) |
 | `/replies` | Replies to your content |
 | `/mentions` | Posts mentioning you |
+| `/search` | Search interface (prompts for query) |
 | `/archive` | Time-based archives (by year/month) |
 | `/event/<id>` | Individual event detail |
 | `/thread/<id>` | Thread view |
@@ -311,6 +326,7 @@ Notes, articles, and interactions from Nostr
 => /articles Articles (7 items)
 => /replies Replies (8 items)
 => /mentions Mentions (15 items)
+=> /search Search
 => /archive Archive
 
 # Click /notes
@@ -320,6 +336,23 @@ Notes, articles, and interactions from Nostr
 => /event/abc123 [2025-10-24] Just published my Gopher server!
 => /event/def456 [2025-10-23] Testing markdown conversion
 ...
+
+# Click /search
+# Client prompts: "Enter search query:"
+# User types: "nostr protocol"
+
+# Search Results
+
+Query: "nostr protocol"
+
+Found 5 results:
+
+=> /profile/xyz123 [Profile] alice
+=> /note/abc456 [Note] Introduction to the Nostr protocol
+=> /note/def789 [Article] Understanding Nostr relays
+
+=> /search New Search
+=> / Back to Home
 ```
 
 ---

@@ -754,7 +754,7 @@ behavior:
 
 ## Phase 19: Profile Enhancement and Search Implementation
 
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 
 **Goal**: Implement proper profile parsing, enhance diagnostics, and add functional search across all protocols.
 
@@ -831,14 +831,14 @@ Create reusable profile parsing utilities:
 
 **Completion Criteria**:
 
-- [ ] Profile endpoints display parsed metadata (name, bio, picture link)
-- [ ] Search returns relevant results for content queries
-- [ ] Search works by npub/pubkey
-- [ ] Search works by event ID
-- [ ] Diagnostics show real statistics
-- [ ] All unit tests pass
-- [ ] Integration tests verify functionality
-- [ ] No regressions in existing features
+- [x] Profile endpoints display parsed metadata (name, bio, picture link)
+- [x] Search returns relevant results for content queries
+- [x] Search works by npub/pubkey
+- [x] Search works by event ID
+- [x] Diagnostics show real statistics
+- [x] All unit tests pass
+- [x] Integration tests verify functionality
+- [x] No regressions in existing features
 
 **Files to Create**:
 - `internal/nostr/profile.go`
@@ -858,16 +858,50 @@ Create reusable profile parsing utilities:
 
 ---
 
+## Phase 20: Advanced Configurable Retention
+
+**Status**: 📋 Future Enhancement
+
+**Goal**: Extend the simple retention system (Phase 12) with sophisticated rule-based retention capabilities.
+
+**Overview**:
+
+Phase 12 implemented simple time-based retention (`keep_days` configuration). Phase 20 would add an advanced, multi-dimensional retention system on top of this foundation.
+
+**Proposed Features**:
+- **Rule Engine**: Priority-based rule matching with configurable conditions
+- **Multi-Dimensional Conditions**:
+  - Social distance (FOAF, mutual, specific pubkeys)
+  - Engagement thresholds (reactions, zaps, replies)
+  - Content characteristics (kind, size, age)
+  - Reference-based (replies to owner, mentions)
+- **Sophisticated Caps**: Global and per-kind storage limits with score-based pruning
+- **Flexible Actions**: Retain forever, retain until date, or delete
+- **Protected Events**: Mark important events as never-delete
+
+**Why Not Yet Implemented**:
+- Phase 12 simple retention meets current needs
+- Would add significant complexity
+- Requires careful design to avoid performance impact
+- Optional enhancement, not core requirement
+
+**Documentation**: See `memory/PHASE_20_ADVANCED_RETENTION.md` for complete specification.
+
+**Dependencies**: Phase 12 (Simple Retention) - Complete
+
+---
+
 ## Summary (Updated)
 
-**Total Phases**: 19
-**Status**: Active Development
+**Total Phases**: 19 (Complete), 20+ (Future)
+**Status**: Core Features Complete
 
 **Phase Breakdown**:
-- ✅ Phases 1-18: Complete
+- ✅ Phases 0-19: Complete
+- 📋 Phase 20: Advanced Retention (Future Enhancement)
 - 🚧 Future: Additional features and optimizations
 
-**Current Focus**: Display customization, content control, and user experience refinement
+**Current Status**: All core features implemented and operational
 
 **Architecture Highlights**:
 - Multi-protocol support (Gopher, Gemini, Finger)
