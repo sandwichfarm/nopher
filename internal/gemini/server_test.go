@@ -73,25 +73,25 @@ func TestGeminiProtocol(t *testing.T) {
 		}
 	})
 
-	// Test 2: Outbox path
-	t.Run("OutboxPath", func(t *testing.T) {
-		response := sendGeminiRequest(t, geminiCfg.Port, "gemini://localhost/outbox")
+	// Test 2: Notes path (was Outbox in Phase 16)
+	t.Run("NotesPath", func(t *testing.T) {
+		response := sendGeminiRequest(t, geminiCfg.Port, "gemini://localhost/notes")
 		if !strings.Contains(response, "20 ") {
-			t.Errorf("Outbox response should have status 20")
+			t.Errorf("Notes response should have status 20")
 		}
-		if !strings.Contains(response, "Outbox") {
-			t.Errorf("Outbox response should contain 'Outbox'")
+		if !strings.Contains(response, "Notes") && !strings.Contains(response, "notes") {
+			t.Errorf("Notes response should contain 'Notes' or 'notes'")
 		}
 	})
 
-	// Test 3: Inbox path
-	t.Run("InboxPath", func(t *testing.T) {
-		response := sendGeminiRequest(t, geminiCfg.Port, "gemini://localhost/inbox")
+	// Test 3: Replies path (was Inbox in Phase 16)
+	t.Run("RepliesPath", func(t *testing.T) {
+		response := sendGeminiRequest(t, geminiCfg.Port, "gemini://localhost/replies")
 		if !strings.Contains(response, "20 ") {
-			t.Errorf("Inbox response should have status 20")
+			t.Errorf("Replies response should have status 20")
 		}
-		if !strings.Contains(response, "Inbox") {
-			t.Errorf("Inbox response should contain 'Inbox'")
+		if !strings.Contains(response, "Replies") && !strings.Contains(response, "replies") {
+			t.Errorf("Replies response should contain 'Replies' or 'replies'")
 		}
 	})
 

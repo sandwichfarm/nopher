@@ -173,6 +173,23 @@ func TestValidate(t *testing.T) {
 				Storage: Storage{Driver: "sqlite"},
 				Caching: Caching{Enabled: false},
 				Logging: Logging{Level: "info"},
+				Display: Display{
+					Limits: DisplayLimits{
+						SummaryLength:     100,
+						MaxContentLength:  5000,
+						MaxThreadDepth:    10,
+						MaxRepliesInFeed:  3,
+						TruncateIndicator: "...",
+					},
+				},
+				Behavior: Behavior{
+					SortPreferences: SortPreferences{
+						Notes:    "chronological",
+						Articles: "chronological",
+						Replies:  "chronological",
+						Mentions: "chronological",
+					},
+				},
 			},
 			wantErr: false,
 		},

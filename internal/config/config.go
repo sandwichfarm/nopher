@@ -391,6 +391,58 @@ type PaginationConfig struct {
 	MaxPages         int  `yaml:"max_pages"`
 }
 
+// applyDefaults fills in missing configuration fields with sensible defaults
+func applyDefaults(cfg *Config) {
+	defaults := Default()
+
+	// Apply Display defaults if missing
+	if cfg.Display.Limits.SummaryLength == 0 {
+		cfg.Display.Limits.SummaryLength = defaults.Display.Limits.SummaryLength
+	}
+	if cfg.Display.Limits.MaxContentLength == 0 {
+		cfg.Display.Limits.MaxContentLength = defaults.Display.Limits.MaxContentLength
+	}
+	if cfg.Display.Limits.MaxThreadDepth == 0 {
+		cfg.Display.Limits.MaxThreadDepth = defaults.Display.Limits.MaxThreadDepth
+	}
+	if cfg.Display.Limits.MaxRepliesInFeed == 0 {
+		cfg.Display.Limits.MaxRepliesInFeed = defaults.Display.Limits.MaxRepliesInFeed
+	}
+	if cfg.Display.Limits.TruncateIndicator == "" {
+		cfg.Display.Limits.TruncateIndicator = defaults.Display.Limits.TruncateIndicator
+	}
+
+	// Apply Behavior defaults for sort preferences
+	if cfg.Behavior.SortPreferences.Notes == "" {
+		cfg.Behavior.SortPreferences.Notes = defaults.Behavior.SortPreferences.Notes
+	}
+	if cfg.Behavior.SortPreferences.Articles == "" {
+		cfg.Behavior.SortPreferences.Articles = defaults.Behavior.SortPreferences.Articles
+	}
+	if cfg.Behavior.SortPreferences.Replies == "" {
+		cfg.Behavior.SortPreferences.Replies = defaults.Behavior.SortPreferences.Replies
+	}
+	if cfg.Behavior.SortPreferences.Mentions == "" {
+		cfg.Behavior.SortPreferences.Mentions = defaults.Behavior.SortPreferences.Mentions
+	}
+
+	// Apply Presentation defaults for separators if empty maps
+	if cfg.Presentation.Headers.PerPage == nil {
+		cfg.Presentation.Headers.PerPage = make(map[string]HeaderConfig)
+	}
+	if cfg.Presentation.Footers.PerPage == nil {
+		cfg.Presentation.Footers.PerPage = make(map[string]FooterConfig)
+	}
+
+	// Apply Layout defaults if empty
+	if cfg.Layout.Sections == nil {
+		cfg.Layout.Sections = make(map[string]interface{})
+	}
+	if cfg.Layout.Pages == nil {
+		cfg.Layout.Pages = make(map[string]interface{})
+	}
+}
+
 // Load reads and parses a configuration file
 func Load(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
@@ -402,6 +454,9 @@ func Load(path string) (*Config, error) {
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
+
+	// Apply defaults for missing fields
+	applyDefaults(&cfg)
 
 	// Apply environment variable overrides
 	if err := applyEnvOverrides(&cfg); err != nil {

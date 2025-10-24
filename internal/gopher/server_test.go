@@ -66,19 +66,19 @@ func TestGopherProtocol(t *testing.T) {
 		}
 	})
 
-	// Test 2: Outbox selector
-	t.Run("OutboxSelector", func(t *testing.T) {
-		response := sendGopherRequest(t, gopherCfg.Port, "/outbox")
-		if !strings.Contains(response, "Outbox") {
-			t.Errorf("Outbox response should contain 'Outbox', got: %s", response)
+	// Test 2: Notes selector (was Outbox in Phase 16)
+	t.Run("NotesSelector", func(t *testing.T) {
+		response := sendGopherRequest(t, gopherCfg.Port, "/notes")
+		if !strings.Contains(response, "Notes") && !strings.Contains(response, "notes") {
+			t.Errorf("Notes response should contain 'Notes' or 'notes', got: %s", response)
 		}
 	})
 
-	// Test 3: Inbox selector
-	t.Run("InboxSelector", func(t *testing.T) {
-		response := sendGopherRequest(t, gopherCfg.Port, "/inbox")
-		if !strings.Contains(response, "Inbox") {
-			t.Errorf("Inbox response should contain 'Inbox', got: %s", response)
+	// Test 3: Replies selector (was Inbox in Phase 16)
+	t.Run("RepliesSelector", func(t *testing.T) {
+		response := sendGopherRequest(t, gopherCfg.Port, "/replies")
+		if !strings.Contains(response, "Replies") && !strings.Contains(response, "replies") {
+			t.Errorf("Replies response should contain 'Replies' or 'replies', got: %s", response)
 		}
 	})
 
