@@ -18,7 +18,7 @@ func TestGopherProtocol(t *testing.T) {
 	// Create test config
 	cfg := &config.Config{
 		Identity: config.Identity{
-			Npub: "test-pubkey",
+			Npub: "npub1nq3zgtqruwhnz0xx40gh4a4fkamlr2sc7ke5wqs2s3nyv2fpy9esg4hdwq",
 		},
 		Storage: config.Storage{
 			Driver:     "sqlite",

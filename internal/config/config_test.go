@@ -54,7 +54,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "no protocols enabled",
 			cfg: &Config{
-				Identity: Identity{Npub: "npub1test"},
+				Identity: Identity{Npub: "npub1nq3zgtqruwhnz0xx40gh4a4fkamlr2sc7ke5wqs2s3nyv2fpy9esg4hdwq"},
 				Protocols: Protocols{
 					Gopher: GopherProtocol{Enabled: false},
 					Gemini: GeminiProtocol{Enabled: false},
@@ -68,7 +68,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "invalid port range",
 			cfg: &Config{
-				Identity: Identity{Npub: "npub1test"},
+				Identity: Identity{Npub: "npub1nq3zgtqruwhnz0xx40gh4a4fkamlr2sc7ke5wqs2s3nyv2fpy9esg4hdwq"},
 				Protocols: Protocols{
 					Gopher: GopherProtocol{Enabled: true, Port: 99999},
 				},
@@ -80,7 +80,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "no relay seeds",
 			cfg: &Config{
-				Identity: Identity{Npub: "npub1test"},
+				Identity: Identity{Npub: "npub1nq3zgtqruwhnz0xx40gh4a4fkamlr2sc7ke5wqs2s3nyv2fpy9esg4hdwq"},
 				Protocols: Protocols{
 					Gopher: GopherProtocol{Enabled: true, Port: 70},
 				},
@@ -92,7 +92,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "invalid relay seed protocol",
 			cfg: &Config{
-				Identity: Identity{Npub: "npub1test"},
+				Identity: Identity{Npub: "npub1nq3zgtqruwhnz0xx40gh4a4fkamlr2sc7ke5wqs2s3nyv2fpy9esg4hdwq"},
 				Protocols: Protocols{
 					Gopher: GopherProtocol{Enabled: true, Port: 70},
 				},
@@ -104,7 +104,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "invalid sync mode",
 			cfg: &Config{
-				Identity: Identity{Npub: "npub1test"},
+				Identity: Identity{Npub: "npub1nq3zgtqruwhnz0xx40gh4a4fkamlr2sc7ke5wqs2s3nyv2fpy9esg4hdwq"},
 				Protocols: Protocols{
 					Gopher: GopherProtocol{Enabled: true, Port: 70},
 				},
@@ -119,7 +119,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "invalid storage driver",
 			cfg: &Config{
-				Identity: Identity{Npub: "npub1test"},
+				Identity: Identity{Npub: "npub1nq3zgtqruwhnz0xx40gh4a4fkamlr2sc7ke5wqs2s3nyv2fpy9esg4hdwq"},
 				Protocols: Protocols{
 					Gopher: GopherProtocol{Enabled: true, Port: 70},
 				},
@@ -133,7 +133,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "invalid cache engine",
 			cfg: &Config{
-				Identity: Identity{Npub: "npub1test"},
+				Identity: Identity{Npub: "npub1nq3zgtqruwhnz0xx40gh4a4fkamlr2sc7ke5wqs2s3nyv2fpy9esg4hdwq"},
 				Protocols: Protocols{
 					Gopher: GopherProtocol{Enabled: true, Port: 70},
 				},
@@ -148,7 +148,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "invalid log level",
 			cfg: &Config{
-				Identity: Identity{Npub: "npub1test"},
+				Identity: Identity{Npub: "npub1nq3zgtqruwhnz0xx40gh4a4fkamlr2sc7ke5wqs2s3nyv2fpy9esg4hdwq"},
 				Protocols: Protocols{
 					Gopher: GopherProtocol{Enabled: true, Port: 70},
 				},
@@ -164,7 +164,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "valid minimal config",
 			cfg: &Config{
-				Identity: Identity{Npub: "npub1test"},
+				Identity: Identity{Npub: "npub1nq3zgtqruwhnz0xx40gh4a4fkamlr2sc7ke5wqs2s3nyv2fpy9esg4hdwq"},
 				Protocols: Protocols{
 					Gopher: GopherProtocol{Enabled: true, Port: 70},
 				},
@@ -228,7 +228,7 @@ site:
   operator: "Test Operator"
 
 identity:
-  npub: "npub1test"
+  npub: "npub1nq3zgtqruwhnz0xx40gh4a4fkamlr2sc7ke5wqs2s3nyv2fpy9esg4hdwq"
 
 protocols:
   gopher:
@@ -260,8 +260,8 @@ logging:
 				if cfg.Site.Title != "Test Site" {
 					t.Errorf("Expected title 'Test Site', got %s", cfg.Site.Title)
 				}
-				if cfg.Identity.Npub != "npub1test" {
-					t.Errorf("Expected npub 'npub1test', got %s", cfg.Identity.Npub)
+				if cfg.Identity.Npub != "npub1nq3zgtqruwhnz0xx40gh4a4fkamlr2sc7ke5wqs2s3nyv2fpy9esg4hdwq" {
+					t.Errorf("Expected npub 'npub1nq3zgtqruwhnz0xx40gh4a4fkamlr2sc7ke5wqs2s3nyv2fpy9esg4hdwq', got %s", cfg.Identity.Npub)
 				}
 				if !cfg.Protocols.Gopher.Enabled {
 					t.Error("Expected Gopher to be enabled")
@@ -343,7 +343,7 @@ site:
   title: "Test"
 
 identity:
-  npub: "npub1test"
+  npub: "npub1nq3zgtqruwhnz0xx40gh4a4fkamlr2sc7ke5wqs2s3nyv2fpy9esg4hdwq"
 
 protocols:
   gopher:

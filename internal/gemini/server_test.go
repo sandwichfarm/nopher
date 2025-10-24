@@ -19,7 +19,7 @@ func TestGeminiProtocol(t *testing.T) {
 	// Create test config
 	cfg := &config.Config{
 		Identity: config.Identity{
-			Npub: "test-pubkey",
+			Npub: "npub1nq3zgtqruwhnz0xx40gh4a4fkamlr2sc7ke5wqs2s3nyv2fpy9esg4hdwq",
 		},
 		Storage: config.Storage{
 			Driver:     "sqlite",
@@ -77,7 +77,7 @@ func TestGeminiProtocol(t *testing.T) {
 	t.Run("NotesPath", func(t *testing.T) {
 		response := sendGeminiRequest(t, geminiCfg.Port, "gemini://localhost/notes")
 		if !strings.Contains(response, "20 ") {
-			t.Errorf("Notes response should have status 20")
+			t.Errorf("Notes response should have status 20, got: %s", response[:min(200, len(response))])
 		}
 		if !strings.Contains(response, "Notes") && !strings.Contains(response, "notes") {
 			t.Errorf("Notes response should contain 'Notes' or 'notes'")
@@ -88,7 +88,7 @@ func TestGeminiProtocol(t *testing.T) {
 	t.Run("RepliesPath", func(t *testing.T) {
 		response := sendGeminiRequest(t, geminiCfg.Port, "gemini://localhost/replies")
 		if !strings.Contains(response, "20 ") {
-			t.Errorf("Replies response should have status 20")
+			t.Errorf("Replies response should have status 20, got: %s", response[:min(200, len(response))])
 		}
 		if !strings.Contains(response, "Replies") && !strings.Contains(response, "replies") {
 			t.Errorf("Replies response should contain 'Replies' or 'replies'")
