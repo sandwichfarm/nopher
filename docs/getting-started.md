@@ -160,7 +160,7 @@ The generated configuration includes many sections:
 | `outbox` | Publishing settings (future) | 📋 Planned |
 | `storage` | Database backend (SQLite/LMDB) | ✅ Verified |
 | `rendering` | Protocol-specific rendering options | 🟡 Implemented |
-| `caching` | Response caching | 📋 Planned |
+| `caching` | Response caching (memory/Redis) | ✅ Verified |
 | `logging` | Log level configuration | ✅ Verified |
 | `layout` | Custom sections and pages | 🟡 Implemented |
 

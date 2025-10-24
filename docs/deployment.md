@@ -38,6 +38,8 @@ curl -sSL https://nopher.io/install.sh | sh
 - [Systemd Service](#systemd-service)
 - [Reverse Proxy](#reverse-proxy)
 - [Docker Deployment](#docker-deployment)
+- [Redis Setup](#redis-setup)
+- [Firewall](#firewall)
 - [Monitoring](#monitoring)
 - [Backups](#backups)
 - [Updates](#updates)
@@ -658,6 +660,276 @@ Docker images support multiple architectures:
 - `amd64` (x86_64)
 - `arm64` (ARM 64-bit)
 - `arm/v7` (ARM 32-bit)
+
+---
+
+## Redis Setup
+
+Redis is an optional cache backend that provides distributed caching, persistence across restarts, and better memory management for production deployments.
+
+### When to Use Redis
+
+**Use Redis cache when:**
+- Running multiple Nopher instances (load balancing)
+- Need persistent cache across restarts
+- Limited memory on host machine
+- Want shared cache for distributed deployment
+
+**Use memory cache when:**
+- Single Nopher instance
+- Development/testing
+- Simplicity preferred
+- No external dependencies wanted
+
+### Installation
+
+**Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install redis-server
+```
+
+**RHEL/CentOS/Fedora:**
+```bash
+sudo dnf install redis
+```
+
+**macOS:**
+```bash
+brew install redis
+```
+
+**From Docker:**
+```bash
+docker run -d --name redis \
+  -p 6379:6379 \
+  -v redis-data:/data \
+  redis:7-alpine \
+  redis-server --appendonly yes --maxmemory 512mb
+```
+
+### Configuration
+
+**Edit Redis config** (usually `/etc/redis/redis.conf`):
+
+```conf
+# Bind to localhost (or specific IP for remote access)
+bind 127.0.0.1
+
+# Port
+port 6379
+
+# Enable persistence (AOF)
+appendonly yes
+appendfsync everysec
+
+# Memory limit
+maxmemory 512mb
+maxmemory-policy allkeys-lru
+
+# Disable snapshotting (AOF is enough)
+save ""
+
+# Security: Set password (recommended)
+requirepass your_redis_password_here
+```
+
+**Restart Redis:**
+```bash
+sudo systemctl restart redis
+sudo systemctl enable redis
+```
+
+### Nopher Configuration
+
+**With Redis on localhost (no password):**
+```yaml
+caching:
+  enabled: true
+  engine: "redis"
+  redis_url: "redis://localhost:6379/0"
+```
+
+**With Redis password:**
+```yaml
+caching:
+  enabled: true
+  engine: "redis"
+  # Set via environment variable for security
+```
+
+```bash
+export NOPHER_REDIS_URL="redis://:your_password@localhost:6379/0"
+```
+
+**Remote Redis server:**
+```bash
+export NOPHER_REDIS_URL="redis://:password@redis.example.com:6379/0"
+```
+
+### Redis Security
+
+**Best practices:**
+
+1. **Set a strong password:**
+```conf
+requirepass $(openssl rand -base64 32)
+```
+
+2. **Bind to specific interfaces:**
+```conf
+# Local only
+bind 127.0.0.1
+
+# Or specific IP
+bind 192.168.1.10
+```
+
+3. **Disable dangerous commands:**
+```conf
+rename-command FLUSHDB ""
+rename-command FLUSHALL ""
+rename-command KEYS ""
+rename-command CONFIG "CONFIG_$(openssl rand -hex 8)"
+```
+
+4. **Enable TLS** (Redis 6+):
+```conf
+tls-port 6380
+port 0
+tls-cert-file /path/to/redis.crt
+tls-key-file /path/to/redis.key
+tls-ca-cert-file /path/to/ca.crt
+```
+
+```bash
+export NOPHER_REDIS_URL="rediss://:password@redis.example.com:6380/0"
+```
+
+### Monitoring Redis
+
+**Check Redis status:**
+```bash
+redis-cli ping
+# Should return: PONG
+```
+
+**Get Redis info:**
+```bash
+redis-cli info
+```
+
+**Monitor cache operations:**
+```bash
+redis-cli monitor
+```
+
+**Check memory usage:**
+```bash
+redis-cli INFO memory
+```
+
+**Check connected clients:**
+```bash
+redis-cli CLIENT LIST
+```
+
+### Redis for Multiple Nopher Instances
+
+When running multiple Nopher instances behind a load balancer:
+
+**Redis server** (shared):
+```bash
+# On redis.example.com
+sudo apt install redis-server
+sudo systemctl enable --now redis
+```
+
+**Nopher instances** (all pointing to same Redis):
+```bash
+# Instance 1
+export NOPHER_REDIS_URL="redis://:password@redis.example.com:6379/0"
+./nopher --config nopher.yaml
+
+# Instance 2 (same Redis URL)
+export NOPHER_REDIS_URL="redis://:password@redis.example.com:6379/0"
+./nopher --config nopher.yaml
+```
+
+**Benefits:**
+- Cache shared across all instances
+- Consistent responses from any instance
+- Better cache hit rates
+- Reduced database load
+
+### Troubleshooting Redis
+
+**Connection refused:**
+```bash
+# Check Redis is running
+sudo systemctl status redis
+
+# Check Redis is listening
+sudo netstat -tlnp | grep 6379
+
+# Check firewall
+sudo ufw allow 6379
+```
+
+**Authentication failed:**
+```bash
+# Test Redis password
+redis-cli -a your_password ping
+
+# Verify NOPHER_REDIS_URL includes password
+echo $NOPHER_REDIS_URL
+```
+
+**Memory issues:**
+```bash
+# Check memory usage
+redis-cli INFO memory | grep used_memory_human
+
+# Increase maxmemory if needed
+redis-cli CONFIG SET maxmemory 1gb
+```
+
+**Slow performance:**
+```bash
+# Check slow queries
+redis-cli SLOWLOG get 10
+
+# Monitor operations
+redis-cli monitor
+
+# Check latency
+redis-cli --latency
+```
+
+### Cache Performance Metrics
+
+Monitor these metrics to ensure Redis is performing well:
+
+**Nopher cache stats:**
+```
+Cache Statistics:
+  Hits: 9,500
+  Misses: 500
+  Hit Rate: 95%
+  Avg Get Time: 2.3ms (Redis)
+  Avg Set Time: 3.1ms (Redis)
+```
+
+**Target metrics:**
+- Hit rate: > 80%
+- Get time: < 5ms
+- Set time: < 10ms
+
+**Redis memory usage:**
+```bash
+redis-cli INFO stats | grep keyspace
+# db0:keys=1234,expires=567,avg_ttl=298000
+```
 
 ---
 

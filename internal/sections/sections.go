@@ -1,0 +1,341 @@
+package sections
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/nbd-wtf/go-nostr"
+	"github.com/sandwich/nopher/internal/storage"
+)
+
+// Section defines a content section with filtering and pagination
+type Section struct {
+	Name        string
+	Title       string
+	Description string
+	Filters     FilterSet
+	SortBy      SortField
+	SortOrder   SortOrder
+	Limit       int
+	ShowDates   bool
+	ShowAuthors bool
+	GroupBy     GroupField
+}
+
+// FilterSet contains multiple filter criteria
+type FilterSet struct {
+	Kinds       []int
+	Authors     []string
+	Tags        map[string][]string
+	Since       *time.Time
+	Until       *time.Time
+	Search      string
+	Scope       Scope
+}
+
+// SortField defines how to sort events
+type SortField string
+
+const (
+	SortByCreatedAt  SortField = "created_at"
+	SortByPublishedAt SortField = "published_at"
+	SortByReactions  SortField = "reactions"
+	SortByZaps       SortField = "zaps"
+	SortByReplies    SortField = "replies"
+)
+
+// SortOrder defines sort direction
+type SortOrder string
+
+const (
+	SortAsc  SortOrder = "asc"
+	SortDesc SortOrder = "desc"
+)
+
+// GroupField defines how to group events
+type GroupField string
+
+const (
+	GroupNone   GroupField = ""
+	GroupByDay  GroupField = "day"
+	GroupByWeek GroupField = "week"
+	GroupByMonth GroupField = "month"
+	GroupByYear GroupField = "year"
+	GroupByAuthor GroupField = "author"
+	GroupByKind GroupField = "kind"
+)
+
+// Scope defines the author scope for filtering
+type Scope string
+
+const (
+	ScopeSelf      Scope = "self"
+	ScopeFollowing Scope = "following"
+	ScopeMutual    Scope = "mutual"
+	ScopeFoaf      Scope = "foaf"
+	ScopeAll       Scope = "all"
+)
+
+// Page represents a paginated section result
+type Page struct {
+	Section    *Section
+	Events     []*nostr.Event
+	PageNumber int
+	TotalPages int
+	TotalItems int64
+	HasNext    bool
+	HasPrev    bool
+}
+
+// Manager manages sections and their content
+type Manager struct {
+	storage  *storage.Storage
+	sections map[string]*Section
+}
+
+// NewManager creates a new section manager
+func NewManager(st *storage.Storage) *Manager {
+	return &Manager{
+		storage:  st,
+		sections: make(map[string]*Section),
+	}
+}
+
+// RegisterSection registers a section definition
+func (m *Manager) RegisterSection(section *Section) error {
+	if section.Name == "" {
+		return fmt.Errorf("section name is required")
+	}
+
+	if section.Limit == 0 {
+		section.Limit = 20 // Default limit
+	}
+
+	m.sections[section.Name] = section
+	return nil
+}
+
+// GetSection retrieves a section by name
+func (m *Manager) GetSection(name string) (*Section, error) {
+	section, exists := m.sections[name]
+	if !exists {
+		return nil, fmt.Errorf("section not found: %s", name)
+	}
+	return section, nil
+}
+
+// ListSections returns all registered sections
+func (m *Manager) ListSections() []*Section {
+	sections := make([]*Section, 0, len(m.sections))
+	for _, section := range m.sections {
+		sections = append(sections, section)
+	}
+	return sections
+}
+
+// GetPage retrieves a page of events for a section
+func (m *Manager) GetPage(ctx context.Context, sectionName string, pageNum int) (*Page, error) {
+	section, err := m.GetSection(sectionName)
+	if err != nil {
+		return nil, err
+	}
+
+	if pageNum < 1 {
+		pageNum = 1
+	}
+
+	// Build Nostr filter from section filters
+	filter := m.buildFilter(section, pageNum)
+
+	// Query events
+	events, err := m.storage.QueryEvents(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query events: %w", err)
+	}
+
+	// Sort events
+	m.sortEvents(events, section.SortBy, section.SortOrder)
+
+	// Calculate pagination
+	offset := (pageNum - 1) * section.Limit
+	totalItems := int64(len(events))
+	totalPages := int((totalItems + int64(section.Limit) - 1) / int64(section.Limit))
+
+	// Extract page events
+	var pageEvents []*nostr.Event
+	if offset < len(events) {
+		end := offset + section.Limit
+		if end > len(events) {
+			end = len(events)
+		}
+		pageEvents = events[offset:end]
+	}
+
+	return &Page{
+		Section:    section,
+		Events:     pageEvents,
+		PageNumber: pageNum,
+		TotalPages: totalPages,
+		TotalItems: totalItems,
+		HasNext:    pageNum < totalPages,
+		HasPrev:    pageNum > 1,
+	}, nil
+}
+
+// buildFilter converts section filters to Nostr filter
+func (m *Manager) buildFilter(section *Section, pageNum int) nostr.Filter {
+	filter := nostr.Filter{
+		Limit: section.Limit * pageNum, // Get all up to this page
+	}
+
+	if len(section.Filters.Kinds) > 0 {
+		filter.Kinds = section.Filters.Kinds
+	}
+
+	if len(section.Filters.Authors) > 0 {
+		filter.Authors = section.Filters.Authors
+	}
+
+	if section.Filters.Since != nil {
+		since := nostr.Timestamp(section.Filters.Since.Unix())
+		filter.Since = &since
+	}
+
+	if section.Filters.Until != nil {
+		until := nostr.Timestamp(section.Filters.Until.Unix())
+		filter.Until = &until
+	}
+
+	// Add tag filters
+	if len(section.Filters.Tags) > 0 {
+		filter.Tags = make(nostr.TagMap)
+		for key, values := range section.Filters.Tags {
+			filter.Tags[key] = values
+		}
+	}
+
+	return filter
+}
+
+// sortEvents sorts events based on field and order
+func (m *Manager) sortEvents(events []*nostr.Event, field SortField, order SortOrder) {
+	// Simple bubble sort for now (can optimize later)
+	n := len(events)
+	for i := 0; i < n-1; i++ {
+		for j := 0; j < n-i-1; j++ {
+			shouldSwap := false
+
+			switch field {
+			case SortByCreatedAt, SortByPublishedAt:
+				if order == SortDesc {
+					shouldSwap = events[j].CreatedAt < events[j+1].CreatedAt
+				} else {
+					shouldSwap = events[j].CreatedAt > events[j+1].CreatedAt
+				}
+			// For other sort fields, would need aggregate data
+			// This is simplified for now
+			}
+
+			if shouldSwap {
+				events[j], events[j+1] = events[j+1], events[j]
+			}
+		}
+	}
+}
+
+// DefaultSections returns commonly used section definitions
+func DefaultSections() []*Section {
+	return []*Section{
+		{
+			Name:        "notes",
+			Title:       "Notes",
+			Description: "Recent short-form notes",
+			Filters: FilterSet{
+				Kinds: []int{1},
+			},
+			SortBy:    SortByCreatedAt,
+			SortOrder: SortDesc,
+			Limit:     20,
+			ShowDates: true,
+			ShowAuthors: true,
+		},
+		{
+			Name:        "articles",
+			Title:       "Articles",
+			Description: "Long-form articles",
+			Filters: FilterSet{
+				Kinds: []int{30023},
+			},
+			SortBy:    SortByPublishedAt,
+			SortOrder: SortDesc,
+			Limit:     10,
+			ShowDates: true,
+			ShowAuthors: true,
+		},
+		{
+			Name:        "reactions",
+			Title:       "Reactions",
+			Description: "Recent reactions and likes",
+			Filters: FilterSet{
+				Kinds: []int{7},
+			},
+			SortBy:    SortByCreatedAt,
+			SortOrder: SortDesc,
+			Limit:     50,
+			ShowDates: true,
+			ShowAuthors: true,
+		},
+		{
+			Name:        "zaps",
+			Title:       "Zaps",
+			Description: "Recent zap receipts",
+			Filters: FilterSet{
+				Kinds: []int{9735},
+			},
+			SortBy:    SortByCreatedAt,
+			SortOrder: SortDesc,
+			Limit:     20,
+			ShowDates: true,
+			ShowAuthors: true,
+		},
+	}
+}
+
+// InboxSection creates an inbox section for a specific pubkey
+func InboxSection(ownerPubkey string) *Section {
+	return &Section{
+		Name:        "inbox",
+		Title:       "Inbox",
+		Description: "Mentions, replies, and interactions",
+		Filters: FilterSet{
+			Tags: map[string][]string{
+				"p": {ownerPubkey},
+			},
+			Kinds: []int{1, 7, 9735}, // Notes, reactions, zaps
+		},
+		SortBy:    SortByCreatedAt,
+		SortOrder: SortDesc,
+		Limit:     50,
+		ShowDates: true,
+		ShowAuthors: true,
+	}
+}
+
+// OutboxSection creates an outbox section for a specific pubkey
+func OutboxSection(ownerPubkey string) *Section {
+	return &Section{
+		Name:        "outbox",
+		Title:       "Outbox",
+		Description: "Your published content",
+		Filters: FilterSet{
+			Authors: []string{ownerPubkey},
+			Kinds:   []int{1, 30023}, // Notes and articles
+		},
+		SortBy:    SortByCreatedAt,
+		SortOrder: SortDesc,
+		Limit:     20,
+		ShowDates: true,
+		ShowAuthors: false,
+	}
+}
