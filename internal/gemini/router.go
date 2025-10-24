@@ -8,6 +8,7 @@ import (
 
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sandwich/nopher/internal/aggregates"
+	"github.com/sandwich/nopher/internal/sections"
 )
 
 // Router handles URL routing for Gemini requests
@@ -36,6 +37,14 @@ func (r *Router) Route(u *url.URL) []byte {
 	path := u.Path
 	if path == "" {
 		path = "/"
+	}
+
+	// Check if sections are registered for this path (sections override defaults)
+	if r.server.GetSectionManager() != nil {
+		sectionsList := r.server.GetSectionManager().GetSectionsByPath(path)
+		if len(sectionsList) > 0 {
+			return r.handleSections(ctx, sectionsList, path, u.Query())
+		}
 	}
 
 	// Parse path
@@ -335,4 +344,76 @@ func (r *Router) geminiURL(path string) string {
 		return fmt.Sprintf("gemini://%s%s", r.host, path)
 	}
 	return fmt.Sprintf("gemini://%s:%d%s", r.host, r.port, path)
+}
+
+// handleSections renders multiple sections on a single page (e.g., homepage with multiple filtered views)
+func (r *Router) handleSections(ctx context.Context, sectionsList []*sections.Section, path string, query url.Values) []byte {
+	var gemtext strings.Builder
+
+	// Render each section in order
+	for i, section := range sectionsList {
+		// Get section page (always page 1 for multi-section views)
+		sectionPage, err := r.server.GetSectionManager().GetPage(ctx, section.Name, 1)
+		if err != nil {
+			gemtext.WriteString(fmt.Sprintf("# Error loading section %s\n\n", section.Name))
+			gemtext.WriteString(fmt.Sprintf("Error: %v\n\n", err))
+			continue
+		}
+
+		// Section title and description
+		if section.Title != "" {
+			gemtext.WriteString(fmt.Sprintf("## %s\n\n", section.Title))
+		}
+		if section.Description != "" {
+			gemtext.WriteString(fmt.Sprintf("%s\n\n", section.Description))
+		}
+
+		// Render events from section
+		if len(sectionPage.Events) > 0 {
+			for _, event := range sectionPage.Events {
+				// Extract first line for display
+				content := event.Content
+				if len(content) > 80 {
+					content = content[:77] + "..."
+				}
+				firstLine := strings.Split(content, "\n")[0]
+
+				linkText := firstLine
+
+				// Add author and timestamp if configured
+				if section.ShowAuthors && section.ShowDates {
+					gemtext.WriteString(fmt.Sprintf("%s - %s\n",
+						truncatePubkey(event.PubKey),
+						formatTimestamp(event.CreatedAt)))
+				} else if section.ShowAuthors {
+					gemtext.WriteString(fmt.Sprintf("%s\n", truncatePubkey(event.PubKey)))
+				} else if section.ShowDates {
+					gemtext.WriteString(fmt.Sprintf("%s\n", formatTimestamp(event.CreatedAt)))
+				}
+
+				// Add the clickable link
+				gemtext.WriteString(fmt.Sprintf("=> %s %s\n\n", r.geminiURL(fmt.Sprintf("/note/%s", event.ID)), linkText))
+			}
+		} else {
+			gemtext.WriteString("No content yet.\n\n")
+		}
+
+		// Add "more" link if configured
+		if section.MoreLink != nil {
+			targetSection, err := r.server.GetSectionManager().GetSection(section.MoreLink.SectionRef)
+			if err == nil && targetSection.Path != "" {
+				gemtext.WriteString(fmt.Sprintf("=> %s → %s\n\n", r.geminiURL(targetSection.Path), section.MoreLink.Text))
+			}
+		}
+
+		// Add separator between sections (except after last)
+		if i < len(sectionsList)-1 {
+			gemtext.WriteString("---\n\n")
+		}
+	}
+
+	// Add home link at bottom
+	gemtext.WriteString("\n=> / ⌂ Home\n")
+
+	return FormatSuccessResponse(gemtext.String())
 }

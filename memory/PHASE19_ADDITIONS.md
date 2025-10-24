@@ -2,6 +2,7 @@
 
 **Status**: ✅ Complete
 **Completed**: 2025-10-24 (after Phase 19 completion)
+**Updated**: 2025-10-24 (added Gemini protocol parity)
 
 ## Overview
 
@@ -90,6 +91,8 @@ rendered, _ := r.parser.RenderGopher([]byte(content), nil)
 - `internal/sections/sections.go`
 - `internal/gopher/router.go`
 - `internal/gopher/server.go`
+- `internal/gemini/router.go`
+- `internal/gemini/server.go`
 
 #### Feature 2a: "More" Links ✅
 
@@ -361,10 +364,13 @@ Operators can now:
 - `internal/entities/resolver.go` - NIP-19 entity resolution
 - `internal/entities/formatters.go` - Protocol-specific formatters
 
-### Modified Files (4)
+### Modified Files (7)
 - `internal/sections/sections.go` - MoreLink, Order, GetSectionsByPath()
 - `internal/gopher/router.go` - handleSections(), sections check
+- `internal/gopher/server.go` - Added sectionManager field
 - `internal/gopher/renderer.go` - Entity resolution integration
+- `internal/gemini/router.go` - handleSections(), sections check
+- `internal/gemini/server.go` - Added sectionManager field
 - `internal/gemini/renderer.go` - Entity resolution integration
 
 ### Documentation Files (1)

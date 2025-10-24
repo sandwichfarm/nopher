@@ -13,18 +13,20 @@ import (
 
 	"github.com/sandwich/nopher/internal/aggregates"
 	"github.com/sandwich/nopher/internal/config"
+	"github.com/sandwich/nopher/internal/sections"
 	"github.com/sandwich/nopher/internal/storage"
 )
 
 // Server implements a Gemini protocol server
 type Server struct {
-	config      *config.GeminiProtocol
-	fullConfig  *config.Config
-	storage     *storage.Storage
-	router      *Router
-	host        string
-	queryHelper *aggregates.QueryHelper
-	tlsConfig   *tls.Config
+	config         *config.GeminiProtocol
+	fullConfig     *config.Config
+	storage        *storage.Storage
+	router         *Router
+	host           string
+	queryHelper    *aggregates.QueryHelper
+	sectionManager *sections.Manager
+	tlsConfig      *tls.Config
 
 	listener net.Listener
 	wg       sync.WaitGroup
@@ -45,6 +47,9 @@ func New(cfg *config.GeminiProtocol, fullCfg *config.Config, st *storage.Storage
 		cancel:      cancel,
 		queryHelper: aggregates.NewQueryHelper(st, fullCfg, aggMgr),
 	}
+
+	// Initialize sections manager (opt-in for custom filtered views)
+	s.sectionManager = sections.NewManager(st)
 
 	// Initialize TLS configuration
 	if err := s.initTLS(); err != nil {
@@ -192,4 +197,9 @@ func (s *Server) GetHost() string {
 // GetQueryHelper returns the query helper instance
 func (s *Server) GetQueryHelper() *aggregates.QueryHelper {
 	return s.queryHelper
+}
+
+// GetSectionManager returns the section manager instance
+func (s *Server) GetSectionManager() *sections.Manager {
+	return s.sectionManager
 }

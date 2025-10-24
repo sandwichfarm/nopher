@@ -200,7 +200,7 @@ Implementation Notes
 - Sections are completely optional
 - Default routes work without configuration
 - FilterSet supports kinds, authors, tags, time ranges
-- Gopher and Gemini protocols supported
+- **Full protocol parity**: Gopher and Gemini both support sections
 
 🚧 **Not Yet Implemented** (Future):
 - YAML configuration for sections (currently Go code only)
