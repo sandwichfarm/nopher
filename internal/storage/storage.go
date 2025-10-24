@@ -96,6 +96,12 @@ func (s *Storage) QueryEvents(ctx context.Context, filter nostr.Filter) ([]*nost
 	return events, nil
 }
 
+// QuerySync is a synchronous query adapter (implements search.Relay interface)
+func (s *Storage) QuerySync(ctx context.Context, filter nostr.Filter) ([]*nostr.Event, error) {
+	// Use QueryEventsWithSearch to support NIP-50
+	return s.QueryEventsWithSearch(ctx, filter)
+}
+
 // Close closes the storage connections
 func (s *Storage) Close() error {
 	if s.db != nil {

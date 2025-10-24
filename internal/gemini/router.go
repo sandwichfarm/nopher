@@ -260,10 +260,55 @@ func (r *Router) handleSearch(ctx context.Context, query url.Values) []byte {
 		return FormatInputResponse("Enter search query:", false)
 	}
 
-	// TODO: Implement actual search functionality
+	// Perform NIP-50 search
+	events, err := r.server.GetStorage().QueryEventsWithSearch(ctx, nostr.Filter{
+		Search: searchQuery,
+		Kinds:  []int{0, 1, 30023}, // Profiles, notes, articles
+		Limit:  50,
+	})
+
 	gemtext := "# Search Results\n\n"
-	gemtext += fmt.Sprintf("Searching for: %s\n\n", searchQuery)
-	gemtext += "Search functionality not yet implemented.\n\n"
+	gemtext += fmt.Sprintf("Query: \"%s\"\n\n", searchQuery)
+
+	if err != nil {
+		gemtext += fmt.Sprintf("Error: %v\n\n", err)
+		gemtext += fmt.Sprintf("=> %s Try Again\n", r.geminiURL("/search"))
+		gemtext += fmt.Sprintf("=> %s Back to Home\n", r.geminiURL("/"))
+		return FormatSuccessResponse(gemtext)
+	}
+
+	if len(events) == 0 {
+		gemtext += "No results found.\n\n"
+		gemtext += fmt.Sprintf("=> %s Try Another Search\n", r.geminiURL("/search"))
+		gemtext += fmt.Sprintf("=> %s Back to Home\n", r.geminiURL("/"))
+		return FormatSuccessResponse(gemtext)
+	}
+
+	gemtext += fmt.Sprintf("Found %d results:\n\n", len(events))
+
+	for _, event := range events {
+		switch event.Kind {
+		case 0: // Profile
+			gemtext += fmt.Sprintf("=> %s [Profile] %s\n",
+				r.geminiURL(fmt.Sprintf("/profile/%s", event.PubKey)),
+				truncatePubkey(event.PubKey))
+
+		case 1: // Note
+			summary := r.renderer.GetSummary(event.Content, 100)
+			gemtext += fmt.Sprintf("=> %s [Note] %s\n",
+				r.geminiURL(fmt.Sprintf("/note/%s", event.ID)),
+				summary)
+
+		case 30023: // Article
+			summary := r.renderer.GetSummary(event.Content, 100)
+			gemtext += fmt.Sprintf("=> %s [Article] %s\n",
+				r.geminiURL(fmt.Sprintf("/note/%s", event.ID)),
+				summary)
+		}
+	}
+
+	gemtext += "\n"
+	gemtext += fmt.Sprintf("=> %s New Search\n", r.geminiURL("/search"))
 	gemtext += fmt.Sprintf("=> %s Back to Home\n", r.geminiURL("/"))
 
 	return FormatSuccessResponse(gemtext)

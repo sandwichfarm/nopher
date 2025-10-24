@@ -752,9 +752,115 @@ behavior:
 
 ---
 
+## Phase 19: Profile Enhancement and Search Implementation
+
+**Status**: 🔄 In Progress
+
+**Goal**: Implement proper profile parsing, enhance diagnostics, and add functional search across all protocols.
+
+**Key Features**:
+
+### 1. Profile Parsing (Kind 0)
+Currently profile endpoints show raw data. Parse kind 0 JSON metadata to display:
+- Display name
+- About/bio
+- Picture URL (as text link)
+- NIP-05 identifier
+- LN address
+- Website
+
+### 2. Search Implementation
+Currently search returns "not yet implemented". Add full-text search:
+- Search across note content (kind 1)
+- Search in profile names/bios (kind 0)
+- Search by npub/hex pubkey
+- Search by note ID (event ID)
+- Protocol-appropriate result formatting
+
+### 3. Enhanced Diagnostics
+Expand diagnostics endpoint with actual system stats:
+- Storage statistics (event counts by kind)
+- Relay connection status
+- Sync status and progress
+- Cache hit/miss rates
+- Uptime
+- Memory/database size
+
+### 4. Profile Metadata Helpers
+Create reusable profile parsing utilities:
+- Parse kind 0 JSON safely
+- Extract common fields (name, about, picture, etc.)
+- Handle missing/malformed data gracefully
+- Fallback to npub if no display name
+
+**Deliverables**:
+
+1. **Profile Parser** ✅
+   - `internal/nostr/profile.go` - Kind 0 JSON parsing
+   - `internal/nostr/profile_test.go` - Comprehensive tests
+   - Handles all common kind 0 fields
+
+2. **Profile Rendering** ✅
+   - Update `internal/gopher/renderer.go` RenderProfile()
+   - Update `internal/gemini/renderer.go` RenderProfile()
+   - Update `internal/finger/renderer.go` QueryUser()
+
+3. **Search Implementation** ✅
+   - `internal/search/engine.go` - Search logic
+   - `internal/search/engine_test.go` - Search tests
+   - SQLite FTS (Full-Text Search) or simple LIKE queries
+   - Pluggable interface for future improvements
+
+4. **Search Endpoints** ✅
+   - Update `internal/gopher/router.go` handleSearch()
+   - Update `internal/gemini/router.go` handleSearch()
+   - Handle empty queries (prompt for input)
+   - Display ranked results
+
+5. **Diagnostics Enhancement** ✅
+   - Implement stats in `internal/storage/stats.go`
+   - Update `internal/gopher/router.go` handleDiagnostics()
+   - Update `internal/gemini/router.go` handleDiagnostics()
+   - Real-time data, not just static messages
+
+6. **Tests** ✅
+   - Profile parsing tests
+   - Search functionality tests
+   - Diagnostics accuracy tests
+   - Integration tests for all protocols
+
+**Completion Criteria**:
+
+- [ ] Profile endpoints display parsed metadata (name, bio, picture link)
+- [ ] Search returns relevant results for content queries
+- [ ] Search works by npub/pubkey
+- [ ] Search works by event ID
+- [ ] Diagnostics show real statistics
+- [ ] All unit tests pass
+- [ ] Integration tests verify functionality
+- [ ] No regressions in existing features
+
+**Files to Create**:
+- `internal/nostr/profile.go`
+- `internal/nostr/profile_test.go`
+- `internal/search/engine.go`
+- `internal/search/engine_test.go`
+
+**Files to Modify**:
+- `internal/gopher/renderer.go`
+- `internal/gopher/router.go`
+- `internal/gemini/renderer.go`
+- `internal/gemini/router.go`
+- `internal/finger/renderer.go`
+- `internal/storage/stats.go`
+
+**Dependencies**: None (Phase 18 complete)
+
+---
+
 ## Summary (Updated)
 
-**Total Phases**: 18  
+**Total Phases**: 19
 **Status**: Active Development
 
 **Phase Breakdown**:

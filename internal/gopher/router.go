@@ -78,6 +78,9 @@ func (r *Router) Route(selector string) []byte {
 	case "diagnostics":
 		return r.handleDiagnostics(ctx)
 
+	case "search":
+		return r.handleSearch(ctx, parts[1:])
+
 	// Legacy support - redirect to new endpoints
 	case "outbox":
 		return r.handleNotes(ctx, parts[1:])
@@ -101,6 +104,7 @@ func (r *Router) handleRoot(ctx context.Context) []byte {
 	gmap.AddDirectory("Replies", "/replies")
 	gmap.AddDirectory("Mentions", "/mentions")
 	gmap.AddSpacer()
+	gmap.AddDirectory("Search", "/search")
 	gmap.AddDirectory("Diagnostics", "/diagnostics")
 	gmap.AddSpacer()
 	gmap.AddInfo("Powered by Nopher")
@@ -440,6 +444,82 @@ func (r *Router) handleDiagnostics(ctx context.Context) []byte {
 	return gmap.Bytes()
 }
 
+// handleSearch handles search requests
+func (r *Router) handleSearch(ctx context.Context, params []string) []byte {
+	gmap := NewGophermap(r.host, r.port)
+
+	// If no search query, show search page
+	if len(params) == 0 || params[0] == "" {
+		gmap.AddInfo("Search Nostr Content")
+		gmap.AddInfo(strings.Repeat("=", 70))
+		gmap.AddSpacer()
+		gmap.AddInfo("Note: Gopher protocol requires entering full path with query")
+		gmap.AddInfo("Format: /search/your+search+terms")
+		gmap.AddSpacer()
+		gmap.AddInfo("Examples:")
+		gmap.AddInfo("  /search/nostr+protocol")
+		gmap.AddInfo("  /search/bitcoin")
+		gmap.AddSpacer()
+		gmap.AddDirectory("← Back to Home", "/")
+		return gmap.Bytes()
+	}
+
+	// Decode search query (URL encoded, replace + with space)
+	query := strings.ReplaceAll(params[0], "+", " ")
+
+	gmap.AddInfo(fmt.Sprintf("Search Results: \"%s\"", query))
+	gmap.AddInfo(strings.Repeat("=", 70))
+	gmap.AddSpacer()
+
+	// Perform search using NIP-50
+	events, err := r.server.storage.QueryEventsWithSearch(ctx, nostr.Filter{
+		Search: query,
+		Kinds:  []int{0, 1, 30023}, // Profiles, notes, articles
+		Limit:  20,
+	})
+
+	if err != nil {
+		gmap.AddError(fmt.Sprintf("Search failed: %v", err))
+		gmap.AddSpacer()
+		gmap.AddDirectory("← Back to Search", "/search")
+		return gmap.Bytes()
+	}
+
+	if len(events) == 0 {
+		gmap.AddInfo("No results found")
+		gmap.AddSpacer()
+		gmap.AddDirectory("← Back to Search", "/search")
+		return gmap.Bytes()
+	}
+
+	gmap.AddInfo(fmt.Sprintf("Found %d results:", len(events)))
+	gmap.AddSpacer()
+
+	for _, event := range events {
+		switch event.Kind {
+		case 0: // Profile
+			gmap.AddTextFile(fmt.Sprintf("[Profile] %s", truncatePubkey(event.PubKey)),
+				fmt.Sprintf("/profile/%s", event.PubKey))
+
+		case 1: // Note
+			summary := getSummary(event.Content, 80)
+			gmap.AddTextFile(fmt.Sprintf("[Note] %s", summary),
+				fmt.Sprintf("/note/%s", event.ID))
+
+		case 30023: // Article
+			summary := getSummary(event.Content, 80)
+			gmap.AddTextFile(fmt.Sprintf("[Article] %s", summary),
+				fmt.Sprintf("/note/%s", event.ID))
+		}
+	}
+
+	gmap.AddSpacer()
+	gmap.AddDirectory("← Back to Search", "/search")
+	gmap.AddDirectory("← Back to Home", "/")
+
+	return gmap.Bytes()
+}
+
 // errorResponse returns an error gophermap
 func (r *Router) errorResponse(message string) []byte {
 	gmap := NewGophermap(r.host, r.port)
@@ -447,4 +527,21 @@ func (r *Router) errorResponse(message string) []byte {
 	gmap.AddSpacer()
 	gmap.AddDirectory("← Back to Home", "/")
 	return gmap.Bytes()
+}
+
+// getSummary creates a summary of content for display
+func getSummary(content string, maxLen int) string {
+	// Remove newlines
+	summary := strings.ReplaceAll(content, "\n", " ")
+	summary = strings.ReplaceAll(summary, "\r", "")
+
+	// Trim whitespace
+	summary = strings.TrimSpace(summary)
+
+	// Truncate if needed
+	if len(summary) > maxLen {
+		return summary[:maxLen] + "..."
+	}
+
+	return summary
 }

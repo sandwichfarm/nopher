@@ -9,6 +9,7 @@ import (
 	"github.com/sandwich/nopher/internal/aggregates"
 	"github.com/sandwich/nopher/internal/config"
 	"github.com/sandwich/nopher/internal/markdown"
+	nostrclient "github.com/sandwich/nopher/internal/nostr"
 	"github.com/sandwich/nopher/internal/presentation"
 )
 
@@ -64,14 +65,66 @@ func (r *Renderer) RenderNote(event *nostr.Event, agg *aggregates.EventAggregate
 func (r *Renderer) RenderProfile(profileEvent *nostr.Event) string {
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("Profile: %s\n", truncatePubkey(profileEvent.PubKey)))
+	// Parse profile metadata
+	profile := nostrclient.ParseProfile(profileEvent)
+	if profile == nil {
+		// Fallback for invalid profile
+		sb.WriteString(fmt.Sprintf("Profile: %s\n", truncatePubkey(profileEvent.PubKey)))
+		sb.WriteString(strings.Repeat("=", 70))
+		sb.WriteString("\n\nInvalid profile data\n")
+		return sb.String()
+	}
+
+	// Header with display name
+	displayName := profile.GetDisplayName()
+	if displayName == "" {
+		displayName = truncatePubkey(profileEvent.PubKey)
+	}
+
+	sb.WriteString(fmt.Sprintf("Profile: %s\n", displayName))
 	sb.WriteString(strings.Repeat("=", 70))
 	sb.WriteString("\n\n")
 
-	// TODO: Parse kind 0 JSON content for name, about, picture
-	sb.WriteString("Content:\n")
-	sb.WriteString(profileEvent.Content)
+	// Pubkey
+	sb.WriteString(fmt.Sprintf("Pubkey: %s\n", profileEvent.PubKey))
 	sb.WriteString("\n")
+
+	// Name fields
+	if profile.Name != "" {
+		sb.WriteString(fmt.Sprintf("Name: %s\n", profile.Name))
+	}
+	if profile.DisplayName != "" && profile.DisplayName != profile.Name {
+		sb.WriteString(fmt.Sprintf("Display Name: %s\n", profile.DisplayName))
+	}
+
+	// About/Bio
+	if profile.About != "" {
+		sb.WriteString("\nAbout:\n")
+		sb.WriteString(profile.About)
+		sb.WriteString("\n")
+	}
+
+	// Contact information
+	if profile.Website != "" {
+		sb.WriteString(fmt.Sprintf("\nWebsite: %s\n", profile.Website))
+	}
+	if profile.NIP05 != "" {
+		sb.WriteString(fmt.Sprintf("NIP-05: %s\n", profile.NIP05))
+	}
+
+	// Lightning info
+	lightningAddr := profile.GetLightningAddress()
+	if lightningAddr != "" {
+		sb.WriteString(fmt.Sprintf("Lightning: %s\n", lightningAddr))
+	}
+
+	// Media
+	if profile.Picture != "" {
+		sb.WriteString(fmt.Sprintf("\nPicture: %s\n", profile.Picture))
+	}
+	if profile.Banner != "" {
+		sb.WriteString(fmt.Sprintf("Banner: %s\n", profile.Banner))
+	}
 
 	return sb.String()
 }

@@ -1,13 +1,13 @@
 package finger
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sandwich/nopher/internal/markdown"
+	nostrclient "github.com/sandwich/nopher/internal/nostr"
 )
 
 // Renderer renders Finger protocol responses
@@ -22,37 +22,41 @@ func NewRenderer() *Renderer {
 	}
 }
 
-// ProfileMetadata represents parsed profile JSON
-type ProfileMetadata struct {
-	Name    string `json:"name"`
-	About   string `json:"about"`
-	Picture string `json:"picture"`
-	Nip05   string `json:"nip05"`
-}
-
 // RenderUser renders user information in Finger format
 func (r *Renderer) RenderUser(pubkey string, profile *nostr.Event, notes interface{}, verbose bool) string {
 	var sb strings.Builder
 
-	// Parse profile metadata
-	var meta ProfileMetadata
+	// Parse profile metadata using proper parser
+	var meta *nostrclient.ProfileMetadata
 	if profile != nil {
-		json.Unmarshal([]byte(profile.Content), &meta)
+		meta = nostrclient.ParseProfile(profile)
+	}
+	if meta == nil {
+		meta = &nostrclient.ProfileMetadata{} // Empty profile
 	}
 
-	// Header line
-	name := meta.Name
-	if name == "" {
-		name = truncatePubkey(pubkey)
+	// Header line with display name
+	displayName := meta.GetDisplayName()
+	if displayName == "" {
+		displayName = truncatePubkey(pubkey)
 	}
 
-	sb.WriteString(fmt.Sprintf("User: %s\n", name))
+	sb.WriteString(fmt.Sprintf("User: %s\n", displayName))
 
 	// Basic info (always shown)
-	if meta.Nip05 != "" {
-		sb.WriteString(fmt.Sprintf("NIP-05: %s\n", meta.Nip05))
+	if meta.NIP05 != "" {
+		sb.WriteString(fmt.Sprintf("NIP-05: %s\n", meta.NIP05))
+	}
+	if meta.Name != "" && meta.DisplayName != "" && meta.Name != meta.DisplayName {
+		sb.WriteString(fmt.Sprintf("Name: %s\n", meta.Name))
 	}
 	sb.WriteString(fmt.Sprintf("Pubkey: %s\n", truncatePubkey(pubkey)))
+
+	// Lightning address (basic info)
+	lightningAddr := meta.GetLightningAddress()
+	if lightningAddr != "" {
+		sb.WriteString(fmt.Sprintf("Lightning: %s\n", lightningAddr))
+	}
 
 	// Verbose mode shows more details
 	if verbose {
@@ -63,6 +67,11 @@ func (r *Renderer) RenderUser(pubkey string, profile *nostr.Event, notes interfa
 				CompactMode: true,
 			})
 			sb.WriteString(fmt.Sprintf("\nAbout:\n%s\n", about))
+		}
+
+		// Additional contact info in verbose mode
+		if meta.Website != "" {
+			sb.WriteString(fmt.Sprintf("Website: %s\n", meta.Website))
 		}
 
 		// Show recent activity
