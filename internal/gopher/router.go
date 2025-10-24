@@ -3,11 +3,14 @@ package gopher
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sandwich/nopher/internal/aggregates"
 )
+
+const itemsPerPage = 9 // Gopher clients use single-digit hotkeys (1-9)
 
 // Router handles selector routing for Gopher requests
 type Router struct {
@@ -25,6 +28,70 @@ func NewRouter(server *Server, host string, port int) *Router {
 		port:     port,
 		renderer: NewRenderer(server.fullConfig),
 	}
+}
+
+// parsePageFromParts extracts page number from URL parts like ["page", "2"]
+// Returns page number (1-indexed) and remaining parts
+func parsePageFromParts(parts []string) (int, []string) {
+	page := 1 // Default to page 1
+	remaining := parts
+
+	// Check for /page/N pattern
+	for i := 0; i < len(parts)-1; i++ {
+		if parts[i] == "page" {
+			if pageNum, err := strconv.Atoi(parts[i+1]); err == nil && pageNum > 0 {
+				page = pageNum
+				// Remove "page" and number from parts
+				remaining = append(parts[:i], parts[i+2:]...)
+				break
+			}
+		}
+	}
+
+	return page, remaining
+}
+
+// addPaginationLinks adds Next/Previous/Home navigation to gophermap
+func (r *Router) addPaginationLinks(gmap *Gophermap, basePath string, page, totalItems int) {
+	totalPages := (totalItems + itemsPerPage - 1) / itemsPerPage
+
+	gmap.AddSpacer()
+
+	// Previous page link
+	if page > 1 {
+		prevPath := fmt.Sprintf("%s/page/%d", basePath, page-1)
+		gmap.AddDirectory("← Previous Page", prevPath)
+	}
+
+	// Next page link
+	if page < totalPages {
+		nextPath := fmt.Sprintf("%s/page/%d", basePath, page+1)
+		gmap.AddDirectory("→ Next Page", nextPath)
+	}
+
+	// Page info
+	if totalPages > 1 {
+		gmap.AddInfo(fmt.Sprintf("Page %d of %d", page, totalPages))
+	}
+
+	gmap.AddSpacer()
+	gmap.AddDirectory("⌂ Home", "/")
+}
+
+// paginateItems returns a subset of items for the current page
+func paginateItems[T any](items []T, page int) []T {
+	start := (page - 1) * itemsPerPage
+	end := start + itemsPerPage
+
+	if start >= len(items) {
+		return []T{}
+	}
+
+	if end > len(items) {
+		end = len(items)
+	}
+
+	return items[start:end]
 }
 
 // Route routes a selector to the appropriate handler
@@ -188,9 +255,12 @@ func (r *Router) handleInbox(ctx context.Context, parts []string) []byte {
 func (r *Router) handleNotes(ctx context.Context, parts []string) []byte {
 	gmap := NewGophermap(r.host, r.port)
 
-	// Check if viewing a specific note
-	if len(parts) > 0 && parts[0] != "" {
-		return r.handleNote(ctx, parts[0])
+	// Parse page number from parts
+	page, remaining := parsePageFromParts(parts)
+
+	// Check if viewing a specific note (not "page")
+	if len(remaining) > 0 && remaining[0] != "" && remaining[0] != "page" {
+		return r.handleNote(ctx, remaining[0])
 	}
 
 	// Add header if configured
@@ -198,20 +268,24 @@ func (r *Router) handleNotes(ctx context.Context, parts []string) []byte {
 
 	// Query notes
 	queryHelper := r.server.GetQueryHelper()
-	notes, err := queryHelper.GetNotes(ctx, 50)
+	notes, err := queryHelper.GetNotes(ctx, 100) // Get more for pagination
 	if err != nil {
 		gmap.AddError(fmt.Sprintf("Error loading notes: %v", err))
 		gmap.AddSpacer()
-		gmap.AddDirectory("← Back to Home", "/")
+		gmap.AddDirectory("⌂ Home", "/")
 		return gmap.Bytes()
 	}
 
 	gmap.AddInfo("Notes")
 	gmap.AddSpacer()
 
+	// Paginate notes
+	totalNotes := len(notes)
+	paginatedNotes := paginateItems(notes, page)
+
 	// Add clickable note links with aggregates
-	if len(notes) > 0 {
-		for _, note := range notes {
+	if len(paginatedNotes) > 0 {
+		for _, note := range paginatedNotes {
 			// Extract first line for display
 			content := note.Event.Content
 			if len(content) > 60 {
@@ -244,8 +318,8 @@ func (r *Router) handleNotes(ctx context.Context, parts []string) []byte {
 		gmap.AddSpacer()
 	}
 
-	gmap.AddSpacer()
-	gmap.AddDirectory("← Back to Home", "/")
+	// Add pagination links
+	r.addPaginationLinks(gmap, "/notes", page, totalNotes)
 
 	// Add footer if configured
 	r.addFooterToGophermap(gmap, "notes")
@@ -257,25 +331,32 @@ func (r *Router) handleNotes(ctx context.Context, parts []string) []byte {
 func (r *Router) handleArticles(ctx context.Context, parts []string) []byte {
 	gmap := NewGophermap(r.host, r.port)
 
+	// Parse page number from parts
+	page, _ := parsePageFromParts(parts)
+
 	// Add header if configured
 	r.addHeaderToGophermap(gmap, "articles")
 
 	// Query articles
 	queryHelper := r.server.GetQueryHelper()
-	articles, err := queryHelper.GetArticles(ctx, 50)
+	articles, err := queryHelper.GetArticles(ctx, 100) // Get more for pagination
 	if err != nil {
 		gmap.AddError(fmt.Sprintf("Error loading articles: %v", err))
 		gmap.AddSpacer()
-		gmap.AddDirectory("← Back to Home", "/")
+		gmap.AddDirectory("⌂ Home", "/")
 		return gmap.Bytes()
 	}
 
 	gmap.AddInfo("Articles")
 	gmap.AddSpacer()
 
+	// Paginate articles
+	totalArticles := len(articles)
+	paginatedArticles := paginateItems(articles, page)
+
 	// Add article links with aggregates
-	if len(articles) > 0 {
-		for _, article := range articles {
+	if len(paginatedArticles) > 0 {
+		for _, article := range paginatedArticles {
 			// Extract title or first line for display
 			content := article.Event.Content
 			if len(content) > 60 {
@@ -306,8 +387,8 @@ func (r *Router) handleArticles(ctx context.Context, parts []string) []byte {
 		gmap.AddSpacer()
 	}
 
-	gmap.AddSpacer()
-	gmap.AddDirectory("← Back to Home", "/")
+	// Add pagination links
+	r.addPaginationLinks(gmap, "/articles", page, totalArticles)
 
 	// Add footer if configured
 	r.addFooterToGophermap(gmap, "articles")
@@ -319,25 +400,32 @@ func (r *Router) handleArticles(ctx context.Context, parts []string) []byte {
 func (r *Router) handleReplies(ctx context.Context, parts []string) []byte {
 	gmap := NewGophermap(r.host, r.port)
 
+	// Parse page number from parts
+	page, _ := parsePageFromParts(parts)
+
 	// Add header if configured
 	r.addHeaderToGophermap(gmap, "replies")
 
 	// Query replies
 	queryHelper := r.server.GetQueryHelper()
-	replies, err := queryHelper.GetReplies(ctx, 50)
+	replies, err := queryHelper.GetReplies(ctx, 100) // Get more for pagination
 	if err != nil {
 		gmap.AddError(fmt.Sprintf("Error loading replies: %v", err))
 		gmap.AddSpacer()
-		gmap.AddDirectory("← Back to Home", "/")
+		gmap.AddDirectory("⌂ Home", "/")
 		return gmap.Bytes()
 	}
 
 	gmap.AddInfo("Replies")
 	gmap.AddSpacer()
 
+	// Paginate replies
+	totalReplies := len(replies)
+	paginatedReplies := paginateItems(replies, page)
+
 	// Add reply links with aggregates
-	if len(replies) > 0 {
-		for _, reply := range replies {
+	if len(paginatedReplies) > 0 {
+		for _, reply := range paginatedReplies {
 			// Extract first line for display
 			content := reply.Event.Content
 			if len(content) > 60 {
@@ -368,8 +456,8 @@ func (r *Router) handleReplies(ctx context.Context, parts []string) []byte {
 		gmap.AddSpacer()
 	}
 
-	gmap.AddSpacer()
-	gmap.AddDirectory("← Back to Home", "/")
+	// Add pagination links
+	r.addPaginationLinks(gmap, "/replies", page, totalReplies)
 
 	// Add footer if configured
 	r.addFooterToGophermap(gmap, "replies")
@@ -381,25 +469,32 @@ func (r *Router) handleReplies(ctx context.Context, parts []string) []byte {
 func (r *Router) handleMentions(ctx context.Context, parts []string) []byte {
 	gmap := NewGophermap(r.host, r.port)
 
+	// Parse page number from parts
+	page, _ := parsePageFromParts(parts)
+
 	// Add header if configured
 	r.addHeaderToGophermap(gmap, "mentions")
 
 	// Query mentions
 	queryHelper := r.server.GetQueryHelper()
-	mentions, err := queryHelper.GetMentions(ctx, 50)
+	mentions, err := queryHelper.GetMentions(ctx, 100) // Get more for pagination
 	if err != nil {
 		gmap.AddError(fmt.Sprintf("Error loading mentions: %v", err))
 		gmap.AddSpacer()
-		gmap.AddDirectory("← Back to Home", "/")
+		gmap.AddDirectory("⌂ Home", "/")
 		return gmap.Bytes()
 	}
 
 	gmap.AddInfo("Mentions")
 	gmap.AddSpacer()
 
+	// Paginate mentions
+	totalMentions := len(mentions)
+	paginatedMentions := paginateItems(mentions, page)
+
 	// Add mention links with aggregates
-	if len(mentions) > 0 {
-		for _, mention := range mentions {
+	if len(paginatedMentions) > 0 {
+		for _, mention := range paginatedMentions {
 			// Extract first line for display
 			content := mention.Event.Content
 			if len(content) > 60 {
@@ -430,8 +525,8 @@ func (r *Router) handleMentions(ctx context.Context, parts []string) []byte {
 		gmap.AddSpacer()
 	}
 
-	gmap.AddSpacer()
-	gmap.AddDirectory("← Back to Home", "/")
+	// Add pagination links
+	r.addPaginationLinks(gmap, "/mentions", page, totalMentions)
 
 	// Add footer if configured
 	r.addFooterToGophermap(gmap, "mentions")
