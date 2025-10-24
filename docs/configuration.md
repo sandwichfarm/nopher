@@ -1,6 +1,6 @@
 # Configuration Reference
 
-**Status:** ✅ VERIFIED
+ 
 
 Complete reference for nophr's YAML configuration file.
 
@@ -99,7 +99,7 @@ identity:
 ```
 
 ```bash
-# Set private key for publishing (optional, future feature)
+# Set private key for publishing (optional)
 export NOPHR_NSEC="nsec1x2y3z4..."
 ```
 
@@ -267,7 +267,7 @@ discovery:
 3. Connect to discovered relays for targeted queries
 4. Refresh periodically to catch relay changes
 
-**Status:** 🟡 IMPLEMENTED (code in internal/nostr/discovery.go)
+ 
 
 ---
 
@@ -324,7 +324,7 @@ sync:
 - Events are pulled based on scope configuration
 - Relay discovery runs periodically
 
-**Status:** ✅ VERIFIED (integrated in main.go)
+ 
 
 ### sync.kinds
 
@@ -440,13 +440,13 @@ Data retention and pruning.
 - Kind 0 (profiles) and kind 3 (follows) never pruned
 - Replaceable events (kind 10002, 30023) keep only latest
 
-**Status:** ✅ VERIFIED (code in internal/sync/)
+ 
 
-### sync.retention.advanced (Phase 20)
+### sync.retention.advanced
 
 **Advanced configurable retention system** - sophisticated, multi-dimensional retention rules.
 
-**Status:** ✅ IMPLEMENTED
+ 
 
 ```yaml
 sync:
@@ -530,9 +530,9 @@ sync:
 - Invalid advanced config falls back to simple mode with warning
 - Simple mode remains fully functional
 
-**See also:** [memory/PHASE_17_RETENTION.md](../memory/PHASE_17_RETENTION.md) for complete specification
+**See also:** [memory/PHASE20_COMPLETION.md](../memory/PHASE20_COMPLETION.md) for complete specification
 
-**Status:** 📋 PLANNED (Phase 17)
+ 
 
 ---
 
@@ -567,13 +567,13 @@ inbox:
 - Allow only specific reactions: `allowed_reaction_chars: ["+", "❤️", "🔥"]`
 - Prevent spam/unwanted reactions
 
-**Status:** ✅ VERIFIED (aggregates code tested in internal/aggregates/)
+ 
 
 ---
 
 ## outbox
 
-Publishing settings (future feature).
+ 
 
 ```yaml
 outbox:
@@ -593,7 +593,7 @@ outbox:
 | `draft_dir` | string | `./content` | Directory for draft notes |
 | `auto_sign` | bool | `false` | Auto-sign with nsec |
 
-**Status:** 📋 PLANNED (Phase 13)
+ 
 
 ---
 
@@ -629,10 +629,10 @@ storage:
 
 **Recommendations:**
 - **Start with SQLite** - simpler, sufficient for most users
-- **Switch to LMDB** if you sync >100K events or need high write throughput
+- LMDB is not supported in this build
 - Both use Khatru eventstore interface (see [storage.md](storage.md))
 
-**Status:** ✅ VERIFIED (both backends implemented in internal/storage/)
+ 
 
 ---
 
@@ -694,7 +694,7 @@ rendering:
 - `kind_0`: Use profile "about" field as .plan
 - `kind_1`: Use most recent note as .plan
 
-**Status:** 🟡 IMPLEMENTED (code in internal/markdown/, internal/gopher/, etc.)
+ 
 
 ---
 
@@ -902,7 +902,7 @@ export NOPHR_REDIS_URL="redis://user:pass@redis.example.com:6379/0"
 
 **See also:** [deployment.md](deployment.md#redis-setup) for Redis installation and configuration.
 
-**Status:** ✅ VERIFIED (Phase 10 complete - implemented in internal/cache/)
+ 
 
 ---
 
@@ -931,7 +931,7 @@ logging:
 NOPHR_LOG_LEVEL=debug nophr --config nophr.yaml
 ```
 
-**Status:** ✅ VERIFIED (validated in internal/config/config.go)
+ 
 
 ---
 
@@ -1145,7 +1145,7 @@ sections:
         - "npub1xyz..."
 ```
 
-**Status:** ✅ VERIFIED (validated in internal/sections/loader.go)
+ 
 
 ---
 
@@ -1375,7 +1375,7 @@ policy:
   block_vpn: false           # Block known VPN IPs
 ```
 
-**Note:** Authentication features are planned for future phases.
+ 
 
 ### Security Best Practices
 
@@ -1397,7 +1397,7 @@ Monitor these metrics:
 
 **See also:** [SECURITY.md](SECURITY.md) for comprehensive security guide
 
-**Status:** ✅ VERIFIED (Phase 14 complete - implemented in internal/security/)
+ 
 
 ---
 
@@ -1493,7 +1493,7 @@ limits:
   truncate_indicator: " [continued...]"
 ```
 
-**Status:** ✅ VERIFIED (Phase 18 - implemented in internal/gopher/renderer.go, internal/gemini/renderer.go)
+ 
 
 ---
 
@@ -1624,7 +1624,7 @@ footers:
       © {{year}} - All rights reserved
 ```
 
-**Status:** ✅ VERIFIED (Phase 18 - implemented in internal/presentation/loader.go)
+ 
 
 ---
 
@@ -1713,7 +1713,7 @@ sort_preferences:
 
 ### behavior.pagination
 
-Pagination settings (future feature).
+ 
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -1721,9 +1721,9 @@ Pagination settings (future feature).
 | `items_per_page` | int | `50` | Items per page |
 | `max_pages` | int | `10` | Maximum pages to generate |
 
-**Note:** Pagination is planned but not yet implemented.
+ 
 
-**Status:** ✅ VERIFIED (Phase 18 - content filtering and sorting implemented)
+ 
 
 ---
 
@@ -1764,7 +1764,7 @@ Configuration is validated on startup. Common errors:
 
 **Validate config without starting servers:**
 ```bash
-nophr --config nophr.yaml --validate  # (future feature)
+ 
 ```
 
 For now, config is validated on startup. Check output for validation errors.

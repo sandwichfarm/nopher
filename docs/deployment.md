@@ -1,6 +1,6 @@
 # Deployment Guide
 
-**Status:** Production deployment guide
+Production deployment guide
 
 Complete guide to deploying nophr in production: system configuration, port binding, TLS certificates, systemd services, and monitoring.
 

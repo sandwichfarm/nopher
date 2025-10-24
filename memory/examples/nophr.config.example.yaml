@@ -4,9 +4,7 @@ site:
   base_url: "https://notes.example.com"
 
 identity:
-  npub: "npub1owner...
-"
-  # NOPHR_NSEC=... in environment
+  npub: "npub1owner..."
 
 relays:
   seeds:

@@ -86,7 +86,7 @@ Goal: Set up Khatru with eventstore backend and custom tables.
 Deliverables:
 - Khatru relay instance initialization
 - SQLite eventstore configuration
-- LMDB eventstore configuration (optional)
+- LMDB eventstore configuration (optional; not yet implemented in current codebase)
 - Custom tables: relay_hints, graph_nodes, sync_state, aggregates
 - Database migrations
 - Storage interface abstraction
@@ -96,7 +96,7 @@ Completion Criteria:
 - Can initialize Khatru with SQLite backend
 - Can store and query events via Khatru
 - Custom tables are created
-- Can switch between SQLite and LMDB via config
+- LMDB support is optional and not required for completion
 - Storage tests pass
 
 Dependencies: Phase 1
@@ -620,8 +620,8 @@ Full Feature Set:
 - Consolidated query logic in aggregates package
 
 **Files Modified**:
-- `internal/gopher/handler.go` - Updated to use QueryHelper methods
-- `internal/gemini/handler.go` - Updated to use QueryHelper methods
+- `internal/gopher/router.go` - Updated to use QueryHelper methods
+- `internal/gemini/router.go` - Updated to use QueryHelper methods
 - `internal/aggregates/queries.go` - Fixed thread retrieval logic
 
 **Impact**:

@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-**Status:** Common issues and solutions
+Common issues and solutions
 
 Comprehensive troubleshooting guide for nophr: configuration errors, connection issues, database problems, protocol errors, and more.
 
@@ -450,15 +450,17 @@ ls -la ./data/nophr.db*
 rm ./data/nophr.db-shm ./data/nophr.db-wal
 ```
 
-**Switch to LMDB (if frequent):**
+**Database tuning (for frequent vacuum needs):**
 ```yaml
 storage:
-  driver: "lmdb"
+  # LMDB is not supported in this build; use SQLite and consider VACUUM/INDEX tuning
 ```
 
 ---
 
 ### "LMDB: database full"
+
+Note: LMDB is not supported in this build. For now, use SQLite guidance above.
 
 **Error:**
 ```
@@ -712,7 +714,7 @@ storage:
 **Symptom:** Protocol requests take seconds to respond.
 
 **Causes:**
-1. No caching (Phase 10 not implemented)
+1. Caching disabled or misconfigured
 2. Large database queries
 3. Complex markdown rendering
 
@@ -723,8 +725,8 @@ storage:
 time sqlite3 ./data/nophr.db "SELECT * FROM events WHERE kind = 1 LIMIT 100;"
 ```
 
-**Fix (future):**
-- Enable caching when Phase 10 is implemented
+**Fix:**
+- Enable and tune caching (see configuration caching settings)
 - Current: optimize sync scope to reduce event count
 
 ---

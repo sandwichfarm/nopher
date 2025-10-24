@@ -2,7 +2,7 @@
 
 # Binaries
 dist/
-nopher
+nophr
 *.exe
 *.exe~
 *.dll

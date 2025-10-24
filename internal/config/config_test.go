@@ -329,10 +329,8 @@ func TestLoadNonExistentFile(t *testing.T) {
 
 func TestEnvOverrides(t *testing.T) {
 	// Set environment variables
-	os.Setenv("NOPHR_NSEC", "nsec1test")
 	os.Setenv("NOPHR_REDIS_URL", "redis://localhost:6379")
 	defer func() {
-		os.Unsetenv("NOPHR_NSEC")
 		os.Unsetenv("NOPHR_REDIS_URL")
 	}()
 
@@ -377,9 +375,7 @@ logging:
 		t.Fatalf("Load() failed: %v", err)
 	}
 
-	if cfg.Identity.Nsec != "nsec1test" {
-		t.Errorf("Expected nsec from env 'nsec1test', got %s", cfg.Identity.Nsec)
-	}
+	// Note: NOPHR_NSEC test removed - not needed since Publisher (Phase 13) is not implemented
 
 	if cfg.Caching.RedisURL != "redis://localhost:6379" {
 		t.Errorf("Expected redis URL from env, got %s", cfg.Caching.RedisURL)

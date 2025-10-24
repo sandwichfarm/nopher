@@ -1,6 +1,6 @@
 # Nostr Integration Guide
 
-**Status:** ✅ VERIFIED (Integrated and working)
+ 
 
 Complete guide to how nophr integrates with Nostr: relay discovery, event synchronization, social graph computation, and interaction aggregation.
 
@@ -45,7 +45,7 @@ Remote Nostr Relays
 ## Relay Discovery
 
 **NIP:** [NIP-65](https://github.com/nostr-protocol/nips/blob/master/65.md)
-**Status:** 🟡 IMPLEMENTED (`internal/nostr/discovery.go`)
+ 
 
 nophr uses **dynamic relay discovery** via kind 10002 events. This allows you to change your Nostr relays without updating nophr's config.
 
@@ -120,7 +120,7 @@ seeds:
 
 **Parsing:**
 - Read relays: used to fetch that author's events
-- Write relays: used when publishing (future feature)
+- Write relays: used when publishing
 
 ### relay_hints Table
 
@@ -165,7 +165,7 @@ If relay hints are missing/stale:
 
 ## Sync Engine
 
-**Status:** ✅ VERIFIED (Integrated in cmd/nophr/main.go, controlled by `sync.enabled`)
+ 
 
 The sync engine pulls events from remote Nostr relays and stores them locally.
 
@@ -273,7 +273,7 @@ CREATE TABLE sync_state (
 
 ## Sync Scope
 
-**Status:** 🟡 IMPLEMENTED (`internal/sync/scope.go`)
+ 
 
 Control whose events to synchronize.
 
@@ -363,7 +363,7 @@ kinds: [0, 1, 3, 6, 7, 9735, 30023, 10002, 30311]  # Add app handlers
 
 ## Social Graph
 
-**Status:** 🟡 IMPLEMENTED (`internal/sync/graph.go`)
+ 
 
 nophr computes the social graph from kind 3 (contacts) events.
 
@@ -430,7 +430,7 @@ sqlite3 ./data/nophr.db "SELECT pubkey FROM graph_nodes WHERE root_pubkey = 'own
 
 ## Aggregates
 
-**Status:** ✅ VERIFIED (`internal/aggregates/aggregates.go`)
+ 
 
 Interaction aggregation: replies, reactions, zaps.
 
@@ -513,7 +513,7 @@ INSERT INTO aggregates VALUES (
 ## Threading
 
 **NIP:** [NIP-10](https://github.com/nostr-protocol/nips/blob/master/10.md)
-**Status:** ✅ VERIFIED (`internal/aggregates/threading.go`)
+ 
 
 Thread resolution from NIP-10 tags.
 
@@ -577,7 +577,7 @@ Thread resolution from NIP-10 tags.
 
 ## Retention
 
-**Status:** 🟡 IMPLEMENTED (basic), 🚧 IN PROGRESS (advanced - Phase 17)
+ 
 
 Data pruning to manage disk space.
 
@@ -601,22 +601,19 @@ sync:
 nophr --config nophr.yaml --prune
 ```
 
-### Advanced Retention (Phase 17)
+### Advanced Retention
 
-**Planned features:**
+Features include:
 - Per-kind retention rules
 - Per-author retention rules
 - Score-based pruning (keep popular events longer)
 - Protected events (never delete)
 
-See [memory/PHASE_17_RETENTION.md](../memory/PHASE_17_RETENTION.md) for details.
+See [memory/PHASE20_COMPLETION.md](../memory/PHASE20_COMPLETION.md) for details.
 
 ---
 
-## Inbox/Outbox
-
-**Inbox:** 🟡 IMPLEMENTED (aggregates)
-**Outbox:** 📋 PLANNED (Phase 13 - publishing)
+## Inbox
 
 ### Inbox
 
@@ -648,22 +645,8 @@ noise_filters:
     - "🔥"
 ```
 
-### Outbox (Publishing - Future)
-
-**Planned:** Publish events from nophr to Nostr relays.
-
-```yaml
-outbox:
-  publish:
-    notes: true
-    reactions: false
-    zaps: false
-  draft_dir: "./content"
-  auto_sign: false
-```
-
-**Status:** Phase 13 (not yet implemented)
-
+ 
+ 
 ---
 
 ## Monitoring
@@ -707,7 +690,7 @@ sqlite3 ./data/nophr.db "SELECT pubkey, COUNT(*) FROM relay_hints GROUP BY pubke
 - Event counts per kind
 - Author counts by depth
 
-**Status:** 📋 PLANNED (Phase 12)
+ 
 
 ---
 

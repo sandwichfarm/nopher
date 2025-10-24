@@ -1,7 +1,5 @@
 # Getting Started with nophr
 
-**Status:** ✅ VERIFIED (Configuration, storage, and sync engine) / 🟡 IMPLEMENTED (Protocol servers undergoing verification)
-
 nophr is a personal gateway that serves your Nostr content via legacy internet protocols: Gopher (RFC 1436), Gemini, and Finger (RFC 742).
 
 This guide covers installation, initial configuration, and first run.
@@ -11,7 +9,7 @@ This guide covers installation, initial configuration, and first run.
 **For one-line install:** curl or wget
 
 **For building from source:**
-- **Go 1.23 or later**
+- **Go 1.25 or later**
 - **Make** - for build automation
 - **Git** - for cloning the repository
 - **golangci-lint** (optional) - for running linters during development
@@ -97,15 +95,7 @@ relays:
 
 **Important:** You must provide your `npub` (Nostr public key). This identifies whose content to serve.
 
-### Optional: Private Key (Publishing)
-
-If you want to publish content (future feature), set your private key via environment variable:
-
-```bash
-export NOPHR_NSEC="nsec1..."  # Your Nostr private key (NEVER in config file!)
-```
-
-**Security Note:** Never put `nsec` in the config file. Always use the `NOPHR_NSEC` environment variable.
+ 
 
 ## Validate Configuration
 
@@ -138,40 +128,32 @@ Starting Finger server on port 79...
 ✓ All services started successfully!
 ```
 
-**Current Status:**
-- ✅ Configuration loading works
-- ✅ Storage initialization works
-- ✅ Sync engine integrated and working
-- 🟡 Protocol servers (Gopher/Gemini/Finger) implemented, undergoing verification
+ 
 
 ## Understanding the Configuration
 
-The generated configuration includes many sections:
+The generated configuration includes many sections, such as:
 
-| Section | Purpose | Status |
-|---------|---------|--------|
-| `site` | Site metadata (title, description) | ✅ Verified |
-| `identity` | Your npub/nsec | ✅ Verified |
-| `protocols` | Enable/disable Gopher, Gemini, Finger | 🟡 Implemented |
-| `relays` | Seed relays and connection policies | ✅ Verified |
-| `discovery` | Relay discovery settings (NIP-65) | ✅ Verified |
-| `sync` | Event synchronization (enabled/scope/retention) | ✅ Verified |
-| `inbox` | Aggregation of replies/reactions/zaps | ✅ Verified |
-| `outbox` | Publishing settings (future) | 📋 Planned |
-| `storage` | Database backend (SQLite/LMDB) | ✅ Verified |
-| `rendering` | Protocol-specific rendering options | 🟡 Implemented |
-| `caching` | Response caching (memory/Redis) | ✅ Verified |
-| `logging` | Log level configuration | ✅ Verified |
-| `sections` | Custom filtered views at specific URL paths | ✅ Verified |
-| `layout` | (DEPRECATED - use sections instead) | ⚠️ Deprecated |
-| `security` | Security features (deny lists, rate limiting, validation) | ✅ Verified |
-| `display` | Display control (feed/detail views, limits) | ✅ Verified |
-| `presentation` | Visual presentation (headers, footers, separators) | ✅ Verified |
-| `behavior` | Behavior control (filtering, sorting) | ✅ Verified |
+- `site` — Site metadata (title, description)
+- `identity` — Your npub (public key)
+- `protocols` — Enable/disable Gopher, Gemini, Finger
+- `relays` — Seed relays and connection policies
+- `discovery` — Relay discovery settings (NIP-65)
+- `sync` — Event synchronization (enabled/scope/retention)
+- `inbox` — Aggregation of replies/reactions/zaps
+- `storage` — Database backend (SQLite)
+- `rendering` — Protocol-specific rendering options
+- `caching` — Response caching (memory/Redis)
+- `logging` — Log level configuration
+- `sections` — Custom filtered views at specific URL paths
+- `security` — Security features (deny lists, rate limiting, validation)
+- `display` — Display control (feed/detail views, limits)
+- `presentation` — Visual presentation (headers, footers, separators)
+- `behavior` — Behavior control (filtering, sorting)
 
 For complete configuration documentation, see [configuration.md](configuration.md).
 
-For security guidance, see [SECURITY.md](SECURITY.md).
+For security guidance, see [security.md](security.md).
 
 ## Storage Backend
 
@@ -181,7 +163,7 @@ nophr stores Nostr events in a local database using [Khatru](https://github.com/
 
 ```yaml
 storage:
-  driver: "sqlite"              # or "lmdb"
+  driver: "sqlite"
   sqlite_path: "./data/nophr.db"
 ```
 
@@ -193,7 +175,7 @@ For more on storage backends, see [storage.md](storage.md).
 
 Now that you have nophr configured:
 
-1. **Test Protocol Servers** (once verified):
+1. **Test Protocol Servers**:
    - Connect to Gopher: `telnet localhost 70` (or use a Gopher client like lynx/VF-1)
    - Connect to Gemini: Use a Gemini client like amfora or lagrange
    - Connect to Finger: `finger @localhost` (or `telnet localhost 79`)

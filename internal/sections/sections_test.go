@@ -31,44 +31,8 @@ func TestDefaultSections(t *testing.T) {
 	}
 }
 
-func TestInboxSection(t *testing.T) {
-	pubkey := "testpubkey123"
-	section := InboxSection(pubkey)
-
-	if section.Name != "inbox" {
-		t.Errorf("expected name 'inbox', got '%s'", section.Name)
-	}
-
-	if len(section.Filters.Tags) == 0 {
-		t.Error("expected tag filters for inbox")
-	}
-
-	pTags, exists := section.Filters.Tags["p"]
-	if !exists {
-		t.Error("expected 'p' tag filter")
-	}
-
-	if len(pTags) != 1 || pTags[0] != pubkey {
-		t.Errorf("expected p tag with pubkey %s", pubkey)
-	}
-}
-
-func TestOutboxSection(t *testing.T) {
-	pubkey := "testpubkey123"
-	section := OutboxSection(pubkey)
-
-	if section.Name != "outbox" {
-		t.Errorf("expected name 'outbox', got '%s'", section.Name)
-	}
-
-	if len(section.Filters.Authors) != 1 || section.Filters.Authors[0] != pubkey {
-		t.Errorf("expected author filter with pubkey %s", pubkey)
-	}
-
-	if section.ShowAuthors {
-		t.Error("expected ShowAuthors to be false for outbox")
-	}
-}
+// Note: InboxSection and OutboxSection tests removed - these are now config-based
+// Inbox/outbox sections are defined in YAML configuration instead of code
 
 func TestSectionManager(t *testing.T) {
 	manager := NewManager(nil)

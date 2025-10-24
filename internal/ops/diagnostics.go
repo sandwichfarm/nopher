@@ -458,19 +458,23 @@ func (d *Diagnostics) FormatAsText() string {
 
 	// Phase 20: Retention
 	out += fmt.Sprintf("--- Retention ---\n")
-	out += fmt.Sprintf("Enabled: %v\n", d.Retention.Enabled)
-	if d.Retention.Enabled {
-		out += fmt.Sprintf("Keep Days: %d\n", d.Retention.KeepDays)
-		if d.Retention.Cutoff != nil {
-			out += fmt.Sprintf("Cutoff Date: %s\n", d.Retention.Cutoff.Format(time.RFC3339))
+	if d.Retention != nil {
+		out += fmt.Sprintf("Enabled: %v\n", d.Retention.Enabled)
+		if d.Retention.Enabled {
+			out += fmt.Sprintf("Keep Days: %d\n", d.Retention.KeepDays)
+			if d.Retention.Cutoff != nil {
+				out += fmt.Sprintf("Cutoff Date: %s\n", d.Retention.Cutoff.Format(time.RFC3339))
+			}
+			out += fmt.Sprintf("Total Events: %d\n", d.Retention.TotalEvents)
+			out += fmt.Sprintf("Estimated Prunable: %d\n", d.Retention.EstimatedPrunable)
+			if d.Retention.AdvancedEnabled {
+				out += fmt.Sprintf("Advanced Retention: enabled\n")
+				out += fmt.Sprintf("  Protected Events: %d\n", d.Retention.TotalProtected)
+				out += fmt.Sprintf("  Events with Metadata: %d\n", d.Retention.TotalWithMetadata)
+			}
 		}
-		out += fmt.Sprintf("Total Events: %d\n", d.Retention.TotalEvents)
-		out += fmt.Sprintf("Estimated Prunable: %d\n", d.Retention.EstimatedPrunable)
-		if d.Retention.AdvancedEnabled {
-			out += fmt.Sprintf("Advanced Retention: enabled\n")
-			out += fmt.Sprintf("  Protected Events: %d\n", d.Retention.TotalProtected)
-			out += fmt.Sprintf("  Events with Metadata: %d\n", d.Retention.TotalWithMetadata)
-		}
+	} else {
+		out += fmt.Sprintf("Not configured\n")
 	}
 
 	return out
@@ -530,14 +534,18 @@ func (d *Diagnostics) FormatAsGemtext() string {
 
 	// Phase 20: Retention
 	out += "## Retention\n\n"
-	out += fmt.Sprintf("* Enabled: %v\n", d.Retention.Enabled)
-	if d.Retention.Enabled {
-		out += fmt.Sprintf("* Keep Days: %d\n", d.Retention.KeepDays)
-		out += fmt.Sprintf("* Estimated Prunable: %d events\n", d.Retention.EstimatedPrunable)
-		if d.Retention.AdvancedEnabled {
-			out += fmt.Sprintf("* Advanced Retention: enabled\n")
-			out += fmt.Sprintf("* Protected Events: %d\n", d.Retention.TotalProtected)
+	if d.Retention != nil {
+		out += fmt.Sprintf("* Enabled: %v\n", d.Retention.Enabled)
+		if d.Retention.Enabled {
+			out += fmt.Sprintf("* Keep Days: %d\n", d.Retention.KeepDays)
+			out += fmt.Sprintf("* Estimated Prunable: %d events\n", d.Retention.EstimatedPrunable)
+			if d.Retention.AdvancedEnabled {
+				out += fmt.Sprintf("* Advanced Retention: enabled\n")
+				out += fmt.Sprintf("* Protected Events: %d\n", d.Retention.TotalProtected)
+			}
 		}
+	} else {
+		out += "* Not configured\n"
 	}
 
 	return out

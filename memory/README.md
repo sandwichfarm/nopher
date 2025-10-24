@@ -13,7 +13,7 @@ Overview
 - Privacy and safety: env-only secrets, pruning, deny-lists, and diagnostics.
 
 Status
-- This directory documents the design decisions and plan. Implementation has not started yet.
+- This directory documents the design decisions and plan. The codebase implements many of these phases already; memory/ remains the source of truth and must stay in sync with implementation.
 
 Implementation Guide:
 - PHASES.md (phased implementation plan with deliverables and completion criteria)
@@ -49,5 +49,4 @@ Operations:
 - operations.md (operational procedures)
 - diagnostics.md (monitoring and diagnostics)
 - security_privacy.md (security and privacy features)
-- retention_advanced.md (Phase 17: advanced configurable retention system)
-
+- retention_advanced.md (Advanced configurable retention system; implemented in Phase 20 — see PHASE20_COMPLETION.md)

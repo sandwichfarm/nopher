@@ -43,7 +43,8 @@ type Site struct {
 // Identity contains Nostr identity information
 type Identity struct {
 	Npub string `yaml:"npub"` // Public key from file
-	Nsec string `yaml:"-"`    // Private key from env only, never serialized
+	// Note: Nsec removed - not needed since Publisher (Phase 13) is not implemented
+	// If Publisher is implemented in the future, add: Nsec string `yaml:"-"` and load from NOPHR_NSEC env var
 }
 
 // Protocols contains protocol server configurations
@@ -476,10 +477,11 @@ func Load(path string) (*Config, error) {
 
 // applyEnvOverrides applies environment variable overrides to config
 func applyEnvOverrides(cfg *Config) error {
-	// NOPHR_NSEC is the most important one - never in file
-	if nsec := os.Getenv("NOPHR_NSEC"); nsec != "" {
-		cfg.Identity.Nsec = nsec
-	}
+	// Note: NOPHR_NSEC removed - not needed since Publisher (Phase 13) is not implemented
+	// If Publisher is implemented in the future, uncomment:
+	// if nsec := os.Getenv("NOPHR_NSEC"); nsec != "" {
+	//     cfg.Identity.Nsec = nsec
+	// }
 
 	// Redis URL from env if using redis
 	if redisURL := os.Getenv("NOPHR_REDIS_URL"); redisURL != "" {

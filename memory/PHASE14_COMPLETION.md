@@ -245,7 +245,7 @@ PASS: TestContentFilter
 PASS: TestCombinedFilter
 ```
 
-### 6. Documentation (`docs/SECURITY.md`)
+### 6. Documentation (`docs/security.md`)
 
 Comprehensive security guide covering:
 - Security architecture

@@ -70,10 +70,12 @@ Sections System (Optional Customization):
 - **✅ "More" links** - Preview sections can link to full paginated views
 - **✅ Completely optional** - Default routes work without any section configuration
 
-IMPORTANT: "inbox" and "outbox" are INTERNAL source identifiers, NOT user-facing paths or sections.
-- These terms refer to relay selection strategy (inbox relays vs outbox relays)
-- Do NOT create sections named "inbox" or "outbox"
-- Sections are for custom filtered views like "/diy", "/philosophy", "/following"
+IMPORTANT: "inbox" and "outbox" naming
+- Historically these terms refer to relay selection strategy (inbox relays vs outbox relays).
+- Current implementation exposes legacy endpoints:
+  - `/inbox` (legacy) maps to Replies (redirects/forwards to `/replies`).
+  - `/outbox` (legacy) lists the operator's notes (owner’s posts).
+- Prefer the canonical routes `/notes` and `/replies` for new configurations. Do not create sections named "inbox" or "outbox".
 
 Example 1: Go Code (Current Implementation)
 

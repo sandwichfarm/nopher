@@ -9,8 +9,8 @@ Architecture
 
 Database Backend (via eventstore)
 - Primary: SQLite (default, single-file, zero-config, excellent for single-tenant)
-- Alternative: LMDB (excellent for streaming large numbers of events and migrations)
-- Both supported via Khatru's eventstore plugin system (https://github.com/fiatjaf/eventstore)
+- Alternative: LMDB (planned; not yet implemented in current code). Khatru supports LMDB in principle, but this repository's `internal/storage/lmdb.go` currently returns a not-implemented error.
+- Khatru uses the eventstore plugin system (https://github.com/fiatjaf/eventstore)
 - No PostgreSQL support (removed from requirements)
 
 What Khatru Handles
@@ -84,6 +84,9 @@ Implementation Notes
 - Our custom tables are separate SQLite/LMDB tables in the same database or separate file.
 - Sync engine writes events via Khatru's StoreEvent; reads via QueryEvents.
 - Aggregates computed on-demand or via background reconciler; cached for performance.
+
+Note on LMDB:
+- The codebase does not yet initialize LMDB (see `internal/storage/lmdb.go`). Any LMDB references here describe planned behavior; use SQLite for all current deployments.
 
 Benefits of Using Khatru
 - No need to implement event storage, indexing, or replaceable event logic.

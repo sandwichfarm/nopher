@@ -55,6 +55,12 @@ func (s *Storage) initSQLite(ctx context.Context) error {
 		return fmt.Errorf("failed to configure SQLite: %w", err)
 	}
 
+	// Tier 1 Optimization: Connection pooling for better concurrency
+	sqlDB.SetMaxOpenConns(10)      // Allow up to 10 concurrent connections
+	sqlDB.SetMaxIdleConns(5)       // Keep 5 idle connections ready
+	sqlDB.SetConnMaxLifetime(0)     // Connections never expire (SQLite file-based)
+	sqlDB.SetConnMaxIdleTime(0)     // Idle connections never close (reduce overhead)
+
 	s.db = sqlDB
 	return nil
 }

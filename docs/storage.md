@@ -1,6 +1,6 @@
 # Storage Guide
 
-**Status:** ✅ VERIFIED
+SQLite is supported. LMDB is not supported in this build.
 
 Complete guide to nophr's storage layer, database backends, and data management.
 
@@ -34,7 +34,7 @@ nophr uses [Khatru](https://github.com/fiatjaf/khatru) as an embedded Nostr rela
 
 ## Database Backends
 
-nophr supports two database backends via Khatru's [eventstore](https://github.com/fiatjaf/eventstore) plugin system.
+nophr uses Khatru's [eventstore](https://github.com/fiatjaf/eventstore) plugin system. This build supports SQLite.
 
 ### SQLite (Default)
 
@@ -68,6 +68,8 @@ storage:
 - Simple setup
 
 ### LMDB (Alternative)
+
+Note: LMDB is not supported in this build.
 
 **Characteristics:**
 - Directory with data files
@@ -193,7 +195,7 @@ CREATE INDEX idx_relay_hints_pubkey ON relay_hints(pubkey, freshness DESC);
 **Purpose:**
 - Determine which relays to query for each author
 - Built from kind 10002 events
-- Used by relay discovery (Phase 3)
+- Used by relay discovery
 
 **Example:**
 ```
@@ -397,10 +399,7 @@ sync:
 - Except: kind 0 (profiles), kind 3 (follows) - never pruned
 - Replaceable events: only latest kept anyway
 
-**Manual pruning (future feature):**
-```bash
-nophr --config nophr.yaml --prune
-```
+Manual pruning via CLI is not available in this build.
 
 ### Vacuum (SQLite Only)
 
@@ -423,10 +422,7 @@ sqlite3 ./data/nophr.db "VACUUM;"
 du -h ./data/nophr.db
 ```
 
-**LMDB:**
-```bash
-du -sh ./data/nophr.lmdb
-```
+LMDB is not supported in this build.
 
 **Check event count:**
 ```bash
@@ -435,22 +431,9 @@ sqlite3 ./data/nophr.db "SELECT COUNT(*) FROM events;"
 
 ---
 
-## Switching Backends (SQLite ↔ LMDB)
+## Switching Backends
 
-Switching requires migrating data.
-
-**SQLite → LMDB:**
-1. Export events from SQLite
-2. Change config to LMDB
-3. Restart (initializes new LMDB)
-4. Re-sync events (or import export)
-
-**Manual migration (future feature):**
-```bash
-nophr migrate --from-sqlite ./data/nophr.db --to-lmdb ./data/nophr.lmdb
-```
-
-**Currently:** Re-sync from relays (easiest approach)
+Only SQLite is supported in this build.
 
 ---
 

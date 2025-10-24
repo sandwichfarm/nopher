@@ -1,6 +1,6 @@
 # Architecture Overview
 
-**Status:** Technical deep-dive for developers and contributors
+Technical deep-dive for developers and contributors
 
 Complete architectural overview of nophr's design, components, and implementation.
 
@@ -120,7 +120,7 @@ Validate() → Check required fields, formats
 *Config → Pass to components
 ```
 
-**Status:** ✅ Phase 1 complete
+ 
 
 ---
 
@@ -168,7 +168,7 @@ Validate() → Check required fields, formats
 - sync_state (cursors per relay/kind)
 - aggregates (interaction rollups)
 
-**Status:** ✅ Phase 2 complete
+ 
 
 ---
 
@@ -202,7 +202,7 @@ Validate() → Check required fields, formats
 - Backoff/retry logic
 - Health tracking
 
-**Status:** ✅ Phase 3 complete
+ 
 
 ---
 
@@ -247,7 +247,7 @@ Validate() → Check required fields, formats
    └→ Trigger aggregates
 ```
 
-**Status:** ✅ Phase 4 complete (integrated in main.go)
+ 
 
 ---
 
@@ -283,7 +283,7 @@ Store in aggregates table
 1. **On ingestion** - Update immediately when new interaction arrives
 2. **Reconciler** - Periodic full recount (detect drift)
 
-**Status:** ✅ Phase 5 complete (tests passing)
+ 
 
 ---
 
@@ -331,7 +331,7 @@ Gopher  Gemini  Finger  (other)
 - Preserve bare URLs optionally
 - Truncate to ~500 chars
 
-**Status:** ✅ Phase 6 complete (tests present)
+ 
 
 ---
 
@@ -364,7 +364,7 @@ Send response
 Close connection
 ```
 
-**Status:** 🟡 Phase 7 implemented
+ 
 
 #### Gemini Server
 
@@ -392,7 +392,7 @@ Send response with status code
 Close connection
 ```
 
-**Status:** 🟡 Phase 8 implemented
+ 
 
 #### Finger Server
 
@@ -418,7 +418,7 @@ Send response
 Close connection
 ```
 
-**Status:** 🟡 Phase 9 implemented
+ 
 
 ---
 
@@ -489,7 +489,7 @@ aggregate:event123              - Interaction counts
 - CPU usage: 50-70% reduction for rendering
 - Throughput: 5-10x increase in requests/second
 
-**Status:** ✅ Phase 10 complete
+ 
 
 ---
 
@@ -605,11 +605,11 @@ page, _ := manager.GetPage(ctx, "notes", 1)
 
 **Integration:**
 - Protocol servers use sections for navigation
-- Each section cached independently (Phase 10)
+- Each section can be cached independently
 - Archives can be pre-generated and cached
 - Supports custom sections via configuration
 
-**Status:** ✅ Phase 11 complete
+ 
 
 ---
 
@@ -709,7 +709,7 @@ safe := logger.SanitizeMessage(msg)  // Redacts any secrets
 - Automatic cleanup of stale data
 - Cache-friendly validation
 
-**Status:** ✅ Phase 14 complete
+ 
 
 ---
 
@@ -821,7 +821,7 @@ lightning := profile.GetLightningAddress() // lud16 or lud06
 - **Gopher**: `/search/<query>` with URL encoding (+ for spaces)
 - **Gemini**: `/search` with input prompt (status 10) for query entry
 - **Protocol Servers**: Use QueryEventsWithSearch for search endpoints
-- **Caching**: Search results cacheable with TTL (Phase 10)
+- **Caching**: Search results cacheable with TTL
 
 **Performance:**
 - Content matching: O(n) with early filtering
@@ -829,7 +829,7 @@ lightning := profile.GetLightningAddress() // lud16 or lud06
 - Profile parsing: O(1) JSON unmarshaling
 - Typical search: <100ms for 10K events
 
-**Status:** ✅ Complete (Phase 18)
+ 
 
 ---
 
@@ -943,7 +943,7 @@ naddr          → /addr/{kind}/{pubkey}/{d-tag}
 - Gopher renderer uses `resolver.ReplaceEntities()` before markdown conversion
 - Gemini renderer uses `resolver.ReplaceEntities()` before rendering
 - Content with `nostr:` URIs automatically shows human-readable references
-- Storage lookups cached (Phase 10 caching layer)
+- Storage lookups can be cached
 
 **Performance:**
 - Regex matching: O(n) with compiled pattern
@@ -957,7 +957,7 @@ naddr          → /addr/{kind}/{pubkey}/{d-tag}
 - Invalid NIP-19: Keeps original `nostr:` URI unchanged
 - Decode errors: Preserves original text
 
-**Status:** ✅ Complete
+ 
 
 ---
 
@@ -1304,10 +1304,7 @@ func (s *Server) Start() {
 - `test/integration/` - Integration tests
 - `test/compliance/` - Protocol tests
 
-**Current status:**
-- Unit tests: 19.4% coverage (growing)
-- Integration tests: Planned (Phase 15)
-- Compliance tests: Planned (Phase 15)
+ 
 
 ---
 
@@ -1359,13 +1356,7 @@ func (s *Server) Start() {
 
 ### Rate Limiting
 
-**Planned (Phase 14):**
-- Per-IP rate limits
-- Per-protocol limits
-- Configurable thresholds
-
-**Current workaround:**
-- Firewall rules (iptables, fail2ban)
+Use built-in rate limiting (see security settings), and optionally firewall rules (iptables, fail2ban).
 
 ---
 
@@ -1409,50 +1400,13 @@ func (s *Server) Start() {
 
 ---
 
-## Future Enhancements
+## Enhancements
 
-### Phase 12: Operations and Diagnostics
-
-- Structured logging
-- Diagnostics page (via protocols)
-- Relay health monitoring
-- Event count statistics
-- Pruning and retention
-
-### Phase 13: Publisher
-
-- Sign events with nsec
-- Publish to write relays
-- Retry/backoff logic
-- Draft management
-
-### Phase 15: Testing
-
-- >80% unit test coverage
-- Integration tests
-- Protocol compliance tests
-
-### Phase 16: Distribution
-
-- Optimized builds
-- Docker images (multi-arch)
-- Systemd service files
-- ✅ One-line installer script (completed - `scripts/install.sh`)
-- ✅ Enhanced Docker Compose (completed - with Redis, Caddy options)
-- ✅ Reverse proxy examples (completed - nginx, Caddy configs)
-
-### Phase 20: Advanced Retention
-
-- Rule-based retention system
-- Multi-dimensional conditions (kind, author, social distance, interactions)
-- Global caps enforcement (max events, storage, per-kind limits)
-- Score-based pruning (when caps exceeded)
-- Protected events (never delete)
-- Incremental evaluation (on ingestion + periodic)
-
-**Status:** 📋 Future Enhancement - Full specification available in [memory/PHASE_20_ADVANCED_RETENTION.md](../memory/PHASE_20_ADVANCED_RETENTION.md)
-
-**Note:** Phase 12 already implements simple time-based retention (`keep_days` configuration). Phase 20 would add sophisticated multi-dimensional retention on top of this foundation.
+- Operations and diagnostics (logging, health, statistics)
+- Publisher (signing and sending events)
+- Testing (unit/integration/compliance)
+- Distribution (builds, Docker, service files)
+- Advanced retention (rule-based, multi-dimensional)
 
 ---
 

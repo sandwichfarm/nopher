@@ -212,6 +212,10 @@ func TestGeminiResponseFormat(t *testing.T) {
 
 func TestRendererOutput(t *testing.T) {
 	cfg := &config.Config{
+		Storage: config.Storage{
+			Driver:     "sqlite",
+			SQLitePath: ":memory:",
+		},
 		Display: config.Display{
 			Feed: config.FeedDisplay{
 				ShowInteractions: true,
@@ -221,7 +225,16 @@ func TestRendererOutput(t *testing.T) {
 			},
 		},
 	}
-	renderer := NewRenderer(cfg)
+
+	// Create storage for renderer
+	ctx := context.Background()
+	st, err := storage.New(ctx, &cfg.Storage)
+	if err != nil {
+		t.Fatalf("Failed to create storage: %v", err)
+	}
+	defer st.Close()
+
+	renderer := NewRenderer(cfg, st)
 
 	// Test home rendering
 	t.Run("HomeRendering", func(t *testing.T) {

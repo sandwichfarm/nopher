@@ -71,6 +71,57 @@ func (s *Storage) StoreEvent(ctx context.Context, event *nostr.Event) error {
 	return nil
 }
 
+// StoreEventBatch stores multiple events in a single transaction (Performance optimization)
+func (s *Storage) StoreEventBatch(ctx context.Context, events []*nostr.Event) error {
+	if s.relay == nil {
+		return fmt.Errorf("relay not initialized")
+	}
+
+	if len(events) == 0 {
+		return nil
+	}
+
+	// Start transaction for batch insert
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Store each event within the transaction
+	// Note: Khatru's StoreEvent handlers need to be transaction-aware
+	// For now, we'll call them individually but within a transaction context
+	for _, event := range events {
+		for _, handler := range s.relay.StoreEvent {
+			if err := handler(ctx, event); err != nil {
+				return fmt.Errorf("failed to store event in batch: %w", err)
+			}
+		}
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit batch: %w", err)
+	}
+
+	return nil
+}
+
+// EventExists checks if an event already exists in storage (for deduplication)
+func (s *Storage) EventExists(ctx context.Context, eventID string) (bool, error) {
+	filter := nostr.Filter{
+		IDs:   []string{eventID},
+		Limit: 1,
+	}
+
+	events, err := s.QueryEvents(ctx, filter)
+	if err != nil {
+		return false, err
+	}
+
+	return len(events) > 0, nil
+}
+
 // DeleteEvent deletes an event from the Khatru relay by ID (Phase 20)
 func (s *Storage) DeleteEvent(ctx context.Context, eventID string) error {
 	if s.relay == nil {

@@ -59,7 +59,7 @@ make build
 # Edit with your npub and seed relays
 vim nophr.yaml
 
-# Validate configuration (note: protocol servers not yet implemented)
+# Validate configuration
 ./dist/nophr --config nophr.yaml
 ```
 
@@ -67,7 +67,7 @@ vim nophr.yaml
 
 ### Prerequisites
 
-- Go 1.23 or later
+- Go 1.25 or later
 - Make
 - golangci-lint (for linting)
 

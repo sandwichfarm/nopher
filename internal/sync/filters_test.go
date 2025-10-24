@@ -127,7 +127,7 @@ func TestBuildReplaceableFilter(t *testing.T) {
 	authors := []string{"pubkey1", "pubkey2"}
 	filter := fb.BuildReplaceableFilter(authors)
 
-	expectedKinds := []int{0, 3, 10002}
+	expectedKinds := []int{0, 3, 10002, 30023} // Added 30023 (long-form articles)
 	if len(filter.Kinds) != len(expectedKinds) {
 		t.Errorf("Expected %d kinds, got %d", len(expectedKinds), len(filter.Kinds))
 	}

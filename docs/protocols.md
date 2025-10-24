@@ -1,7 +1,5 @@
 # Protocol Servers Guide
 
-**Status:** 🟡 IMPLEMENTED (Code complete, undergoing verification)
-
 Complete guide to nophr's protocol servers: Gopher, Gemini, and Finger.
 
 ## Overview
@@ -32,8 +30,6 @@ All three protocols can run simultaneously, serving the same content with protoc
 
 **Port:** 70 (TCP)
 **RFC:** [RFC 1436](https://www.rfc-editor.org/rfc/rfc1436.html)
-**Status:** 🟡 IMPLEMENTED
-
 Gopher is a menu-driven protocol from 1991. Content is served as either **gophermaps** (menus) or **text files**.
 
 ### Configuration
@@ -85,9 +81,9 @@ Gopher uses "selectors" (paths) to navigate content:
 | `/about` | Your profile (kind 0) |
 | `/<custom>` | Custom sections (configured in `sections` config) |
 
-**Legacy selectors** (redirect to new paths):
+**Legacy selectors** (aliases for compatibility):
 | `/inbox` | → `/replies` (backwards compatibility) |
-| `/outbox` | → `/notes` (backwards compatibility) |
+| `/outbox` | alias for `/notes` (backwards compatibility) |
 
 ### Gophermap Format
 
@@ -175,8 +171,6 @@ i	fake	localhost	70
 
 **Port:** 1965 (TLS)
 **Spec:** [gemini://geminiprotocol.net](gemini://geminiprotocol.net)
-**Status:** 🟡 IMPLEMENTED
-
 Gemini is a modern minimalist protocol (2019) serving content as **gemtext** (lightweight markup).
 
 ### Configuration
@@ -253,9 +247,9 @@ rendering:
 | `/about` | Your profile (kind 0) |
 | `/<custom>` | Custom sections (configured in `sections` config) |
 
-**Legacy paths** (redirect to new paths):
+**Legacy paths** (aliases for compatibility):
 | `/inbox` | → `/replies` (backwards compatibility) |
-| `/outbox` | → `/notes` (backwards compatibility) |
+| `/outbox` | alias for `/notes` (backwards compatibility) |
 
 ### Gemtext Format
 
@@ -363,8 +357,6 @@ Found 5 results:
 
 **Port:** 79 (TCP)
 **RFC:** [RFC 742](https://www.rfc-editor.org/rfc/rfc742.html) / [RFC 1288](https://www.rfc-editor.org/rfc/rfc1288.html)
-**Status:** 🟡 IMPLEMENTED
-
 Finger returns user information for a given query.
 
 ### Configuration
@@ -619,7 +611,7 @@ Check out [@alice](gemini://host/profile/abc123...) for more info.
 - Fallback: "Note abc123..." or "Event abc123..."
 
 **Performance:**
-- Entity resolution cached (Phase 10)
+\- Entity resolution is cached
 - Storage lookups only for unknown entities
 - Regex matching optimized with compiled pattern
 
@@ -764,7 +756,7 @@ caching:
       finger_response: 60     # Cache finger 1 min
 ```
 
-**Status:** 📋 PLANNED (Phase 10 - caching not yet implemented)
+ 
 
 ---
 
@@ -795,9 +787,7 @@ See [Deployment Guide](deployment.md#port-binding).
 
 ### Rate Limiting
 
-**Future feature:** Built-in rate limiting per protocol.
-
-**Current workaround:** Use firewall rules (iptables, fail2ban).
+Configure rate limiting in security settings; see `docs/security.md`. You can also complement with firewall rules (iptables, fail2ban).
 
 ---
 

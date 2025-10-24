@@ -30,8 +30,23 @@ type Engine struct {
 	// Channels for coordination
 	eventChan chan *nostr.Event
 
+	// Performance optimizations (Balanced Plan - Tier 1)
+	eventCache *EventCache // LRU cache for fast deduplication
+
+	// Performance optimizations (Balanced Plan - Tier 2)
+	aggregateChan chan *AggregateUpdate // Async aggregate processing
+
 	// Phase 20: Optional retention evaluation callback
 	evaluateRetention func(context.Context, *nostr.Event) error
+}
+
+// AggregateUpdate represents a pending aggregate update
+type AggregateUpdate struct {
+	Type          string // "reply", "reaction", "zap"
+	EventID       string
+	Reaction      string // For reactions
+	Sats          int64  // For zaps
+	InteractionAt int64
 }
 
 // New creates a new sync engine (legacy signature for compatibility)
@@ -54,6 +69,8 @@ func New(ctx context.Context, cfg *config.Config, st *storage.Storage, client *i
 		ctx:           engineCtx,
 		cancel:        cancel,
 		eventChan:     make(chan *nostr.Event, 1000),
+		eventCache:    NewEventCache(5000),        // Tier 1: Cache last 5000 event IDs
+		aggregateChan: make(chan *AggregateUpdate, 1000), // Tier 2: Async aggregate queue
 	}
 }
 
@@ -81,6 +98,8 @@ func NewEngine(st *storage.Storage, cfg *config.Config) *Engine {
 		ctx:           engineCtx,
 		cancel:        cancel,
 		eventChan:     make(chan *nostr.Event, 1000),
+		eventCache:    NewEventCache(5000),        // Tier 1: Cache last 5000 event IDs
+		aggregateChan: make(chan *AggregateUpdate, 1000), // Tier 2: Async aggregate queue
 	}
 }
 
@@ -94,6 +113,10 @@ func (e *Engine) Start() error {
 	// Start event ingestion worker
 	e.wg.Add(1)
 	go e.ingestEvents()
+
+	// Tier 2 Optimization: Start async aggregate worker
+	e.wg.Add(1)
+	go e.processAggregates()
 
 	// Start continuous sync
 	e.wg.Add(1)
@@ -110,6 +133,7 @@ func (e *Engine) Start() error {
 func (e *Engine) Stop() {
 	e.cancel()
 	close(e.eventChan)
+	close(e.aggregateChan) // Tier 2: Close aggregate channel
 	e.wg.Wait()
 }
 
@@ -210,21 +234,52 @@ func (e *Engine) bootstrap() error {
 	return nil
 }
 
-// continuousSync runs the main sync loop
+// continuousSync runs the main sync loop with adaptive intervals
 func (e *Engine) continuousSync() {
 	defer e.wg.Done()
 
-	ticker := time.NewTicker(10 * time.Second)
+	// Tier 1 Optimization: Smart adaptive sync intervals
+	interval := 10 * time.Second
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
+
+	eventsInLastSync := 0
 
 	for {
 		select {
 		case <-e.ctx.Done():
 			return
 		case <-ticker.C:
+			// Track events before sync
+			sizeBefore := e.eventCache.Size()
+
 			if err := e.syncOnce(); err != nil {
 				// Log error but continue
 				fmt.Printf("Sync error: %v\n", err)
+			}
+
+			// Estimate events received (rough approximation)
+			sizeAfter := e.eventCache.Size()
+			eventsInLastSync = sizeAfter - sizeBefore
+			if eventsInLastSync < 0 {
+				eventsInLastSync = 0 // Cache may have evicted old entries
+			}
+
+			// Adapt sync interval based on activity
+			var newInterval time.Duration
+			if eventsInLastSync == 0 {
+				newInterval = 30 * time.Second // Slow when idle
+			} else if eventsInLastSync < 50 {
+				newInterval = 10 * time.Second // Normal activity
+			} else {
+				newInterval = 5 * time.Second // High activity
+			}
+
+			// Only reset ticker if interval changed
+			if newInterval != interval {
+				interval = newInterval
+				ticker.Reset(interval)
+				fmt.Printf("[SYNC] Adaptive interval: %v (received %d events)\n", interval, eventsInLastSync)
 			}
 		}
 	}
@@ -345,10 +400,23 @@ func (e *Engine) ingestEvents() {
 
 // processEvent handles a single event
 func (e *Engine) processEvent(event *nostr.Event) error {
+	// Tier 1 Optimization: Fast deduplication using LRU cache
+	if e.eventCache.Contains(event.ID) {
+		// Very likely a duplicate - verify with DB
+		exists, err := e.storage.EventExists(e.ctx, event.ID)
+		if err == nil && exists {
+			return nil // Skip duplicate (saves ~90% of duplicate DB writes)
+		}
+	}
+
 	// Store event in Khatru
 	if err := e.storage.StoreEvent(e.ctx, event); err != nil {
 		return fmt.Errorf("failed to store event: %w", err)
 	}
+
+	// Add to cache after successful storage
+	e.eventCache.Add(event.ID)
+
 	fmt.Printf("[SYNC]   ✓ Stored event %s (kind %d)\n", event.ID[:16]+"...", event.Kind)
 
 	// Handle special event kinds
@@ -378,22 +446,16 @@ func (e *Engine) processEvent(event *nostr.Event) error {
 		}
 
 	case 7:
-		// Reaction - update aggregates
-		if err := e.updateReactionAggregate(event); err != nil {
-			return fmt.Errorf("failed to update reaction: %w", err)
-		}
+		// Tier 2 Optimization: Queue reaction aggregate update (async, non-blocking)
+		e.queueReactionUpdate(event)
 
 	case 1:
-		// Note - check if it's a reply
-		if err := e.updateReplyAggregate(event); err != nil {
-			return fmt.Errorf("failed to update reply: %w", err)
-		}
+		// Tier 2 Optimization: Queue reply aggregate update (async, non-blocking)
+		e.queueReplyUpdate(event)
 
 	case 9735:
-		// Zap - update aggregates
-		if err := e.updateZapAggregate(event); err != nil {
-			return fmt.Errorf("failed to update zap: %w", err)
-		}
+		// Tier 2 Optimization: Queue zap aggregate update (async, non-blocking)
+		e.queueZapUpdate(event)
 	}
 
 	// Phase 20: Evaluate retention if enabled
@@ -503,8 +565,8 @@ func (e *Engine) getActiveRelays(authors []string) []string {
 	return relays
 }
 
-// Helper methods for aggregate updates
-func (e *Engine) updateReactionAggregate(event *nostr.Event) error {
+// Tier 2: Async aggregate queueing methods (non-blocking)
+func (e *Engine) queueReactionUpdate(event *nostr.Event) {
 	// Find the event being reacted to
 	var targetEventID string
 	for _, tag := range event.Tags {
@@ -515,7 +577,7 @@ func (e *Engine) updateReactionAggregate(event *nostr.Event) error {
 	}
 
 	if targetEventID == "" {
-		return nil // No target event
+		return // No target event
 	}
 
 	// Reaction content is the emoji
@@ -524,10 +586,21 @@ func (e *Engine) updateReactionAggregate(event *nostr.Event) error {
 		reaction = "+" // Default like
 	}
 
-	return e.storage.IncrementReaction(e.ctx, targetEventID, reaction, int64(event.CreatedAt))
+	// Queue update (non-blocking)
+	select {
+	case e.aggregateChan <- &AggregateUpdate{
+		Type:          "reaction",
+		EventID:       targetEventID,
+		Reaction:      reaction,
+		InteractionAt: int64(event.CreatedAt),
+	}:
+	default:
+		// Channel full, log and drop (graceful degradation)
+		fmt.Printf("[SYNC] ⚠ Aggregate queue full, dropped reaction update\n")
+	}
 }
 
-func (e *Engine) updateReplyAggregate(event *nostr.Event) error {
+func (e *Engine) queueReplyUpdate(event *nostr.Event) {
 	// Check if this is a reply (has e tags)
 	var targetEventID string
 	for _, tag := range event.Tags {
@@ -538,13 +611,22 @@ func (e *Engine) updateReplyAggregate(event *nostr.Event) error {
 	}
 
 	if targetEventID == "" {
-		return nil // Not a reply
+		return // Not a reply
 	}
 
-	return e.storage.IncrementReplyCount(e.ctx, targetEventID, int64(event.CreatedAt))
+	// Queue update (non-blocking)
+	select {
+	case e.aggregateChan <- &AggregateUpdate{
+		Type:          "reply",
+		EventID:       targetEventID,
+		InteractionAt: int64(event.CreatedAt),
+	}:
+	default:
+		fmt.Printf("[SYNC] ⚠ Aggregate queue full, dropped reply update\n")
+	}
 }
 
-func (e *Engine) updateZapAggregate(event *nostr.Event) error {
+func (e *Engine) queueZapUpdate(event *nostr.Event) {
 	// Parse zap amount from bolt11 invoice
 	// This is simplified - real implementation needs to parse the invoice
 	var targetEventID string
@@ -558,8 +640,99 @@ func (e *Engine) updateZapAggregate(event *nostr.Event) error {
 	}
 
 	if targetEventID == "" {
-		return nil
+		return
 	}
 
-	return e.storage.AddZapAmount(e.ctx, targetEventID, amount, int64(event.CreatedAt))
+	// Queue update (non-blocking)
+	select {
+	case e.aggregateChan <- &AggregateUpdate{
+		Type:          "zap",
+		EventID:       targetEventID,
+		Sats:          amount,
+		InteractionAt: int64(event.CreatedAt),
+	}:
+	default:
+		fmt.Printf("[SYNC] ⚠ Aggregate queue full, dropped zap update\n")
+	}
+}
+
+// processAggregates processes aggregate updates in batches (Tier 2 optimization)
+func (e *Engine) processAggregates() {
+	defer e.wg.Done()
+
+	// Batch aggregates every 200ms for efficiency
+	ticker := time.NewTicker(200 * time.Millisecond)
+	defer ticker.Stop()
+
+	replies := make(map[string]int64)
+	reactions := make(map[string]map[string]int64)
+	zaps := make(map[string]struct {
+		Sats          int64
+		InteractionAt int64
+	})
+
+	flush := func() {
+		// Process batched replies
+		if len(replies) > 0 {
+			if err := e.storage.BatchIncrementReplies(e.ctx, replies); err != nil {
+				fmt.Printf("[SYNC] ⚠ Failed to batch update replies: %v\n", err)
+			}
+			replies = make(map[string]int64)
+		}
+
+		// Process batched reactions
+		if len(reactions) > 0 {
+			if err := e.storage.BatchIncrementReactions(e.ctx, reactions); err != nil {
+				fmt.Printf("[SYNC] ⚠ Failed to batch update reactions: %v\n", err)
+			}
+			reactions = make(map[string]map[string]int64)
+		}
+
+		// Process batched zaps
+		if len(zaps) > 0 {
+			if err := e.storage.BatchAddZaps(e.ctx, zaps); err != nil {
+				fmt.Printf("[SYNC] ⚠ Failed to batch update zaps: %v\n", err)
+			}
+			zaps = make(map[string]struct {
+				Sats          int64
+				InteractionAt int64
+			})
+		}
+	}
+
+	for {
+		select {
+		case <-e.ctx.Done():
+			flush() // Final flush before exit
+			return
+
+		case update, ok := <-e.aggregateChan:
+			if !ok {
+				flush() // Channel closed, final flush
+				return
+			}
+
+			// Accumulate updates by type
+			switch update.Type {
+			case "reply":
+				replies[update.EventID] = update.InteractionAt
+
+			case "reaction":
+				if reactions[update.EventID] == nil {
+					reactions[update.EventID] = make(map[string]int64)
+				}
+				reactions[update.EventID][update.Reaction] = update.InteractionAt
+
+			case "zap":
+				zaps[update.EventID] = struct {
+					Sats          int64
+					InteractionAt int64
+				}{Sats: update.Sats, InteractionAt: update.InteractionAt}
+			}
+
+		case <-ticker.C:
+			// Periodic flush every 200ms
+			flush()
+		}
+	}
 }

@@ -77,4 +77,4 @@ Implementation Plan
 - Backward compatible: simple keep_days retention unchanged.
 - Opt-in: advanced.enabled must be explicitly set to true.
 - Detailed diagnostics: per-rule stats, storage utilization, pruning reports.
-- See memory/retention_advanced.md and memory/PHASE_17_RETENTION.md for full specification.
+- See memory/retention_advanced.md and memory/PHASE20_COMPLETION.md for full specification.

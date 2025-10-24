@@ -463,7 +463,7 @@ sync:
 
 Rollout Plan
 
-1. **Deploy Phase 17 Code**
+1. **Deploy Phase 20 Code**
    - New retention package added
    - Config schema extended (backward compatible)
    - Advanced retention disabled by default
@@ -521,7 +521,7 @@ Update these files:
 - `memory/configuration.md` - Add advanced retention config examples
 - `memory/operations.md` - Update retention section with advanced features
 - `memory/storage_model.md` - Document retention_metadata table
-- `memory/PHASES.md` - Add Phase 17 summary
+- `memory/PHASES.md` - Add Phase 20 summary
 
 Do NOT change:
 - `memory/README.md` - Status unchanged, phases are internal

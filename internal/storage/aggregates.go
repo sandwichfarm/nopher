@@ -206,3 +206,113 @@ func (s *Storage) DeleteAggregate(ctx context.Context, eventID string) error {
 	}
 	return nil
 }
+
+// BatchIncrementReplies increments reply counts for multiple events (Performance optimization)
+func (s *Storage) BatchIncrementReplies(ctx context.Context, updates map[string]int64) error {
+	if len(updates) == 0 {
+		return nil
+	}
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.PrepareContext(ctx, `
+		INSERT INTO aggregates (event_id, reply_count, reaction_total, zap_sats_total, last_interaction_at)
+		VALUES (?, 1, 0, 0, ?)
+		ON CONFLICT(event_id) DO UPDATE SET
+			reply_count = reply_count + 1,
+			last_interaction_at = MAX(last_interaction_at, excluded.last_interaction_at)
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
+	for eventID, interactionAt := range updates {
+		if _, err := stmt.ExecContext(ctx, eventID, interactionAt); err != nil {
+			return fmt.Errorf("failed to increment reply for %s: %w", eventID, err)
+		}
+	}
+
+	return tx.Commit()
+}
+
+// BatchAddZaps adds zap amounts for multiple events (Performance optimization)
+func (s *Storage) BatchAddZaps(ctx context.Context, updates map[string]struct {
+	Sats          int64
+	InteractionAt int64
+}) error {
+	if len(updates) == 0 {
+		return nil
+	}
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.PrepareContext(ctx, `
+		INSERT INTO aggregates (event_id, reply_count, reaction_total, zap_sats_total, last_interaction_at)
+		VALUES (?, 0, 0, ?, ?)
+		ON CONFLICT(event_id) DO UPDATE SET
+			zap_sats_total = zap_sats_total + excluded.zap_sats_total,
+			last_interaction_at = MAX(last_interaction_at, excluded.last_interaction_at)
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
+	for eventID, update := range updates {
+		if _, err := stmt.ExecContext(ctx, eventID, update.Sats, update.InteractionAt); err != nil {
+			return fmt.Errorf("failed to add zap for %s: %w", eventID, err)
+		}
+	}
+
+	return tx.Commit()
+}
+
+// BatchIncrementReactions increments reaction counts for multiple events (Performance optimization)
+func (s *Storage) BatchIncrementReactions(ctx context.Context, updates map[string]map[string]int64) error {
+	if len(updates) == 0 {
+		return nil
+	}
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	for eventID, reactions := range updates {
+		// Get current aggregate
+		agg, err := s.GetAggregate(ctx, eventID)
+		if err != nil {
+			// Create new aggregate
+			agg = &Aggregate{
+				EventID:        eventID,
+				ReactionCounts: make(map[string]int),
+			}
+		}
+
+		// Increment reaction counts
+		for reaction, interactionAt := range reactions {
+			agg.ReactionCounts[reaction]++
+			agg.ReactionTotal++
+			if interactionAt > agg.LastInteractionAt {
+				agg.LastInteractionAt = interactionAt
+			}
+		}
+
+		// Save updated aggregate
+		if err := s.SaveAggregate(ctx, agg); err != nil {
+			return fmt.Errorf("failed to save aggregate for %s: %w", eventID, err)
+		}
+	}
+
+	return tx.Commit()
+}
