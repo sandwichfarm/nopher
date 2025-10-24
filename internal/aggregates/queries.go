@@ -208,6 +208,73 @@ func (qh *QueryHelper) enrichEvents(ctx context.Context, events []*nostr.Event) 
 	return enriched, nil
 }
 
+// filterAndSortEvents applies content filtering and sorting based on config
+func (qh *QueryHelper) filterAndSortEvents(enriched []*EnrichedEvent, sortMode string) []*EnrichedEvent {
+	// Apply content filtering if enabled
+	if qh.config.Behavior.ContentFiltering.Enabled {
+		filtered := make([]*EnrichedEvent, 0)
+		for _, e := range enriched {
+			if qh.passesContentFilter(e) {
+				filtered = append(filtered, e)
+			}
+		}
+		enriched = filtered
+	}
+
+	// Apply sorting
+	switch sortMode {
+	case "engagement":
+		sort.Slice(enriched, func(i, j int) bool {
+			return enriched[i].Aggregates.InteractionScore() > enriched[j].Aggregates.InteractionScore()
+		})
+	case "zaps":
+		sort.Slice(enriched, func(i, j int) bool {
+			return enriched[i].Aggregates.ZapSatsTotal > enriched[j].Aggregates.ZapSatsTotal
+		})
+	case "reactions":
+		sort.Slice(enriched, func(i, j int) bool {
+			return enriched[i].Aggregates.ReactionTotal > enriched[j].Aggregates.ReactionTotal
+		})
+	case "chronological":
+		fallthrough
+	default:
+		// Already in chronological order from query (newest first)
+		// No additional sorting needed
+	}
+
+	return enriched
+}
+
+// passesContentFilter checks if an event passes content filtering rules
+func (qh *QueryHelper) passesContentFilter(e *EnrichedEvent) bool {
+	cfg := qh.config.Behavior.ContentFiltering
+
+	// Check minimum reactions
+	if cfg.MinReactions > 0 && e.Aggregates.ReactionTotal < cfg.MinReactions {
+		return false
+	}
+
+	// Check minimum zap sats
+	if cfg.MinZapSats > 0 && e.Aggregates.ZapSatsTotal < int64(cfg.MinZapSats) {
+		return false
+	}
+
+	// Check minimum engagement (combined score)
+	if cfg.MinEngagement > 0 && e.Aggregates.InteractionScore() < int64(cfg.MinEngagement) {
+		return false
+	}
+
+	// Check hide no interactions
+	if cfg.HideNoInteractions && !e.Aggregates.HasInteractions() {
+		return false
+	}
+
+	// Content type filtering would go here if needed
+	// For now, we don't filter by content type
+
+	return true
+}
+
 // enrichEvent adds aggregate data to a single event
 func (qh *QueryHelper) enrichEvent(ctx context.Context, event *nostr.Event) *EnrichedEvent {
 	agg, _ := qh.manager.GetEventAggregates(ctx, event.ID)
@@ -295,13 +362,23 @@ func (qh *QueryHelper) GetNotes(ctx context.Context, limit int) ([]*EnrichedEven
 		}
 		if !threadInfo.IsReply() {
 			notes = append(notes, event)
-			if len(notes) >= limit {
-				break
-			}
 		}
 	}
 
-	return qh.enrichEvents(ctx, notes)
+	enriched, err := qh.enrichEvents(ctx, notes)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply filtering and sorting
+	enriched = qh.filterAndSortEvents(enriched, qh.config.Behavior.SortPreferences.Notes)
+
+	// Apply limit after filtering
+	if len(enriched) > limit {
+		enriched = enriched[:limit]
+	}
+
+	return enriched, nil
 }
 
 // GetArticles returns owner's long-form articles (kind 30023)
@@ -322,7 +399,20 @@ func (qh *QueryHelper) GetArticles(ctx context.Context, limit int) ([]*EnrichedE
 		return nil, err
 	}
 
-	return qh.enrichEvents(ctx, events)
+	enriched, err := qh.enrichEvents(ctx, events)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply filtering and sorting
+	enriched = qh.filterAndSortEvents(enriched, qh.config.Behavior.SortPreferences.Articles)
+
+	// Apply limit after filtering
+	if len(enriched) > limit {
+		enriched = enriched[:limit]
+	}
+
+	return enriched, nil
 }
 
 // GetReplies returns replies to owner's content
@@ -357,13 +447,23 @@ func (qh *QueryHelper) GetReplies(ctx context.Context, limit int) ([]*EnrichedEv
 		// A reply must have a ReplyToID (e tag)
 		if threadInfo.IsReply() && qh.manager.IsMentioning(ctx, event, ownerHex) {
 			replies = append(replies, event)
-			if len(replies) >= limit {
-				break
-			}
 		}
 	}
 
-	return qh.enrichEvents(ctx, replies)
+	enriched, err := qh.enrichEvents(ctx, replies)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply filtering and sorting
+	enriched = qh.filterAndSortEvents(enriched, qh.config.Behavior.SortPreferences.Replies)
+
+	// Apply limit after filtering
+	if len(enriched) > limit {
+		enriched = enriched[:limit]
+	}
+
+	return enriched, nil
 }
 
 // GetMentions returns posts that mention the owner (including non-reply mentions)
@@ -387,6 +487,19 @@ func (qh *QueryHelper) GetMentions(ctx context.Context, limit int) ([]*EnrichedE
 		return nil, err
 	}
 
+	enriched, err := qh.enrichEvents(ctx, events)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply filtering and sorting
+	enriched = qh.filterAndSortEvents(enriched, qh.config.Behavior.SortPreferences.Mentions)
+
+	// Apply limit after filtering
+	if len(enriched) > limit {
+		enriched = enriched[:limit]
+	}
+
 	// Return all mentions (both replies and non-reply mentions)
-	return qh.enrichEvents(ctx, events)
+	return enriched, nil
 }

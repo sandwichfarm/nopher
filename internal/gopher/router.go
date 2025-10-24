@@ -23,7 +23,7 @@ func NewRouter(server *Server, host string, port int) *Router {
 		server:   server,
 		host:     host,
 		port:     port,
-		renderer: NewRenderer(),
+		renderer: NewRenderer(server.fullConfig),
 	}
 }
 

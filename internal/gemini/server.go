@@ -19,6 +19,7 @@ import (
 // Server implements a Gemini protocol server
 type Server struct {
 	config      *config.GeminiProtocol
+	fullConfig  *config.Config
 	storage     *storage.Storage
 	router      *Router
 	host        string
@@ -37,6 +38,7 @@ func New(cfg *config.GeminiProtocol, fullCfg *config.Config, st *storage.Storage
 
 	s := &Server{
 		config:      cfg,
+		fullConfig:  fullCfg,
 		storage:     st,
 		host:        host,
 		ctx:         ctx,

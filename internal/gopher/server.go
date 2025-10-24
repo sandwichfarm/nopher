@@ -17,6 +17,7 @@ import (
 // Server implements a Gopher protocol server (RFC 1436)
 type Server struct {
 	config      *config.GopherProtocol
+	fullConfig  *config.Config
 	storage     *storage.Storage
 	router      *Router
 	host        string
@@ -34,6 +35,7 @@ func New(cfg *config.GopherProtocol, fullCfg *config.Config, st *storage.Storage
 
 	s := &Server{
 		config:      cfg,
+		fullConfig:  fullCfg,
 		storage:     st,
 		host:        host,
 		ctx:         ctx,

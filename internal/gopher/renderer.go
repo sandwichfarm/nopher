@@ -7,18 +7,24 @@ import (
 
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sandwich/nopher/internal/aggregates"
+	"github.com/sandwich/nopher/internal/config"
 	"github.com/sandwich/nopher/internal/markdown"
+	"github.com/sandwich/nopher/internal/presentation"
 )
 
 // Renderer renders Nostr events as Gopher text
 type Renderer struct {
 	parser *markdown.Parser
+	config *config.Config
+	loader *presentation.Loader
 }
 
 // NewRenderer creates a new event renderer
-func NewRenderer() *Renderer {
+func NewRenderer(cfg *config.Config) *Renderer {
 	return &Renderer{
 		parser: markdown.NewParser(),
+		config: cfg,
+		loader: presentation.NewLoader(cfg),
 	}
 }
 
@@ -33,15 +39,22 @@ func (r *Renderer) RenderNote(event *nostr.Event, agg *aggregates.EventAggregate
 	sb.WriteString("\n\n")
 
 	// Content (render markdown)
-	rendered, _ := r.parser.RenderGopher([]byte(event.Content), nil)
+	content := event.Content
+
+	// Apply max content length if configured
+	if r.config.Display.Limits.MaxContentLength > 0 && len(content) > r.config.Display.Limits.MaxContentLength {
+		content = content[:r.config.Display.Limits.MaxContentLength] + r.config.Display.Limits.TruncateIndicator
+	}
+
+	rendered, _ := r.parser.RenderGopher([]byte(content), nil)
 	sb.WriteString(rendered)
 
-	// Aggregates footer
-	if agg != nil && agg.HasInteractions() {
+	// Aggregates footer - only show if configured for detail view
+	if r.config.Display.Detail.ShowInteractions && agg != nil && agg.HasInteractions() {
 		sb.WriteString("\n")
-		sb.WriteString(strings.Repeat("-", 70))
+		sb.WriteString(r.applyConfigSeparator("section"))
 		sb.WriteString("\n")
-		sb.WriteString(r.renderAggregates(agg))
+		sb.WriteString(r.renderAggregatesForDetail(agg))
 	}
 
 	return sb.String()
@@ -101,15 +114,28 @@ func (r *Renderer) RenderThread(root *aggregates.EnrichedEvent, replies []*aggre
 	return sb.String()
 }
 
-// renderAggregates renders interaction stats
+// renderAggregates renders interaction stats (for feed view - respects feed config)
 func (r *Renderer) renderAggregates(agg *aggregates.EventAggregates) string {
+	if !r.config.Display.Feed.ShowInteractions {
+		return ""
+	}
+	return r.buildAggregatesString(agg, r.config.Display.Feed.ShowReplies, r.config.Display.Feed.ShowReactions, r.config.Display.Feed.ShowZaps)
+}
+
+// renderAggregatesForDetail renders interaction stats for detail view
+func (r *Renderer) renderAggregatesForDetail(agg *aggregates.EventAggregates) string {
+	return r.buildAggregatesString(agg, r.config.Display.Detail.ShowReplies, r.config.Display.Detail.ShowReactions, r.config.Display.Detail.ShowZaps)
+}
+
+// buildAggregatesString builds the aggregates string based on what should be shown
+func (r *Renderer) buildAggregatesString(agg *aggregates.EventAggregates, showReplies, showReactions, showZaps bool) string {
 	var parts []string
 
-	if agg.ReplyCount > 0 {
+	if showReplies && agg.ReplyCount > 0 {
 		parts = append(parts, fmt.Sprintf("%d replies", agg.ReplyCount))
 	}
 
-	if agg.ReactionTotal > 0 {
+	if showReactions && agg.ReactionTotal > 0 {
 		// Show total reactions with breakdown
 		if len(agg.ReactionCounts) > 0 {
 			var reactionParts []string
@@ -122,7 +148,7 @@ func (r *Renderer) renderAggregates(agg *aggregates.EventAggregates) string {
 		}
 	}
 
-	if agg.ZapSatsTotal > 0 {
+	if showZaps && agg.ZapSatsTotal > 0 {
 		parts = append(parts, fmt.Sprintf("%s zapped", aggregates.FormatSats(agg.ZapSatsTotal)))
 	}
 
@@ -131,6 +157,51 @@ func (r *Renderer) renderAggregates(agg *aggregates.EventAggregates) string {
 	}
 
 	return "Interactions: " + strings.Join(parts, ", ") + "\n"
+}
+
+// applyConfigSeparator applies the configured separator for the given type
+func (r *Renderer) applyConfigSeparator(separatorType string) string {
+	var sep string
+	switch separatorType {
+	case "item":
+		sep = r.config.Presentation.Separators.Item.Gopher
+	case "section":
+		sep = r.config.Presentation.Separators.Section.Gopher
+	default:
+		sep = "---"
+	}
+
+	// If no custom separator, use default visual separator
+	if sep == "" {
+		if separatorType == "section" {
+			return strings.Repeat("-", 70)
+		}
+		return ""
+	}
+
+	return sep
+}
+
+// applyHeadersFooters wraps content with configured headers and footers
+func (r *Renderer) applyHeadersFooters(content, page string) string {
+	var sb strings.Builder
+
+	// Add header if configured
+	if header, err := r.loader.GetHeader(page); err == nil && header != "" {
+		sb.WriteString(header)
+		sb.WriteString("\n\n")
+	}
+
+	// Add main content
+	sb.WriteString(content)
+
+	// Add footer if configured
+	if footer, err := r.loader.GetFooter(page); err == nil && footer != "" {
+		sb.WriteString("\n\n")
+		sb.WriteString(footer)
+	}
+
+	return sb.String()
 }
 
 // truncatePubkey truncates a pubkey for display
@@ -188,11 +259,16 @@ func (r *Renderer) RenderNoteList(notes []*aggregates.EnrichedEvent, title strin
 		return lines
 	}
 
+	summaryLength := r.config.Display.Limits.SummaryLength
+	if summaryLength <= 0 {
+		summaryLength = 70 // Default fallback
+	}
+
 	for i, note := range notes {
 		// Extract first line of content as summary
 		content := note.Event.Content
-		if len(content) > 70 {
-			content = content[:67] + "..."
+		if len(content) > summaryLength {
+			content = content[:summaryLength-len(r.config.Display.Limits.TruncateIndicator)] + r.config.Display.Limits.TruncateIndicator
 		}
 		firstLine := strings.Split(content, "\n")[0]
 
@@ -201,8 +277,18 @@ func (r *Renderer) RenderNoteList(notes []*aggregates.EnrichedEvent, title strin
 			truncatePubkey(note.Event.PubKey),
 			formatTimestamp(note.Event.CreatedAt)))
 
-		if note.Aggregates != nil && note.Aggregates.HasInteractions() {
-			lines = append(lines, fmt.Sprintf("   %s", r.renderAggregates(note.Aggregates)))
+		// Only show aggregates if configured for feed view
+		if r.config.Display.Feed.ShowInteractions && note.Aggregates != nil && note.Aggregates.HasInteractions() {
+			aggStr := r.renderAggregates(note.Aggregates)
+			if aggStr != "" {
+				lines = append(lines, fmt.Sprintf("   %s", aggStr))
+			}
+		}
+
+		// Apply item separator if configured
+		itemSep := r.applyConfigSeparator("item")
+		if itemSep != "" {
+			lines = append(lines, itemSep)
 		}
 
 		lines = append(lines, "")

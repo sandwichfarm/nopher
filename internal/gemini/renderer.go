@@ -7,18 +7,24 @@ import (
 
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sandwich/nopher/internal/aggregates"
+	"github.com/sandwich/nopher/internal/config"
 	"github.com/sandwich/nopher/internal/markdown"
+	"github.com/sandwich/nopher/internal/presentation"
 )
 
 // Renderer renders Nostr events as Gemtext
 type Renderer struct {
 	parser *markdown.Parser
+	config *config.Config
+	loader *presentation.Loader
 }
 
 // NewRenderer creates a new event renderer
-func NewRenderer() *Renderer {
+func NewRenderer(cfg *config.Config) *Renderer {
 	return &Renderer{
 		parser: markdown.NewParser(),
+		config: cfg,
+		loader: presentation.NewLoader(cfg),
 	}
 }
 
@@ -167,15 +173,28 @@ func (r *Renderer) RenderNoteList(notes []*aggregates.EnrichedEvent, title, home
 	return sb.String()
 }
 
-// renderAggregates renders interaction stats
+// renderAggregates renders interaction stats (for feed view)
 func (r *Renderer) renderAggregates(agg *aggregates.EventAggregates) string {
+	if !r.config.Display.Feed.ShowInteractions {
+		return ""
+	}
+	return r.buildAggregatesString(agg, r.config.Display.Feed.ShowReplies, r.config.Display.Feed.ShowReactions, r.config.Display.Feed.ShowZaps)
+}
+
+// renderAggregatesForDetail renders interaction stats for detail view
+func (r *Renderer) renderAggregatesForDetail(agg *aggregates.EventAggregates) string {
+	return r.buildAggregatesString(agg, r.config.Display.Detail.ShowReplies, r.config.Display.Detail.ShowReactions, r.config.Display.Detail.ShowZaps)
+}
+
+// buildAggregatesString builds the aggregates string based on what should be shown
+func (r *Renderer) buildAggregatesString(agg *aggregates.EventAggregates, showReplies, showReactions, showZaps bool) string {
 	var parts []string
 
-	if agg.ReplyCount > 0 {
+	if showReplies && agg.ReplyCount > 0 {
 		parts = append(parts, fmt.Sprintf("%d replies", agg.ReplyCount))
 	}
 
-	if agg.ReactionTotal > 0 {
+	if showReactions && agg.ReactionTotal > 0 {
 		// Show total reactions with breakdown
 		if len(agg.ReactionCounts) > 0 {
 			var reactionParts []string
@@ -188,7 +207,7 @@ func (r *Renderer) renderAggregates(agg *aggregates.EventAggregates) string {
 		}
 	}
 
-	if agg.ZapSatsTotal > 0 {
+	if showZaps && agg.ZapSatsTotal > 0 {
 		parts = append(parts, fmt.Sprintf("%s zapped", aggregates.FormatSats(agg.ZapSatsTotal)))
 	}
 
@@ -228,4 +247,26 @@ func formatTimestamp(ts nostr.Timestamp) string {
 	}
 
 	return t.Format("2006-01-02 15:04")
+}
+
+// applyHeadersFooters wraps content with configured headers and footers
+func (r *Renderer) applyHeadersFooters(content, page string) string {
+	var sb strings.Builder
+
+	// Add header if configured
+	if header, err := r.loader.GetHeader(page); err == nil && header != "" {
+		sb.WriteString(header)
+		sb.WriteString("\n\n")
+	}
+
+	// Add main content
+	sb.WriteString(content)
+
+	// Add footer if configured
+	if footer, err := r.loader.GetFooter(page); err == nil && footer != "" {
+		sb.WriteString("\n\n")
+		sb.WriteString(footer)
+	}
+
+	return sb.String()
 }
