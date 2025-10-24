@@ -15,13 +15,15 @@ import (
 type BackupManager struct {
 	storage *storage.Storage
 	logger  *Logger
+	dbPath  string
 }
 
 // NewBackupManager creates a new backup manager
-func NewBackupManager(st *storage.Storage, logger *Logger) *BackupManager {
+func NewBackupManager(st *storage.Storage, logger *Logger, dbPath string) *BackupManager {
 	return &BackupManager{
 		storage: st,
 		logger:  logger.WithComponent("backup"),
+		dbPath:  dbPath,
 	}
 }
 
@@ -37,10 +39,11 @@ func (b *BackupManager) Backup(ctx context.Context, destPath string) error {
 
 	switch driver {
 	case "sqlite":
-		sourcePath = b.storage.DB().Stats().DriverName // This won't work, need actual path
-		// We need to pass the config to get the path
-		b.logger.Error("backup not yet implemented for SQLite without config access")
-		return fmt.Errorf("backup requires config access for path")
+		sourcePath = b.dbPath
+		if sourcePath == "" {
+			b.logger.Error("database path not configured")
+			return fmt.Errorf("database path not set")
+		}
 	case "lmdb":
 		b.logger.Error("backup not yet implemented for LMDB")
 		return fmt.Errorf("LMDB backup not implemented")
