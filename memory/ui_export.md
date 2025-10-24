@@ -2,22 +2,46 @@ Protocol Rendering
 
 Gopher Server (RFC 1436)
 - Serves on port 70; responds to selectors with gophermaps or text files.
-- Main menu (selector "/"): lists sections (Notes, Articles, Inbox, Archives, Diagnostics).
+- Homepage (selector "/" or empty): fully configurable via layout.pages.home or layout.sections
+  - Default: Auto-generated gophermap menu with links to all sections
+  - Customizable: Can show composed sections, single section, or custom content
+- Default sections (all configurable via layout.sections):
+  - /notes - Owner's notes (kind 1, non-replies)
+  - /articles - Owner's long-form articles (kind 30023)
+  - /replies - Replies to owner's content
+  - /mentions - Posts mentioning the owner
+  - /archive - Time-based archives (by year/month)
+  - /about - Owner profile (kind 0)
+  - /diagnostics - System status and statistics
 - Per-section views: gophermap with item type '0' (text) or '1' (submenu) for each event.
 - Text rendering: converts Nostr event content to wrapped plain text; shows metadata (author, timestamp, reactions/zaps).
 - Thread navigation: parent/replies linked via selectors; indented display.
+- Event detail: /event/<id> shows full event with thread context.
 - Archives: gophermap by year/month with links to individual posts.
 - Diagnostics: text file showing relay status, sync cursors, author counts.
 
+Note: "inbox" and "outbox" are internal concepts for data organization, not exposed as paths.
+
 Gemini Server (gemini://)
 - Serves on port 1965 with TLS (self-signed or custom cert).
-- Main page (gemini://host/): gemtext with links to sections.
+- Main page (gemini://host/ or gemini://host): homepage gemtext with links to all sections.
+- Default sections (same as Gopher, configurable):
+  - /notes - Owner's notes (kind 1, non-replies)
+  - /articles - Owner's long-form articles (kind 30023)
+  - /replies - Replies to owner's content
+  - /mentions - Posts mentioning the owner
+  - /archive - Time-based archives (by year/month)
+  - /about - Owner profile (kind 0)
+  - /diagnostics - System status and statistics
 - Per-section views: gemtext document with event links (=> /event/<id>).
 - Event rendering: gemtext formatting with headings, quotes, preformatted blocks; reactions/zaps shown as text.
+- Event detail: gemini://host/event/<id> shows full event with thread context.
 - Thread navigation: links to parent and child replies.
 - Input support: search queries, filter selection via Gemini input (status 10).
 - Archives: gemtext index by year/month with links.
 - Diagnostics: gemtext page with relay/sync status.
+
+Note: "inbox" and "outbox" are internal concepts for data organization, not exposed as paths.
 
 Finger Server (RFC 742)
 - Serves on port 79; responds to finger queries.

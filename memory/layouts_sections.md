@@ -37,67 +37,110 @@ Filter spec (examples)
 - include_threads_of_mine: true|false
 
 Default layout (when none configured)
-- Profile header (owner's kind 0)
-- Recent Notes: outbox, kinds:[1], is_reply:false, limit:20, template:list
-- Recent Comments: outbox, kinds:[1], is_reply:true, template:threaded, limit:20
-- Recent Articles: outbox, kinds:[30023], limit:10, template:list
-- Archives: month/year pages for Notes and Articles
+
+Homepage (/ or empty selector):
+- **Default behavior**: Auto-generated menu (gophermap/gemtext) with links to all sections
+- **Fully customizable**: Configure via pages.home.layout or create a section with path: "/"
+- **Composable**: Can show multiple sections, single section, or custom content
+
+Default sections (user-facing paths):
+- /notes - Owner's notes (outbox, kinds:[1], is_reply:false, limit:20)
+- /articles - Owner's articles (outbox, kinds:[30023], limit:10)
+- /replies - Replies to owner (inbox, filter: replies_to:owner)
+- /mentions - Mentions of owner (inbox, filter: mentions:owner)
+- /archive - Time-based archives (by year/month)
+- /about - Owner profile (kind 0)
+- /diagnostics - System status
+
+Customization Options for Homepage (/):
+1. **Menu (default)**: Auto-generated links to all sections
+2. **Composed page**: Multiple sections via pages.home.layout (e.g., profile + notes + replies)
+3. **Single section**: Create a section with path: "/" (e.g., just show recent notes)
+4. **Custom template**: Use any template (list, threaded, cards, etc.)
+
+Note: "inbox" and "outbox" are internal source identifiers in section config, not exposed as paths.
+Sections use source: "inbox" or source: "outbox" internally, but are accessed via descriptive paths like /replies or /notes.
 
 Example (YAML fragment)
 
 layout:
   sections:
-    profile:
-      id: "profile"
-      title: "Profile"
-      source: "outbox"
+    about:
+      id: "about"
+      path: "/about"                  # User-facing path
+      title: "About"
+      source: "outbox"                # Internal: where data comes from
       filter: { kinds: [0], authors: [owner] }
       template: "profile"
       hide_when_empty: false
     notes:
       id: "notes"
-      title: "Recent Notes"
-      source: "outbox"
+      path: "/notes"                  # User-facing path
+      title: "Notes"
+      source: "outbox"                # Internal: owner's content
       filter: { kinds: [1], authors: [owner], is_reply: false }
       sort: "-created_at"
       limit: 20
       template: "list"
       archive: { by: "month", route: "/archive/notes/{YYYY}/{MM}" }
-      feeds: { rss: true, json: true }
-    comments:
-      id: "comments"
-      title: "Recent Comments"
-      source: "outbox"
-      filter: { kinds: [1], authors: [owner], is_reply: true }
-      sort: "-created_at"
-      limit: 20
-      template: "threaded"
     articles:
       id: "articles"
+      path: "/articles"               # User-facing path
       title: "Articles"
-      source: "outbox"
+      source: "outbox"                # Internal: owner's content
       filter: { kinds: [30023], authors: [owner] }
       sort: "-created_at"
       limit: 10
       template: "list"
       archive: { by: "year", route: "/archive/articles/{YYYY}" }
-    interactions:
-      id: "interactions"
-      title: "Interactions"
-      source: "inbox"
-      filter: { kinds: [7, 9735], mentions: "owner" }
+    replies:
+      id: "replies"
+      path: "/replies"                # User-facing path
+      title: "Replies"
+      source: "inbox"                 # Internal: content targeting owner
+      filter: { kinds: [1], replies_to: "owner" }
+      sort: "-created_at"
+      limit: 50
+      template: "threaded"
+    mentions:
+      id: "mentions"
+      path: "/mentions"               # User-facing path
+      title: "Mentions"
+      source: "inbox"                 # Internal: content mentioning owner
+      filter: { mentions: "owner" }
       sort: "-created_at"
       limit: 50
       template: "list"
   pages:
     home:
+      path: "/"                       # Root path (customizable)
       layout:
-        - ["profile"]
-        - ["notes"]
-        - ["comments", "articles"]
-        - ["interactions"]
+        - ["about"]                   # Row 1: profile section
+        - ["notes", "articles"]       # Row 2: two sections side-by-side
+        - ["replies", "mentions"]     # Row 3: two sections side-by-side
+
+# Alternative: Custom homepage (just recent notes)
+# pages:
+#   home:
+#     path: "/"
+#     layout:
+#       - ["notes"]
+
+# Alternative: Custom homepage (single custom section at /)
+# sections:
+#   homepage:
+#     path: "/"                       # Override default menu
+#     title: "Welcome"
+#     source: "outbox"
+#     filter: { kinds: [1, 30023], authors: [owner] }
+#     sort: "-created_at"
+#     limit: 10
+#     template: "list"
 
 Notes
+- The homepage (/) is fully configurable via pages.home.layout or by creating a section with path: "/"
+- Default behavior: Auto-generated menu linking to all sections
+- Custom behavior: Compose any sections you want, or create a single section at /
 - Sections obey global sync scope by default; they can narrow to authors:[owner] etc.
 - Archives are optional per section; feeds can be generated per section.
 - Templates are themeable; operators can choose different templates per section.
