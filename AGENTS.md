@@ -30,14 +30,30 @@ Core Principles
    - Keep memory/ in sync with implementation
    - Update PHASES.md if phase definition changes
 
-5. **Documentation Philosophy**
-   - User-facing docs (README.md, CONTRIBUTING.md, docs/) reflect current source state only
-   - No project management status in user-facing documentation
-   - No phase completion checklists or future roadmaps in user docs
-   - Keep implementation plans and SDLC tracking in memory/ only
-   - Status sections describe what works NOW, not what's planned
-   - docs/ contains guides for features that actually exist
-   - See "Documentation Guidelines" section below
+5. **Documentation Philosophy - CRITICAL DISTINCTION**
+
+   **📁 memory/ = Planning, Design, SDLC (Internal)**
+   - ALL implementation planning documents
+   - ALL phase completion tracking (PHASE*.md)
+   - ALL design documents (architecture.md, storage_model.md, etc.)
+   - ALL SDLC/project management files
+   - ALL-CAPS documents about implementation status
+   - Roadmaps, future plans, completion criteria
+   - Technical specifications and rationale
+   - FOR: Developers and AI agents working on implementation
+
+   **📁 docs/ = User Guides (External)**
+   - User-facing documentation ONLY
+   - Deployment guides, configuration guides
+   - Troubleshooting, API references
+   - How-to guides for EXISTING features
+   - Architecture overviews (conceptual, not status)
+   - FOR: End users, operators, contributors using the software
+
+   **RULE: If it mentions phases, completion status, or future implementation → memory/**
+   **RULE: If it's a guide for using what exists now → docs/**
+
+   See "Documentation Guidelines" section below for details
 
 6. **Code Quality and Architecture**
    - Write modular, DRY (Don't Repeat Yourself) code
@@ -805,69 +821,76 @@ Bad:
 
 Documentation Guidelines
 
-User-Facing Documentation (README.md, CONTRIBUTING.md, docs/)
+⚠️ **CRITICAL: File Location Matters** ⚠️
 
-These documents are for end users, operators, and contributors. They describe what exists and works NOW.
+**memory/ vs docs/ - WRONG vs RIGHT:**
+
+❌ **WRONG - These belong in memory/ NOT docs/:**
+```
+docs/PHASE*_COMPLETION.md      ← NO! Phase tracking = memory/
+docs/[DESIGN_TOPIC].md         ← NO! If it's design/planning = memory/
+```
+
+✅ **RIGHT - Correct locations:**
+```
+memory/PHASE*_COMPLETION.md    ← YES! Phase completion docs go here
+memory/[design_topic].md       ← YES! Implementation design goes here
+docs/[feature]-guide.md        ← YES! User guide for features
+docs/installation.md           ← YES! How to install what exists NOW
+```
+
+**📁 docs/ - User-Facing Documentation**
+
+**PURPOSE:** Help users/operators/contributors USE the software that exists today.
 
 **Applies to:**
 - README.md (project overview and quick start)
 - CONTRIBUTING.md (contribution guidelines)
-- docs/ (any user-facing documentation like deployment guides, troubleshooting, API references, tutorials, etc.)
+- docs/ directory (user guides only)
 
-**What to Include:**
-- Current functionality that actually works
-- Installation instructions for the current state
-- Configuration examples that work now
-- How-to guides for implemented features
-- Troubleshooting for real issues users might encounter
-- Architecture overview (conceptual, not implementation status)
-- Links to design docs for those interested in internals
+**What BELONGS in docs/:**
+- ✅ Deployment guides for current functionality
+- ✅ Configuration reference for working options
+- ✅ Troubleshooting real issues
+- ✅ API reference for implemented endpoints
+- ✅ How-to guides for features that work NOW
+- ✅ Architecture overview (conceptual, for users)
 
-**What NOT to Include:**
-- Phase completion checklists (❌ "Phase 0 Complete")
-- "Next steps" or future implementation plans
-- "Coming soon" features or roadmaps
-- SDLC status updates or project management info
-- Checklists of what's done vs. what's pending
-- Implementation plans or timelines
+**What NEVER goes in docs/:**
+- ❌ PHASE*.md files (phase completion tracking)
+- ❌ "Phase X Complete" status updates
+- ❌ Implementation roadmaps or future plans
+- ❌ "Next steps" or "Coming soon" sections
+- ❌ Completion checklists or criteria
+- ❌ SDLC/project management content
+- ❌ Technical design rationale
+- ❌ ALL-CAPS status documents
 
-**Status Sections:**
-- State what IS implemented and working
-- Be clear about what's NOT yet functional
-- Use language like "Early Development - Not yet ready for production"
-- Example: "Current implementation includes configuration and storage layers. Protocol servers not yet implemented."
+**📁 memory/ - Planning, Design, SDLC Documentation**
 
-**Example docs/ structure (when created):**
-```
-docs/
-├── deployment.md       # How to deploy what's implemented
-├── configuration.md    # User guide to config options that work
-├── troubleshooting.md  # Real issues users can encounter now
-└── api-reference.md    # Document APIs that actually exist
-```
-
-Design Documentation (memory/)
-
-These documents are for developers and describe the technical design, implementation plan, and future roadmap.
+**PURPOSE:** Track implementation, design decisions, and project planning.
 
 **Applies to:**
-- memory/PHASES.md (implementation roadmap and completion criteria)
-- memory/architecture.md (technical design decisions)
-- memory/configuration.md (config schema and design rationale)
-- All other memory/*.md files
+- memory/PHASES.md (implementation roadmap)
+- memory/PHASE*_COMPLETION.md (phase tracking)
+- memory/*.md (all design documents)
 
-**What to Include:**
-- Detailed design decisions and rationale
-- Implementation phases and roadmaps
-- Future plans and features
-- Technical specifications
-- Completion criteria for phases
-- SDLC tracking and project management
+**What BELONGS in memory/:**
+- ✅ ALL PHASE*.md files (completion tracking)
+- ✅ Implementation roadmaps (PHASES.md)
+- ✅ Technical design documents
+- ✅ Architecture decisions and rationale
+- ✅ Future plans and feature specs
+- ✅ Completion criteria for phases
+- ✅ SDLC tracking and status
+- ✅ Configuration schema design
+- ✅ ALL-CAPS documents about status
 
-**This is where SDLC content belongs:**
-- memory/PHASES.md for implementation roadmap
-- memory/*.md for design decisions
-- Keep project management separate from user docs
+**Examples of what goes in memory/:**
+- ✅ PHASE*_COMPLETION.md files
+- ✅ Technical design documents
+- ✅ Implementation specifications
+- ✅ Architecture decision records
 
 Example README Status Section
 
