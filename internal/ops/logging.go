@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sandwich/nopher/internal/config"
+	"github.com/sandwich/nophr/internal/config"
 )
 
 // Logger is a structured logger wrapper
@@ -223,7 +223,7 @@ func (l *Logger) LogBackupOperation(op string, path string, sizeBytes int64, err
 
 // LogStartup logs application startup information
 func (l *Logger) LogStartup(version, commit string, config map[string]interface{}) {
-	l.Info("nopher starting",
+	l.Info("nophr starting",
 		"version", version,
 		"commit", commit,
 		"config", config)
@@ -231,7 +231,7 @@ func (l *Logger) LogStartup(version, commit string, config map[string]interface{
 
 // LogShutdown logs application shutdown
 func (l *Logger) LogShutdown(reason string) {
-	l.Info("nopher shutting down",
+	l.Info("nophr shutting down",
 		"reason", reason)
 }
 

@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/nbd-wtf/go-nostr"
-	"github.com/sandwich/nopher/internal/aggregates"
-	"github.com/sandwich/nopher/internal/sections"
+	"github.com/sandwich/nophr/internal/aggregates"
+	"github.com/sandwich/nophr/internal/sections"
 )
 
 // Router handles URL routing for Gemini requests

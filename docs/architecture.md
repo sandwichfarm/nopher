@@ -2,11 +2,11 @@
 
 **Status:** Technical deep-dive for developers and contributors
 
-Complete architectural overview of Nopher's design, components, and implementation.
+Complete architectural overview of nophr's design, components, and implementation.
 
 ## Executive Summary
 
-Nopher is a **personal Nostr gateway** that serves content via legacy internet protocols (Gopher, Gemini, Finger). It acts as a bridge between the modern Nostr protocol and classic protocols from the 1980s-90s.
+nophr is a **personal Nostr gateway** that serves content via legacy internet protocols (Gopher, Gemini, Finger). It acts as a bridge between the modern Nostr protocol and classic protocols from the 1980s-90s.
 
 **Key design principles:**
 1. **Config-first** - Everything customizable via YAML
@@ -128,7 +128,7 @@ Validate() → Check required fields, formats
 
 **Location:** `internal/storage/`
 
-**Purpose:** Persist events and Nopher-specific data.
+**Purpose:** Persist events and nophr-specific data.
 
 **Architecture:**
 ```
@@ -162,7 +162,7 @@ Validate() → Check required fields, formats
 - Signature verification
 - Replaceable events logic
 
-**What Nopher adds:**
+**What nophr adds:**
 - relay_hints (NIP-65 data)
 - graph_nodes (social graph cache)
 - sync_state (cursors per relay/kind)
@@ -964,8 +964,8 @@ naddr          → /addr/{kind}/{pubkey}/{d-tag}
 ## Code Organization
 
 ```
-nopher/
-├── cmd/nopher/              # Main application entry point
+nophr/
+├── cmd/nophr/              # Main application entry point
 │   └── main.go              # CLI, server startup
 │
 ├── internal/                # Private application code
@@ -1062,7 +1062,7 @@ nopher/
 │       └── renderer.go      # Response formatting
 │
 ├── configs/                 # Example configurations
-│   └── nopher.example.yaml
+│   └── nophr.example.yaml
 │
 ├── memory/                  # Design documentation
 │   ├── README.md
@@ -1144,7 +1144,7 @@ nopher/
 - Querying via Nostr filters
 - WebSocket relay interface (optional)
 
-**What Nopher adds:**
+**What nophr adds:**
 - Sync engine (pull from remote → push to Khatru)
 - Relay discovery and social graph
 - Aggregates (interaction counts)
@@ -1160,7 +1160,7 @@ nopher/
 ```
 1. User publishes note (kind 1) on remote relay
    │
-2. Nopher sync engine subscribes to relay
+2. nophr sync engine subscribes to relay
    │
 3. Relay sends EVENT message
    │
@@ -1243,7 +1243,7 @@ nopher/
 
 ## Concurrency Model
 
-Nopher uses Go's goroutines for concurrency:
+nophr uses Go's goroutines for concurrency:
 
 **Protocol servers:**
 - Each protocol server runs in own goroutine

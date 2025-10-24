@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/nbd-wtf/go-nostr"
-	"github.com/sandwich/nopher/internal/storage"
+	"github.com/sandwich/nophr/internal/storage"
 )
 
 // ParseRelayHints extracts relay hints from a NIP-65 kind 10002 event

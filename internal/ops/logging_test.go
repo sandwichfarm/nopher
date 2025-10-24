@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sandwich/nopher/internal/config"
+	"github.com/sandwich/nophr/internal/config"
 )
 
 func TestNewLogger(t *testing.T) {

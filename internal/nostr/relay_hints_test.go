@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/nbd-wtf/go-nostr"
-	"github.com/sandwich/nopher/internal/storage"
+	"github.com/sandwich/nophr/internal/storage"
 )
 
 func TestParseRelayHints(t *testing.T) {

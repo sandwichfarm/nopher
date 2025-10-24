@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sandwich/nopher/internal/aggregates"
-	"github.com/sandwich/nopher/internal/config"
-	"github.com/sandwich/nopher/internal/storage"
+	"github.com/sandwich/nophr/internal/aggregates"
+	"github.com/sandwich/nophr/internal/config"
+	"github.com/sandwich/nophr/internal/storage"
 )
 
 func TestFingerProtocol(t *testing.T) {

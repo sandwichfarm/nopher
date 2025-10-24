@@ -1,0 +1,156 @@
+site:
+  title: "Alice's Notes"
+  theme: "minimal"
+  base_url: "https://notes.example.com"
+
+identity:
+  npub: "npub1owner...
+"
+  # NOPHER_NSEC=... in environment
+
+relays:
+  seeds:
+    - "wss://relay.example1"
+    - "wss://relay.example2"
+  policy:
+    connect_timeout_ms: 5000
+    max_concurrent_subs: 8
+    backoff_ms: [500, 1500, 5000]
+
+discovery:
+  refresh_seconds: 900
+  use_owner_hints: true
+  use_author_hints: true
+  fallback_to_seeds: true
+  max_relays_per_author: 8
+
+sync:
+  kinds: [0,1,3,6,7,9735,30023,10002]
+  scope:
+    mode: "foaf"
+    depth: 2
+    include_direct_mentions: true
+    include_threads_of_mine: true
+    max_authors: 2000
+    allowlist_pubkeys: []
+    denylist_pubkeys: []
+  retention:
+    keep_days: 365
+    prune_on_start: true
+
+inbox:
+  include_replies: true
+  include_reactions: true
+  include_zaps: true
+  group_by_thread: true
+  collapse_reposts: true
+  noise_filters:
+    min_zap_sats: 1
+    allowed_reaction_chars: ["+"]
+
+outbox:
+  publish:
+    notes: true
+    reactions: false
+    zaps: false
+  draft_dir: "./content"
+  auto_sign: false
+
+storage:
+  driver: "sqlite"
+  sqlite_path: "./data/nophr.db"
+  postgres_url: ""
+
+export:
+  mode: "dynamic"
+  out_dir: "./public"
+  rss: true
+  json_feed: true
+
+logging:
+caching:
+  enabled: true
+  engine: "memory"
+  ttl:
+    sections:
+      notes: 60
+      comments: 30
+      articles: 300
+      interactions: 10
+    render:
+      kind_1: 86400
+      kind_30023: 604800
+      kind_0: 3600
+      kind_3: 600
+    feeds: 300
+  live:
+    interactions: true
+    replies: true
+    sse:
+      enabled: true
+      heartbeat_seconds: 25
+      max_clients: 1000
+    poll_fallback_seconds: 15
+  http_cache:
+    etag: true
+    last_modified: true
+    max_age_seconds: 60
+    stale_while_revalidate_seconds: 300
+  aggregates:
+    enabled: true
+    update_on_ingest: true
+    reconciler_interval_seconds: 900
+  overrides: {}
+
+  level: "info"
+
+layout:
+  sections:
+    profile:
+      id: "profile"
+      title: "Profile"
+      source: "outbox"
+      filter: { kinds: [0], authors: [owner] }
+      template: "profile"
+    notes:
+      id: "notes"
+      title: "Recent Notes"
+      source: "outbox"
+      filter: { kinds: [1], authors: [owner], is_reply: false }
+      sort: "-created_at"
+      limit: 20
+      template: "list"
+      archive: { by: "month", route: "/archive/notes/{YYYY}/{MM}" }
+      feeds: { rss: true, json: true }
+    comments:
+      id: "comments"
+      title: "Recent Comments"
+      source: "outbox"
+      filter: { kinds: [1], authors: [owner], is_reply: true }
+      sort: "-created_at"
+      limit: 20
+      template: "threaded"
+    articles:
+      id: "articles"
+      title: "Articles"
+      source: "outbox"
+      filter: { kinds: [30023], authors: [owner] }
+      sort: "-created_at"
+      limit: 10
+      template: "list"
+      archive: { by: "year", route: "/archive/articles/{YYYY}" }
+    interactions:
+      id: "interactions"
+      title: "Interactions"
+      source: "inbox"
+      filter: { kinds: [7, 9735], mentions: "owner" }
+      sort: "-created_at"
+      limit: 50
+      template: "list"
+  pages:
+    home:
+      layout:
+        - ["profile"]
+        - ["notes"]
+        - ["comments", "articles"]
+        - ["interactions"]

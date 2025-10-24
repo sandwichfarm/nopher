@@ -7,8 +7,8 @@ import (
 
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip19"
-	"github.com/sandwich/nopher/internal/config"
-	"github.com/sandwich/nopher/internal/storage"
+	"github.com/sandwich/nophr/internal/config"
+	"github.com/sandwich/nophr/internal/storage"
 )
 
 // QueryHelper provides helper methods for inbox/outbox queries

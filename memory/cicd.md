@@ -10,7 +10,7 @@ Philosophy
 Directory Structure
 
 ```
-nopher/
+nophr/
 ├── .github/
 │   └── workflows/
 │       ├── test.yml           # Run tests on PR/push
@@ -104,7 +104,7 @@ VERSION="${VERSION:-dev}"
 COMMIT="${COMMIT:-$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')}"
 DATE="${DATE:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}"
 
-echo "==> Building nopher..."
+echo "==> Building nophr..."
 echo "    Version: $VERSION"
 echo "    Commit:  $COMMIT"
 echo "    Date:    $DATE"
@@ -118,13 +118,13 @@ LDFLAGS="$LDFLAGS -X main.date=$DATE"
 # Build binary
 CGO_ENABLED=0 go build \
     -ldflags "$LDFLAGS" \
-    -o dist/nopher \
-    ./cmd/nopher
+    -o dist/nophr \
+    ./cmd/nophr
 
-echo "==> Build complete: dist/nopher"
+echo "==> Build complete: dist/nophr"
 
 # Show version
-./dist/nopher --version
+./dist/nophr --version
 ```
 
 scripts/ci/setup.sh
@@ -190,15 +190,15 @@ echo "==> Verification complete!"
 scripts/install.sh (user-facing one-line installer)
 ```bash
 #!/usr/bin/env bash
-# Install script for Nopher
-# Usage: curl -fsSL https://get.nopher.io | sh
+# Install script for nophr
+# Usage: curl -fsSL https://get.nophr.io | sh
 
 set -euo pipefail
 
 # Configuration
-REPO="sandwich/nopher"
+REPO="sandwich/nophr"
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
-CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/nopher}"
+CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/nophr}"
 
 # Detect OS and architecture
 detect_platform() {
@@ -239,7 +239,7 @@ get_latest_version() {
 }
 
 main() {
-    echo "==> Installing Nopher..."
+    echo "==> Installing nophr..."
 
     local PLATFORM
     PLATFORM="$(detect_platform)"
@@ -249,7 +249,7 @@ main() {
     VERSION="$(get_latest_version)"
     echo "    Version:  $VERSION"
 
-    local ARCHIVE="nopher_${VERSION#v}_${PLATFORM}.tar.gz"
+    local ARCHIVE="nophr_${VERSION#v}_${PLATFORM}.tar.gz"
     local URL="https://github.com/$REPO/releases/download/$VERSION/$ARCHIVE"
 
     echo "==> Downloading from $URL..."
@@ -264,32 +264,32 @@ main() {
 
     echo "==> Installing to $INSTALL_DIR..."
     if [ -w "$INSTALL_DIR" ]; then
-        mv "$TMPDIR/nopher" "$INSTALL_DIR/nopher"
+        mv "$TMPDIR/nophr" "$INSTALL_DIR/nophr"
     else
         echo "    (requires sudo)"
-        sudo mv "$TMPDIR/nopher" "$INSTALL_DIR/nopher"
+        sudo mv "$TMPDIR/nophr" "$INSTALL_DIR/nophr"
     fi
 
     echo "==> Creating config directory..."
     mkdir -p "$CONFIG_DIR"
 
-    if [ -f "$TMPDIR/nopher.example.yaml" ]; then
-        if [ ! -f "$CONFIG_DIR/nopher.yaml" ]; then
-            cp "$TMPDIR/nopher.example.yaml" "$CONFIG_DIR/nopher.yaml"
-            echo "    Created: $CONFIG_DIR/nopher.yaml"
+    if [ -f "$TMPDIR/nophr.example.yaml" ]; then
+        if [ ! -f "$CONFIG_DIR/nophr.yaml" ]; then
+            cp "$TMPDIR/nophr.example.yaml" "$CONFIG_DIR/nophr.yaml"
+            echo "    Created: $CONFIG_DIR/nophr.yaml"
         else
-            echo "    Config already exists: $CONFIG_DIR/nopher.yaml"
+            echo "    Config already exists: $CONFIG_DIR/nophr.yaml"
         fi
     fi
 
     echo ""
-    echo "==> Nopher installed successfully!"
+    echo "==> nophr installed successfully!"
     echo ""
     echo "Next steps:"
-    echo "  1. Edit config: $CONFIG_DIR/nopher.yaml"
-    echo "  2. Run: nopher --config $CONFIG_DIR/nopher.yaml"
+    echo "  1. Edit config: $CONFIG_DIR/nophr.yaml"
+    echo "  2. Run: nophr --config $CONFIG_DIR/nophr.yaml"
     echo ""
-    echo "For help: nopher --help"
+    echo "For help: nophr --help"
 }
 
 main "$@"
@@ -302,26 +302,26 @@ scripts/postinstall.sh (for system packages)
 
 set -euo pipefail
 
-# Create nopher user if it doesn't exist
-if ! id -u nopher &>/dev/null; then
-    useradd --system --user-group --no-create-home --shell /bin/false nopher
+# Create nophr user if it doesn't exist
+if ! id -u nophr &>/dev/null; then
+    useradd --system --user-group --no-create-home --shell /bin/false nophr
 fi
 
 # Create data directory
-mkdir -p /var/lib/nopher
-chown nopher:nopher /var/lib/nopher
-chmod 750 /var/lib/nopher
+mkdir -p /var/lib/nophr
+chown nophr:nophr /var/lib/nophr
+chmod 750 /var/lib/nophr
 
 # Create config directory
-mkdir -p /etc/nopher
-chmod 755 /etc/nopher
+mkdir -p /etc/nophr
+chmod 755 /etc/nophr
 
 # Copy example config if main config doesn't exist
-if [ ! -f /etc/nopher/nopher.yaml ] && [ -f /etc/nopher/nopher.example.yaml ]; then
-    cp /etc/nopher/nopher.example.yaml /etc/nopher/nopher.yaml
-    chmod 640 /etc/nopher/nopher.yaml
-    chown root:nopher /etc/nopher/nopher.yaml
-    echo "Created /etc/nopher/nopher.yaml - please edit before starting"
+if [ ! -f /etc/nophr/nophr.yaml ] && [ -f /etc/nophr/nophr.example.yaml ]; then
+    cp /etc/nophr/nophr.example.yaml /etc/nophr/nophr.yaml
+    chmod 640 /etc/nophr/nophr.yaml
+    chown root:nophr /etc/nophr/nophr.yaml
+    echo "Created /etc/nophr/nophr.yaml - please edit before starting"
 fi
 
 # Reload systemd
@@ -329,8 +329,8 @@ if command -v systemctl &>/dev/null; then
     systemctl daemon-reload
 fi
 
-echo "Nopher installed successfully!"
-echo "Edit /etc/nopher/nopher.yaml and run: systemctl start nopher"
+echo "nophr installed successfully!"
+echo "Edit /etc/nophr/nophr.yaml and run: systemctl start nophr"
 ```
 
 Makefile
@@ -358,10 +358,10 @@ clean: ## Clean build artifacts
 	rm -rf dist/ coverage.txt coverage.html
 
 install: build ## Install to /usr/local/bin
-	install -m 755 dist/nopher /usr/local/bin/nopher
+	install -m 755 dist/nophr /usr/local/bin/nophr
 
 dev: ## Run in development mode
-	go run ./cmd/nopher --config ./configs/nopher.example.yaml
+	go run ./cmd/nophr --config ./configs/nophr.example.yaml
 
 release: ## Create a release (requires goreleaser)
 	goreleaser release --clean
@@ -370,7 +370,7 @@ release-snapshot: ## Create a snapshot release
 	goreleaser release --snapshot --clean
 
 docker: ## Build Docker image
-	docker build -t nopher:$(VERSION) .
+	docker build -t nophr:$(VERSION) .
 
 docker-compose-up: ## Start with docker-compose
 	docker-compose up -d
@@ -530,8 +530,8 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: nopher-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: dist/nopher
+        name: nophr-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: dist/nophr
         retention-days: 7
 ```
 
@@ -623,7 +623,7 @@ jobs:
     - name: Checkout homebrew tap
       uses: actions/checkout@v4
       with:
-        repository: ${{ github.repository_owner }}/homebrew-nopher
+        repository: ${{ github.repository_owner }}/homebrew-nophr
         token: ${{ secrets.TAP_GITHUB_TOKEN }}
 
     - name: Update formula
@@ -711,9 +711,9 @@ before:
     - go generate ./...
 
 builds:
-  - id: nopher
-    main: ./cmd/nopher
-    binary: nopher
+  - id: nophr
+    main: ./cmd/nophr
+    binary: nophr
     env:
       - CGO_ENABLED=0
     goos:
@@ -736,7 +736,7 @@ builds:
     mod_timestamp: '{{ .CommitTimestamp }}'
 
 archives:
-  - id: nopher-archive
+  - id: nophr-archive
     format: tar.gz
     name_template: >-
       {{ .ProjectName }}_
@@ -750,7 +750,7 @@ archives:
     files:
       - README.md
       - LICENSE
-      - configs/nopher.example.yaml
+      - configs/nophr.example.yaml
       - docs/**/*
 
 checksum:
@@ -788,37 +788,37 @@ changelog:
 release:
   github:
     owner: sandwich
-    name: nopher
+    name: nophr
   draft: false
   prerelease: auto
   name_template: "{{.ProjectName}} v{{.Version}}"
   header: |
-    ## Nopher {{.Version}}
+    ## nophr {{.Version}}
 
-    Release of Nopher {{.Version}}
+    Release of nophr {{.Version}}
   footer: |
-    **Full Changelog**: https://github.com/sandwich/nopher/compare/{{ .PreviousTag }}...{{ .Tag }}
+    **Full Changelog**: https://github.com/sandwich/nophr/compare/{{ .PreviousTag }}...{{ .Tag }}
 
 brews:
-  - name: nopher
+  - name: nophr
     repository:
       owner: sandwich
-      name: homebrew-nopher
+      name: homebrew-nophr
       token: "{{ .Env.TAP_GITHUB_TOKEN }}"
     directory: Formula
-    homepage: https://github.com/sandwich/nopher
+    homepage: https://github.com/sandwich/nophr
     description: "Nostr to Gopher/Gemini/Finger gateway"
     license: MIT
     test: |
-      system "#{bin}/nopher", "--version"
+      system "#{bin}/nophr", "--version"
     install: |
-      bin.install "nopher"
-      etc.install "configs/nopher.example.yaml" => "nopher.example.yaml"
+      bin.install "nophr"
+      etc.install "configs/nophr.example.yaml" => "nophr.example.yaml"
 
 nfpms:
-  - id: nopher-packages
-    package_name: nopher
-    homepage: https://github.com/sandwich/nopher
+  - id: nophr-packages
+    package_name: nophr
+    homepage: https://github.com/sandwich/nophr
     maintainer: Your Name <you@example.com>
     description: Nostr to Gopher/Gemini/Finger gateway
     license: MIT
@@ -828,11 +828,11 @@ nfpms:
       - apk
     bindir: /usr/bin
     contents:
-      - src: configs/nopher.example.yaml
-        dst: /etc/nopher/nopher.example.yaml
+      - src: configs/nophr.example.yaml
+        dst: /etc/nophr/nophr.example.yaml
         type: config
-      - src: scripts/systemd/nopher.service
-        dst: /etc/systemd/system/nopher.service
+      - src: scripts/systemd/nophr.service
+        dst: /etc/systemd/system/nophr.service
         type: config
     scripts:
       postinstall: scripts/postinstall.sh
@@ -846,8 +846,8 @@ nfpms:
 
 dockers:
   - image_templates:
-      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:{{ .Version }}-amd64"
-      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:latest-amd64"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:{{ .Version }}-amd64"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:latest-amd64"
     dockerfile: Dockerfile
     use: buildx
     build_flag_templates:
@@ -859,8 +859,8 @@ dockers:
       - "--label=org.opencontainers.image.source={{.GitURL}}"
 
   - image_templates:
-      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:{{ .Version }}-arm64"
-      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:latest-arm64"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:{{ .Version }}-arm64"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:latest-arm64"
     dockerfile: Dockerfile
     use: buildx
     build_flag_templates:
@@ -872,15 +872,15 @@ dockers:
       - "--label=org.opencontainers.image.source={{.GitURL}}"
 
 docker_manifests:
-  - name_template: ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:{{ .Version }}
+  - name_template: ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:{{ .Version }}
     image_templates:
-      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:{{ .Version }}-amd64
-      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:{{ .Version }}-arm64
+      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:{{ .Version }}-amd64
+      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:{{ .Version }}-arm64
 
-  - name_template: ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:latest
+  - name_template: ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:latest
     image_templates:
-      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:latest-amd64
-      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:latest-arm64
+      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:latest-amd64
+      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:latest-arm64
 
 signs:
   - cmd: gpg
@@ -901,8 +901,8 @@ Usage Documentation
 Local Development Workflow
 ```bash
 # Clone repository
-git clone https://github.com/sandwich/nopher.git
-cd nopher
+git clone https://github.com/sandwich/nophr.git
+cd nophr
 
 # Run tests
 make test
@@ -1200,9 +1200,9 @@ System Packages:
   - Homebrew formula (macOS/Linux)
 
 Docker Images:
-  - ghcr.io/owner/nopher:latest
-  - ghcr.io/owner/nopher:v1.0.0
-  - ghcr.io/owner/nopher:v1
+  - ghcr.io/owner/nophr:latest
+  - ghcr.io/owner/nophr:v1.0.0
+  - ghcr.io/owner/nophr:v1
   - Multi-arch manifests
 ```
 
@@ -1224,13 +1224,13 @@ ls -lh dist/
 ./scripts/ci/verify.sh
 
 # Test a binary
-./dist/nopher_linux_amd64/nopher --version
+./dist/nophr_linux_amd64/nophr --version
 ```
 
 File Structure
 
 ```
-nopher/
+nophr/
 ├── .github/workflows/
 │   ├── test.yml           # Automated testing
 │   ├── lint.yml           # Code quality
@@ -1290,13 +1290,13 @@ git tag -a v1.0.0 -m "Release v1.0.0"
 git push origin v1.0.0
 
 # GitHub Actions does everything else automatically
-# Monitor at: https://github.com/owner/nopher/actions
+# Monitor at: https://github.com/owner/nophr/actions
 ```
 
 Verifying a Release
 ```bash
 # Check GitHub releases page
-open https://github.com/owner/nopher/releases
+open https://github.com/owner/nophr/releases
 
 # Verify assets:
 # - Binaries for all platforms
@@ -1306,10 +1306,10 @@ open https://github.com/owner/nopher/releases
 # - Changelog in release notes
 
 # Test installation
-curl -fsSL https://get.nopher.io | sh
+curl -fsSL https://get.nophr.io | sh
 
 # Or via package manager
-brew install nopher
+brew install nophr
 ```
 
 Benefits Summary

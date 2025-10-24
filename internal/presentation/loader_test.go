@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sandwich/nopher/internal/config"
+	"github.com/sandwich/nophr/internal/config"
 )
 
 func TestGetHeader(t *testing.T) {
@@ -194,7 +194,7 @@ func TestGetFooter(t *testing.T) {
 
 func TestLoadContentFromFile(t *testing.T) {
 	// Create temporary directory for test files
-	tmpDir, err := os.MkdirTemp("", "nopher-test")
+	tmpDir, err := os.MkdirTemp("", "nophr-test")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
@@ -350,7 +350,7 @@ func TestTemplateVariables(t *testing.T) {
 }
 
 func TestFilePriorityOverContent(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "nopher-test")
+	tmpDir, err := os.MkdirTemp("", "nophr-test")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}

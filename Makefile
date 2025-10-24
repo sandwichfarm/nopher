@@ -1,4 +1,4 @@
-# Nopher Makefile
+# nophr Makefile
 
 .PHONY: all build test lint clean install dev help
 
@@ -23,9 +23,9 @@ clean:
 
 # Install to GOPATH/bin
 install: build
-	@echo "Installing nopher..."
-	@cp nopher $(shell go env GOPATH)/bin/
-	@echo "✓ Installed to $(shell go env GOPATH)/bin/nopher"
+	@echo "Installing nophr..."
+	@cp nophr $(shell go env GOPATH)/bin/
+	@echo "✓ Installed to $(shell go env GOPATH)/bin/nophr"
 
 # Run in development mode
 dev:
@@ -37,13 +37,13 @@ run:
 
 # Build Docker image
 docker:
-	@docker build -t nopher:latest .
+	@docker build -t nophr:latest .
 
 # Show help
 help:
-	@echo "Nopher Makefile targets:"
+	@echo "nophr Makefile targets:"
 	@echo ""
-	@echo "  make build    - Build the nopher binary"
+	@echo "  make build    - Build the nophr binary"
 	@echo "  make test     - Run tests with coverage"
 	@echo "  make lint     - Run golangci-lint"
 	@echo "  make clean    - Clean build artifacts"

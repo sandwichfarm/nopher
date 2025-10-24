@@ -1,8 +1,8 @@
-# Getting Started with Nopher
+# Getting Started with nophr
 
 **Status:** ✅ VERIFIED (Configuration, storage, and sync engine) / 🟡 IMPLEMENTED (Protocol servers undergoing verification)
 
-Nopher is a personal gateway that serves your Nostr content via legacy internet protocols: Gopher (RFC 1436), Gemini, and Finger (RFC 742).
+nophr is a personal gateway that serves your Nostr content via legacy internet protocols: Gopher (RFC 1436), Gemini, and Finger (RFC 742).
 
 This guide covers installation, initial configuration, and first run.
 
@@ -23,13 +23,13 @@ This guide covers installation, initial configuration, and first run.
 Use the one-line installer:
 
 ```bash
-curl -sSL https://nopher.io/install.sh | sh
+curl -sSL https://nophr.io/install.sh | sh
 ```
 
 This will:
 - Detect your platform and architecture
 - Download the latest release
-- Install to `/usr/local/bin/nopher`
+- Install to `/usr/local/bin/nophr`
 - Create example configuration
 
 **For more installation options** (Docker, packages, etc.), see [INSTALLATION.md](INSTALLATION.md).
@@ -38,19 +38,19 @@ This will:
 
 ```bash
 # Clone the repository
-git clone https://github.com/sandwich/nopher.git
-cd nopher
+git clone https://github.com/sandwich/nophr.git
+cd nophr
 
 # Build the binary
 make build
 
-# The binary will be in dist/nopher
-./dist/nopher --version
+# The binary will be in dist/nophr
+./dist/nophr --version
 ```
 
 You should see output like:
 ```
-nopher dev
+nophr dev
   commit: abc1234
   built:  2025-10-24T12:00:00Z
   by:     manual
@@ -63,21 +63,21 @@ nopher dev
 sudo make install
 
 # Verify installation
-nopher --version
+nophr --version
 ```
 
 ## Initial Configuration
 
-Nopher uses a YAML configuration file. Generate an example configuration:
+nophr uses a YAML configuration file. Generate an example configuration:
 
 ```bash
 # Generate example configuration
-./dist/nopher init > nopher.yaml
+./dist/nophr init > nophr.yaml
 ```
 
 ### Minimum Required Configuration
 
-Edit `nopher.yaml` and configure these essential settings:
+Edit `nophr.yaml` and configure these essential settings:
 
 ```yaml
 site:
@@ -112,12 +112,12 @@ export NOPHER_NSEC="nsec1..."  # Your Nostr private key (NEVER in config file!)
 Test that your configuration is valid:
 
 ```bash
-./dist/nopher --config nopher.yaml
+./dist/nophr --config nophr.yaml
 ```
 
 If configuration is valid, you should see:
 ```
-Starting nopher dev
+Starting nophr dev
   Site: My Nostr Site
   Operator: Your Name
   Identity: npub1...
@@ -174,14 +174,14 @@ For security guidance, see [SECURITY.md](SECURITY.md).
 
 ## Storage Backend
 
-Nopher stores Nostr events in a local database using [Khatru](https://github.com/fiatjaf/khatru) (embedded Nostr relay).
+nophr stores Nostr events in a local database using [Khatru](https://github.com/fiatjaf/khatru) (embedded Nostr relay).
 
-**Default:** SQLite at `./data/nopher.db`
+**Default:** SQLite at `./data/nophr.db`
 
 ```yaml
 storage:
   driver: "sqlite"              # or "lmdb"
-  sqlite_path: "./data/nopher.db"
+  sqlite_path: "./data/nophr.db"
 ```
 
 The database file will be created automatically on first run.
@@ -190,7 +190,7 @@ For more on storage backends, see [storage.md](storage.md).
 
 ## Next Steps
 
-Now that you have Nopher configured:
+Now that you have nophr configured:
 
 1. **Test Protocol Servers** (once verified):
    - Connect to Gopher: `telnet localhost 70` (or use a Gopher client like lynx/VF-1)
@@ -235,13 +235,13 @@ Run directly from source with live reloading:
 make dev
 ```
 
-This runs `go run ./cmd/nopher --config ./configs/nopher.example.yaml`.
+This runs `go run ./cmd/nophr --config ./configs/nophr.example.yaml`.
 
 ## Project Structure
 
 ```
-nopher/
-├── cmd/nopher/          # Main application entry point
+nophr/
+├── cmd/nophr/          # Main application entry point
 ├── internal/            # Private application code
 │   ├── config/          # Configuration loading and validation
 │   ├── storage/         # Storage layer (SQLite/LMDB)
@@ -262,7 +262,7 @@ nopher/
 
 ### "identity.npub is required"
 
-You forgot to set your `npub` in `nopher.yaml`. Get your npub from any Nostr client.
+You forgot to set your `npub` in `nophr.yaml`. Get your npub from any Nostr client.
 
 ### "failed to initialize storage: unable to open database file"
 
@@ -275,13 +275,13 @@ mkdir -p ./data
 
 Another service is using one of the protocol ports (70, 79, or 1965). Either:
 - Stop the conflicting service
-- Change the port in `nopher.yaml`
+- Change the port in `nophr.yaml`
 - Disable that protocol
 
 ### "permission denied" binding to port
 
 Ports below 1024 require root/sudo permissions. Either:
-- Run with sudo: `sudo ./dist/nopher --config nopher.yaml`
+- Run with sudo: `sudo ./dist/nophr --config nophr.yaml`
 - Use port forwarding: `iptables` to forward 70→7070, etc.
 - Change ports in config to >1024 (testing only)
 
@@ -290,8 +290,8 @@ For more troubleshooting, see [troubleshooting.md](troubleshooting.md).
 ## Getting Help
 
 - **Documentation:** Browse docs/ for detailed guides
-- **Issues:** Report bugs at https://github.com/sandwich/nopher/issues
-- **Discussions:** Ask questions at https://github.com/sandwich/nopher/discussions
+- **Issues:** Report bugs at https://github.com/sandwich/nophr/issues
+- **Discussions:** Ask questions at https://github.com/sandwich/nophr/discussions
 - **Design Docs:** See memory/ for technical design decisions
 
 ## Contributing

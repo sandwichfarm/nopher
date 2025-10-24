@@ -68,7 +68,7 @@ logging:
 
 **Example Output**:
 ```
-=== Nopher Diagnostics ===
+=== nophr Diagnostics ===
 Collected: 2025-10-24T12:00:00Z
 
 --- System ---
@@ -240,13 +240,13 @@ backupMgr := ops.NewBackupManager(storage, logger)
 
 // Manual backup
 err := backupMgr.BackupWithConfig(ctx,
-    "/var/lib/nopher/nopher.db",
-    "/backups/nopher-backup-20251024.db")
+    "/var/lib/nophr/nophr.db",
+    "/backups/nophr-backup-20251024.db")
 
 // Periodic backups
 periodicBackup := ops.NewPeriodicBackup(
     backupMgr,
-    "/var/lib/nopher/nopher.db",
+    "/var/lib/nophr/nophr.db",
     "/backups",
     24*time.Hour,
     logger)
@@ -376,7 +376,7 @@ backupMgr := ops.NewBackupManager(storage, logger)
 
 // Manual backup
 timestamp := time.Now().Format("20060102-150405")
-backupPath := fmt.Sprintf("/backups/nopher-%s.db", timestamp)
+backupPath := fmt.Sprintf("/backups/nophr-%s.db", timestamp)
 err := backupMgr.BackupWithConfig(ctx, cfg.Storage.SQLitePath, backupPath)
 
 // Start periodic backups

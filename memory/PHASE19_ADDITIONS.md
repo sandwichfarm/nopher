@@ -275,7 +275,7 @@ Recent Dev Posts
 
 ### Build Tests ✅
 ```bash
-go build -o nopher ./cmd/nopher  # SUCCESS
+go build -o nophr ./cmd/nophr  # SUCCESS
 ```
 
 ## Technical Implementation

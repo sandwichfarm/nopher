@@ -1,13 +1,13 @@
-# Nopher Test Configuration
+# nophr Test Configuration
 
 logging:
   level: info
   format: text
 
 site:
-  title: "Nopher Test Instance"
+  title: "nophr Test Instance"
   operator: "Test Operator"
-  description: "Testing Nopher integration"
+  description: "Testing nophr integration"
 
 identity:
   npub: "npub1uac67zc9er54ln0kl6e4qp2y6ta3enfcg7ywnayshvlw9r5w6ehsqq99rx"
@@ -15,7 +15,7 @@ identity:
 
 storage:
   driver: sqlite
-  sqlite_path: ./test-data/nopher.db
+  sqlite_path: ./test-data/nophr.db
   lmdb_path: ./test-data/lmdb
   lmdb_max_size_mb: 1024
 

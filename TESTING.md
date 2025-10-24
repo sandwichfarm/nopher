@@ -1,4 +1,4 @@
-# Nopher Testing Instructions
+# nophr Testing Instructions
 
 ## Prerequisites
 
@@ -12,25 +12,25 @@
 
 ```bash
 # Build the binary
-go build -o nopher ./cmd/nopher
+go build -o nophr ./cmd/nophr
 
 # Create test data directory if needed
 mkdir -p test-data
 
-# Start nopher with test configuration
-./nopher --config test-config.yaml
+# Start nophr with test configuration
+./nophr --config test-config.yaml
 
 # Or run in background with logging
-./nopher --config test-config.yaml > nopher.log 2>&1 &
+./nophr --config test-config.yaml > nophr.log 2>&1 &
 ```
 
 ## Wait for Initial Sync
 
-Nopher needs 20-30 seconds to sync events from relays on first start.
+nophr needs 20-30 seconds to sync events from relays on first start.
 
 ```bash
 # Watch the logs to see sync progress
-tail -f nopher.log
+tail -f nophr.log
 
 # You should see messages like:
 # [NOSTR CLIENT] Received 100 events so far...
@@ -38,8 +38,8 @@ tail -f nopher.log
 # etc.
 
 # Check database population
-sqlite3 test-data/nopher.db "SELECT COUNT(*) FROM event;"
-sqlite3 test-data/nopher.db "SELECT COUNT(*) FROM aggregates WHERE reaction_total > 0;"
+sqlite3 test-data/nophr.db "SELECT COUNT(*) FROM event;"
+sqlite3 test-data/nophr.db "SELECT COUNT(*) FROM aggregates WHERE reaction_total > 0;"
 ```
 
 Expected results after sync:
@@ -55,7 +55,7 @@ printf "/\r\n" | nc localhost 7070
 ```
 
 **Expected output:**
-- Title: "Nopher - Nostr Gateway"
+- Title: "nophr - Nostr Gateway"
 - Menu items: Notes, Articles, Replies, Mentions, Diagnostics
 - Gopher directory entries (type `1`)
 
@@ -171,10 +171,10 @@ First, add a test aggregate to see the enhanced rendering:
 
 ```bash
 # Get first note ID
-NOTE_ID=$(sqlite3 test-data/nopher.db "SELECT id FROM event WHERE kind = 1 AND pubkey = (SELECT DISTINCT pubkey FROM event WHERE kind = 1 LIMIT 1) LIMIT 1;")
+NOTE_ID=$(sqlite3 test-data/nophr.db "SELECT id FROM event WHERE kind = 1 AND pubkey = (SELECT DISTINCT pubkey FROM event WHERE kind = 1 LIMIT 1) LIMIT 1;")
 
 # Add test aggregate with multiple reaction types
-sqlite3 test-data/nopher.db "INSERT OR REPLACE INTO aggregates (event_id, reply_count, reaction_total, reaction_counts_json, zap_sats_total, last_interaction_at) VALUES ('$NOTE_ID', 3, 7, '{\"❤️\":3,\"🔥\":2,\"🚀\":1,\"👍\":1}', 21000, $(date +%s));"
+sqlite3 test-data/nophr.db "INSERT OR REPLACE INTO aggregates (event_id, reply_count, reaction_total, reaction_counts_json, zap_sats_total, last_interaction_at) VALUES ('$NOTE_ID', 3, 7, '{\"❤️\":3,\"🔥\":2,\"🚀\":1,\"👍\":1}', 21000, $(date +%s));"
 
 # View the note
 printf "/note/$NOTE_ID\r\n" | nc localhost 7070
@@ -223,13 +223,13 @@ echo "gemini://localhost/notes" | openssl s_client -connect localhost:1965 -quie
 ### Test 13: Verify Event Storage
 ```bash
 # Count total events
-sqlite3 test-data/nopher.db "SELECT COUNT(*) FROM event;"
+sqlite3 test-data/nophr.db "SELECT COUNT(*) FROM event;"
 
 # Count by kind
-sqlite3 test-data/nopher.db "SELECT kind, COUNT(*) FROM event GROUP BY kind ORDER BY COUNT(*) DESC;"
+sqlite3 test-data/nophr.db "SELECT kind, COUNT(*) FROM event GROUP BY kind ORDER BY COUNT(*) DESC;"
 
 # Show sample events
-sqlite3 test-data/nopher.db "SELECT id, kind, substr(content, 1, 50) FROM event WHERE kind = 1 LIMIT 5;"
+sqlite3 test-data/nophr.db "SELECT id, kind, substr(content, 1, 50) FROM event WHERE kind = 1 LIMIT 5;"
 ```
 
 **Expected results:**
@@ -240,13 +240,13 @@ sqlite3 test-data/nopher.db "SELECT id, kind, substr(content, 1, 50) FROM event 
 ### Test 14: Verify Aggregate Calculation
 ```bash
 # Count aggregates
-sqlite3 test-data/nopher.db "SELECT COUNT(*) FROM aggregates;"
+sqlite3 test-data/nophr.db "SELECT COUNT(*) FROM aggregates;"
 
 # Show aggregates with reactions
-sqlite3 test-data/nopher.db "SELECT event_id, reply_count, reaction_total, reaction_counts_json FROM aggregates WHERE reaction_total > 0 LIMIT 5;"
+sqlite3 test-data/nophr.db "SELECT event_id, reply_count, reaction_total, reaction_counts_json FROM aggregates WHERE reaction_total > 0 LIMIT 5;"
 
 # Find events with multiple reaction types
-sqlite3 test-data/nopher.db "SELECT event_id, reaction_total, reaction_counts_json FROM aggregates WHERE reaction_counts_json LIKE '%,%' LIMIT 5;"
+sqlite3 test-data/nophr.db "SELECT event_id, reaction_total, reaction_counts_json FROM aggregates WHERE reaction_counts_json LIKE '%,%' LIMIT 5;"
 ```
 
 **Expected results:**
@@ -256,13 +256,13 @@ sqlite3 test-data/nopher.db "SELECT event_id, reaction_total, reaction_counts_js
 ### Test 15: Verify Owner's Content
 ```bash
 # Get owner's pubkey from config
-OWNER_PUBKEY=$(sqlite3 test-data/nopher.db "SELECT DISTINCT pubkey FROM event WHERE kind = 1 LIMIT 1;")
+OWNER_PUBKEY=$(sqlite3 test-data/nophr.db "SELECT DISTINCT pubkey FROM event WHERE kind = 1 LIMIT 1;")
 
 # Count owner's notes
-sqlite3 test-data/nopher.db "SELECT COUNT(*) FROM event WHERE kind = 1 AND pubkey = '$OWNER_PUBKEY';"
+sqlite3 test-data/nophr.db "SELECT COUNT(*) FROM event WHERE kind = 1 AND pubkey = '$OWNER_PUBKEY';"
 
 # Count owner's replies
-sqlite3 test-data/nopher.db "SELECT COUNT(*) FROM event WHERE kind = 1 AND pubkey = '$OWNER_PUBKEY' AND json_extract(tags, '$[0][0]') = 'e';"
+sqlite3 test-data/nophr.db "SELECT COUNT(*) FROM event WHERE kind = 1 AND pubkey = '$OWNER_PUBKEY' AND json_extract(tags, '$[0][0]') = 'e';"
 ```
 
 **Expected results:**
@@ -316,8 +316,8 @@ printf "/unknown_route\r\n" | nc localhost 7070
 ## Cleanup
 
 ```bash
-# Stop nopher
-pkill -f 'nopher --config'
+# Stop nophr
+pkill -f 'nophr --config'
 
 # Optional: Remove test data
 # rm -rf test-data/
@@ -326,18 +326,18 @@ pkill -f 'nopher --config'
 ## Troubleshooting
 
 ### No events syncing
-- Check logs: `tail -f nopher.log`
+- Check logs: `tail -f nophr.log`
 - Verify relay connectivity: Look for relay connection messages
 - Check seed relays in `test-config.yaml`
 - Wait longer (30-60 seconds) for initial sync
 
 ### Empty query results
-- Verify database has events: `sqlite3 test-data/nopher.db "SELECT COUNT(*) FROM event;"`
+- Verify database has events: `sqlite3 test-data/nophr.db "SELECT COUNT(*) FROM event;"`
 - Check owner pubkey matches config npub (hex vs bech32)
 - Look for errors in logs
 
 ### Connection refused
-- Verify nopher is running: `ps aux | grep nopher`
+- Verify nophr is running: `ps aux | grep nophr`
 - Check ports 7070 (Gopher) and 1965 (Gemini) are not in use
 - Review startup logs for binding errors
 

@@ -1,4 +1,4 @@
-# Nopher End-to-End Test Report
+# nophr End-to-End Test Report
 
 **Date:** 2025-10-24  
 **Tester:** Claude (AI Agent)  
@@ -26,7 +26,7 @@ Tested all three protocol implementations (Gopher, Gemini, Finger) with both raw
 
 ### Build
 ```bash
-go build -o nopher ./cmd/nopher
+go build -o nophr ./cmd/nophr
 ```
 
 **Build Status:** ✅ Success (no errors)
@@ -43,7 +43,7 @@ go build -o nopher ./cmd/nopher
 **Result:** ✅ PASS
 
 ```
-iNopher - Nostr Gateway	fake	localhost	7070
+inophr - Nostr Gateway	fake	localhost	7070
 i======================	fake	localhost	7070
 i	fake	localhost	7070
 iBrowse Nostr content via Gopher protocol	fake	localhost	7070
@@ -120,7 +120,7 @@ i	fake	localhost	7070
 **Result:** ✅ PASS
 
 ```
-Nopher - Nostr Gateway
+nophr - Nostr Gateway
 ======================
 
 Browse Nostr content via Gopher protocol
@@ -130,7 +130,7 @@ Inbox (Replies & Mentions)
 
 Diagnostics
 
-Powered by Nopher
+Powered by nophr
 ```
 
 **Observations:**
@@ -151,7 +151,7 @@ Powered by Nopher
 
 ```
 20 text/gemini; charset=utf-8
-# Nopher - Nostr Gateway
+# nophr - Nostr Gateway
 
 Browse Nostr content via Gemini protocol
 
@@ -162,7 +162,7 @@ Browse Nostr content via Gemini protocol
 => /search Search
 => /diagnostics Diagnostics
 
-Powered by Nopher
+Powered by nophr
 ```
 
 **Observations:**
@@ -175,8 +175,8 @@ Powered by Nopher
 **Result:** ✅ PASS
 
 ```
-subject=O=Nopher Gemini Server, CN=localhost
-issuer=O=Nopher Gemini Server, CN=localhost
+subject=O=nophr Gemini Server, CN=localhost
+issuer=O=nophr Gemini Server, CN=localhost
 ```
 
 **Observations:**
@@ -259,7 +259,7 @@ Pubkey: npub1uac...hsqq99rx
 
 **Database Verification:**
 ```bash
-$ sqlite3 test-data/nopher.db "SELECT COUNT(*) FROM event"
+$ sqlite3 test-data/nophr.db "SELECT COUNT(*) FROM event"
 0
 ```
 
@@ -299,8 +299,8 @@ func (e *Engine) getOwnerPubkey() (string, error) {
 ## Server Startup Logs
 
 ```
-Starting nopher dev
-  Site: Nopher Test Instance
+Starting nophr dev
+  Site: nophr Test Instance
   Operator: Test Operator
   Identity: npub1uac67zc9er54ln0kl6e4qp2y6ta3enfcg7ywnayshvlw9r5w6ehsqq99rx
 

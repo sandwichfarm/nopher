@@ -2,16 +2,16 @@
 
 **Status:** ✅ VERIFIED
 
-Complete guide to Nopher's storage layer, database backends, and data management.
+Complete guide to nophr's storage layer, database backends, and data management.
 
 ## Overview
 
-Nopher uses [Khatru](https://github.com/fiatjaf/khatru) as an embedded Nostr relay for event storage. Khatru provides battle-tested event storage, querying, deduplication, and NIP compliance.
+nophr uses [Khatru](https://github.com/fiatjaf/khatru) as an embedded Nostr relay for event storage. Khatru provides battle-tested event storage, querying, deduplication, and NIP compliance.
 
 **Key Concepts:**
 - **Khatru**: Embedded Nostr relay (library, not separate service)
 - **eventstore**: Pluggable database backend (SQLite or LMDB)
-- **Custom tables**: Nopher-specific data (relay hints, social graph, sync state, aggregates)
+- **Custom tables**: nophr-specific data (relay hints, social graph, sync state, aggregates)
 
 **Architecture:**
 ```
@@ -34,7 +34,7 @@ Nopher uses [Khatru](https://github.com/fiatjaf/khatru) as an embedded Nostr rel
 
 ## Database Backends
 
-Nopher supports two database backends via Khatru's [eventstore](https://github.com/fiatjaf/eventstore) plugin system.
+nophr supports two database backends via Khatru's [eventstore](https://github.com/fiatjaf/eventstore) plugin system.
 
 ### SQLite (Default)
 
@@ -49,16 +49,16 @@ Nopher supports two database backends via Khatru's [eventstore](https://github.c
 ```yaml
 storage:
   driver: "sqlite"
-  sqlite_path: "./data/nopher.db"
+  sqlite_path: "./data/nophr.db"
 ```
 
 **File location:**
 ```bash
 # Default location
-./data/nopher.db
+./data/nophr.db
 
 # Custom location
-/var/lib/nopher/nopher.db
+/var/lib/nophr/nophr.db
 ```
 
 **Best for:**
@@ -80,13 +80,13 @@ storage:
 ```yaml
 storage:
   driver: "lmdb"
-  lmdb_path: "./data/nopher.lmdb"
+  lmdb_path: "./data/nophr.lmdb"
   lmdb_max_size_mb: 10240  # 10GB max
 ```
 
 **Directory structure:**
 ```bash
-./data/nopher.lmdb/
+./data/nophr.lmdb/
 ├── data.mdb      # Main data file
 └── lock.mdb      # Lock file
 ```
@@ -171,7 +171,7 @@ Khatru provides the core Nostr relay functionality:
 
 ## Custom Tables
 
-Nopher adds custom tables for features beyond basic event storage:
+nophr adds custom tables for features beyond basic event storage:
 
 ### 1. relay_hints
 
@@ -296,7 +296,7 @@ last_interaction_at: 1698765500
 
 ## Database Initialization
 
-Nopher automatically initializes the database on first run.
+nophr automatically initializes the database on first run.
 
 **What happens:**
 1. Check if database file/directory exists
@@ -310,8 +310,8 @@ Nopher automatically initializes the database on first run.
 # Ensure data directory exists
 mkdir -p ./data
 
-# Run nopher (will initialize on startup)
-./dist/nopher --config nopher.yaml
+# Run nophr (will initialize on startup)
+./dist/nophr --config nophr.yaml
 ```
 
 **Output:**
@@ -330,50 +330,50 @@ Initializing storage...
 
 **Hot backup (while running):**
 ```bash
-sqlite3 ./data/nopher.db ".backup ./backups/nopher-$(date +%Y%m%d).db"
+sqlite3 ./data/nophr.db ".backup ./backups/nophr-$(date +%Y%m%d).db"
 ```
 
-**Cold backup (Nopher stopped):**
+**Cold backup (nophr stopped):**
 ```bash
-cp ./data/nopher.db ./backups/nopher-$(date +%Y%m%d).db
+cp ./data/nophr.db ./backups/nophr-$(date +%Y%m%d).db
 ```
 
 **Restore:**
 ```bash
-cp ./backups/nopher-20251024.db ./data/nopher.db
+cp ./backups/nophr-20251024.db ./data/nophr.db
 ```
 
 ### LMDB Backups
 
-**Cold backup (Nopher stopped):**
+**Cold backup (nophr stopped):**
 ```bash
-cp -r ./data/nopher.lmdb ./backups/nopher-$(date +%Y%m%d).lmdb
+cp -r ./data/nophr.lmdb ./backups/nophr-$(date +%Y%m%d).lmdb
 ```
 
 **Hot backup:**
-LMDB doesn't support hot backups easily. Stop Nopher first.
+LMDB doesn't support hot backups easily. Stop nophr first.
 
 **Restore:**
 ```bash
-rm -rf ./data/nopher.lmdb
-cp -r ./backups/nopher-20251024.lmdb ./data/nopher.lmdb
+rm -rf ./data/nophr.lmdb
+cp -r ./backups/nophr-20251024.lmdb ./data/nophr.lmdb
 ```
 
 **Automated backups:**
 ```bash
 # Cron job (daily at 2am)
-0 2 * * * /usr/local/bin/nopher-backup.sh
+0 2 * * * /usr/local/bin/nophr-backup.sh
 ```
 
 **Example backup script:**
 ```bash
 #!/bin/bash
-# nopher-backup.sh
-BACKUP_DIR="/var/backups/nopher"
+# nophr-backup.sh
+BACKUP_DIR="/var/backups/nophr"
 DATE=$(date +%Y%m%d)
-cp ./data/nopher.db "$BACKUP_DIR/nopher-$DATE.db"
+cp ./data/nophr.db "$BACKUP_DIR/nophr-$DATE.db"
 # Keep last 7 days
-find "$BACKUP_DIR" -name "nopher-*.db" -mtime +7 -delete
+find "$BACKUP_DIR" -name "nophr-*.db" -mtime +7 -delete
 ```
 
 ---
@@ -399,7 +399,7 @@ sync:
 
 **Manual pruning (future feature):**
 ```bash
-nopher --config nopher.yaml --prune
+nophr --config nophr.yaml --prune
 ```
 
 ### Vacuum (SQLite Only)
@@ -407,30 +407,30 @@ nopher --config nopher.yaml --prune
 Reclaim disk space after deleting events:
 
 ```bash
-sqlite3 ./data/nopher.db "VACUUM;"
+sqlite3 ./data/nophr.db "VACUUM;"
 ```
 
 **Automated vacuum:**
 ```bash
 # Weekly vacuum (Sunday 3am)
-0 3 * * 0 sqlite3 /path/to/nopher.db "VACUUM;"
+0 3 * * 0 sqlite3 /path/to/nophr.db "VACUUM;"
 ```
 
 ### Database Size Monitoring
 
 **SQLite:**
 ```bash
-du -h ./data/nopher.db
+du -h ./data/nophr.db
 ```
 
 **LMDB:**
 ```bash
-du -sh ./data/nopher.lmdb
+du -sh ./data/nophr.lmdb
 ```
 
 **Check event count:**
 ```bash
-sqlite3 ./data/nopher.db "SELECT COUNT(*) FROM events;"
+sqlite3 ./data/nophr.db "SELECT COUNT(*) FROM events;"
 ```
 
 ---
@@ -447,7 +447,7 @@ Switching requires migrating data.
 
 **Manual migration (future feature):**
 ```bash
-nopher migrate --from-sqlite ./data/nopher.db --to-lmdb ./data/nopher.lmdb
+nophr migrate --from-sqlite ./data/nophr.db --to-lmdb ./data/nophr.lmdb
 ```
 
 **Currently:** Re-sync from relays (easiest approach)
@@ -475,22 +475,22 @@ storage:
   lmdb_max_size_mb: 20480  # Increase to 20GB
 ```
 
-Restart Nopher.
+Restart nophr.
 
 ### "database is locked" (SQLite)
 
 **Cause:** Another process has database open, or unclean shutdown.
 
 **Fix:**
-1. Ensure only one Nopher instance running
+1. Ensure only one nophr instance running
 2. Check for stale lock files
-3. Restart Nopher
+3. Restart nophr
 
 ### Corrupted database
 
 **SQLite integrity check:**
 ```bash
-sqlite3 ./data/nopher.db "PRAGMA integrity_check;"
+sqlite3 ./data/nophr.db "PRAGMA integrity_check;"
 ```
 
 **If corrupted:**
@@ -524,7 +524,7 @@ CREATE INDEX idx_events_kind_created ON events(kind, created_at DESC);
 - Don't set unnecessarily huge (wastes virtual address space)
 
 **No-sync mode (dangerous, faster):**
-LMDB can run with `MDB_NOSYNC` for speed. Not recommended for Nopher (data integrity matters).
+LMDB can run with `MDB_NOSYNC` for speed. Not recommended for nophr (data integrity matters).
 
 ---
 
@@ -532,17 +532,17 @@ LMDB can run with `MDB_NOSYNC` for speed. Not recommended for Nopher (data integ
 
 **Database size growth:**
 ```bash
-watch -n 60 du -h ./data/nopher.db
+watch -n 60 du -h ./data/nophr.db
 ```
 
 **Event count growth:**
 ```bash
-watch -n 60 'sqlite3 ./data/nopher.db "SELECT COUNT(*) FROM events;"'
+watch -n 60 'sqlite3 ./data/nophr.db "SELECT COUNT(*) FROM events;"'
 ```
 
 **Custom table sizes:**
 ```bash
-sqlite3 ./data/nopher.db <<EOF
+sqlite3 ./data/nophr.db <<EOF
 SELECT 'relay_hints', COUNT(*) FROM relay_hints;
 SELECT 'graph_nodes', COUNT(*) FROM graph_nodes;
 SELECT 'sync_state', COUNT(*) FROM sync_state;
@@ -558,15 +558,15 @@ EOF
 
 **Inspect stored events:**
 ```bash
-sqlite3 ./data/nopher.db "SELECT id, kind, created_at, pubkey FROM events LIMIT 10;"
+sqlite3 ./data/nophr.db "SELECT id, kind, created_at, pubkey FROM events LIMIT 10;"
 ```
 
 **Check relay hints:**
 ```bash
-sqlite3 ./data/nopher.db "SELECT * FROM relay_hints WHERE pubkey = 'hex_pubkey';"
+sqlite3 ./data/nophr.db "SELECT * FROM relay_hints WHERE pubkey = 'hex_pubkey';"
 ```
 
-**Warning:** DO NOT modify data directly via SQL. Use Nopher's APIs.
+**Warning:** DO NOT modify data directly via SQL. Use nophr's APIs.
 
 ### Custom eventstore Implementations
 

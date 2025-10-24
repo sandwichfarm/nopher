@@ -4,7 +4,7 @@ Status: FUTURE FEATURE - Extends Phase 12 simple retention
 
 Overview
 
-This phase adds advanced, configurable retention capabilities to the existing Nopher implementation. The current simple retention system (`keep_days`) remains fully functional. This is an additive feature that does not modify existing infrastructure.
+This phase adds advanced, configurable retention capabilities to the existing nophr implementation. The current simple retention system (`keep_days`) remains fully functional. This is an additive feature that does not modify existing infrastructure.
 
 Goal
 

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sandwich/nopher/internal/config"
-	"github.com/sandwich/nopher/internal/storage"
+	"github.com/sandwich/nophr/internal/config"
+	"github.com/sandwich/nophr/internal/storage"
 )
 
 // RetentionManager handles data retention and pruning

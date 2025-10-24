@@ -84,7 +84,7 @@ jobs:
     - name: Checkout homebrew tap
       uses: actions/checkout@v4
       with:
-        repository: ${{ github.repository_owner }}/homebrew-nopher
+        repository: ${{ github.repository_owner }}/homebrew-nophr
         token: ${{ secrets.TAP_GITHUB_TOKEN }}
 
     - name: Update formula

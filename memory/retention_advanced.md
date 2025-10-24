@@ -2,7 +2,7 @@ Advanced Configurable Retention System
 
 Overview
 
-This document describes the advanced retention system for Nopher, allowing fine-grained control over which events to keep based on multiple configurable criteria (gates). This extends the existing simple retention system without replacing it.
+This document describes the advanced retention system for nophr, allowing fine-grained control over which events to keep based on multiple configurable criteria (gates). This extends the existing simple retention system without replacing it.
 
 Design Goals
 

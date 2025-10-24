@@ -141,7 +141,7 @@ benchcmp old.txt new.txt
 ### 5. Test Organization
 
 ```
-nopher/
+nophr/
 ├── internal/
 │   ├── aggregates/*_test.go    # Unit tests
 │   ├── cache/*_test.go

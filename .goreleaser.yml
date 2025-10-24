@@ -6,9 +6,9 @@ before:
     - go generate ./...
 
 builds:
-  - id: nopher
-    main: ./cmd/nopher
-    binary: nopher
+  - id: nophr
+    main: ./cmd/nophr
+    binary: nophr
     env:
       - CGO_ENABLED=0
     goos:
@@ -31,7 +31,7 @@ builds:
     mod_timestamp: '{{ .CommitTimestamp }}'
 
 archives:
-  - id: nopher-archive
+  - id: nophr-archive
     format: tar.gz
     name_template: >-
       {{ .ProjectName }}_
@@ -45,7 +45,7 @@ archives:
     files:
       - README.md
       - LICENSE
-      - configs/nopher.example.yaml
+      - configs/nophr.example.yaml
       - docs/**/*
 
 checksum:
@@ -83,37 +83,37 @@ changelog:
 release:
   github:
     owner: sandwich
-    name: nopher
+    name: nophr
   draft: false
   prerelease: auto
   name_template: "{{.ProjectName}} v{{.Version}}"
   header: |
-    ## Nopher {{.Version}}
+    ## nophr {{.Version}}
 
-    Release of Nopher {{.Version}}
+    Release of nophr {{.Version}}
   footer: |
-    **Full Changelog**: https://github.com/sandwichfarm/nopher/compare/{{ .PreviousTag }}...{{ .Tag }}
+    **Full Changelog**: https://github.com/sandwichfarm/nophr/compare/{{ .PreviousTag }}...{{ .Tag }}
 
 brews:
-  - name: nopher
+  - name: nophr
     repository:
       owner: sandwich
-      name: homebrew-nopher
+      name: homebrew-nophr
       token: "{{ .Env.TAP_GITHUB_TOKEN }}"
     directory: Formula
-    homepage: https://github.com/sandwichfarm/nopher
+    homepage: https://github.com/sandwichfarm/nophr
     description: "Nostr to Gopher/Gemini/Finger gateway"
     license: MIT
     test: |
-      system "#{bin}/nopher", "--version"
+      system "#{bin}/nophr", "--version"
     install: |
-      bin.install "nopher"
-      etc.install "configs/nopher.example.yaml" => "nopher.example.yaml"
+      bin.install "nophr"
+      etc.install "configs/nophr.example.yaml" => "nophr.example.yaml"
 
 nfpms:
-  - id: nopher-packages
-    package_name: nopher
-    homepage: https://github.com/sandwichfarm/nopher
+  - id: nophr-packages
+    package_name: nophr
+    homepage: https://github.com/sandwichfarm/nophr
     maintainer: Sandwich <sandwich@example.com>
     description: Nostr to Gopher/Gemini/Finger gateway
     license: MIT
@@ -123,11 +123,11 @@ nfpms:
       - apk
     bindir: /usr/bin
     contents:
-      - src: configs/nopher.example.yaml
-        dst: /etc/nopher/nopher.example.yaml
+      - src: configs/nophr.example.yaml
+        dst: /etc/nophr/nophr.example.yaml
         type: config
-      - src: scripts/systemd/nopher.service
-        dst: /etc/systemd/system/nopher.service
+      - src: scripts/systemd/nophr.service
+        dst: /etc/systemd/system/nophr.service
         type: config
     scripts:
       postinstall: scripts/postinstall.sh
@@ -141,8 +141,8 @@ nfpms:
 
 dockers:
   - image_templates:
-      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:{{ .Version }}-amd64"
-      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:latest-amd64"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:{{ .Version }}-amd64"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:latest-amd64"
     dockerfile: Dockerfile
     use: buildx
     build_flag_templates:
@@ -154,8 +154,8 @@ dockers:
       - "--label=org.opencontainers.image.source={{.GitURL}}"
 
   - image_templates:
-      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:{{ .Version }}-arm64"
-      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:latest-arm64"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:{{ .Version }}-arm64"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:latest-arm64"
     dockerfile: Dockerfile
     use: buildx
     build_flag_templates:
@@ -167,15 +167,15 @@ dockers:
       - "--label=org.opencontainers.image.source={{.GitURL}}"
 
 docker_manifests:
-  - name_template: ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:{{ .Version }}
+  - name_template: ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:{{ .Version }}
     image_templates:
-      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:{{ .Version }}-amd64
-      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:{{ .Version }}-arm64
+      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:{{ .Version }}-amd64
+      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:{{ .Version }}-arm64
 
-  - name_template: ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:latest
+  - name_template: ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:latest
     image_templates:
-      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:latest-amd64
-      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nopher:latest-arm64
+      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:latest-amd64
+      - ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/nophr:latest-arm64
 
 signs:
   - cmd: gpg

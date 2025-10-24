@@ -1,6 +1,6 @@
-# Contributing to Nopher
+# Contributing to nophr
 
-Thank you for your interest in contributing to Nopher!
+Thank you for your interest in contributing to nophr!
 
 ## For AI Agents
 
@@ -23,8 +23,8 @@ If you're an AI agent (like Claude) working on this project, please read [AGENTS
 
 ```bash
 # Clone your fork
-git clone https://github.com/YOUR_USERNAME/nopher.git
-cd nopher
+git clone https://github.com/YOUR_USERNAME/nophr.git
+cd nophr
 
 # Install dependencies
 go mod download
@@ -222,4 +222,4 @@ By contributing, you agree that your contributions will be licensed under the MI
 
 ---
 
-Thank you for contributing to Nopher! 🎉
+Thank you for contributing to nophr! 🎉

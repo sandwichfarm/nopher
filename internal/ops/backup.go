@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/sandwich/nopher/internal/storage"
+	"github.com/sandwich/nophr/internal/storage"
 )
 
 // BackupManager handles database backup operations
@@ -214,7 +214,7 @@ func (p *PeriodicBackup) Start(ctx context.Context) {
 
 			// Generate timestamped backup filename
 			timestamp := time.Now().Format("20060102-150405")
-			backupPath := filepath.Join(p.destDir, fmt.Sprintf("nopher-backup-%s.db", timestamp))
+			backupPath := filepath.Join(p.destDir, fmt.Sprintf("nophr-backup-%s.db", timestamp))
 
 			err := p.manager.BackupWithConfig(ctx, p.sourcePath, backupPath)
 			if err != nil {
@@ -277,5 +277,5 @@ func CleanOldBackups(backupDir string, maxAge time.Duration, logger *Logger) err
 // isBackupFile checks if a filename is a backup file
 func isBackupFile(name string) bool {
 	return filepath.Ext(name) == ".db" &&
-		(len(name) > 14 && name[:14] == "nopher-backup-")
+		(len(name) > 14 && name[:14] == "nophr-backup-")
 }

@@ -1,6 +1,6 @@
 Distribution Strategy
 
-Goal: Make Nopher as easy to install as possible across different platforms and use cases.
+Goal: Make nophr as easy to install as possible across different platforms and use cases.
 
 Single Binary Distribution
 
@@ -22,13 +22,13 @@ Benefits:
 What Goes in the Binary:
 - Application code (sync engine, protocol servers, renderers)
 - Embedded Khatru and eventstore libraries
-- Default configuration template (nopher.example.yaml)
+- Default configuration template (nophr.example.yaml)
 - Example layouts and section definitions
 - Markdown conversion libraries
 - TLS certificate generator for Gemini
 
 What Stays External:
-- User configuration file (nopher.yaml)
+- User configuration file (nophr.yaml)
 - Database files (SQLite or LMDB)
 - TLS certificates (if user-provided)
 - Logs
@@ -52,43 +52,43 @@ Distribution Channels
 
 Homebrew (macOS and Linux)
 ```bash
-brew tap sandwich/nopher
-brew install nopher
+brew tap sandwich/nophr
+brew install nophr
 ```
 - GoReleaser auto-generates Homebrew formula
 - Updates handled via brew upgrade
-- Easy uninstall: brew uninstall nopher
+- Easy uninstall: brew uninstall nophr
 
 APT (Debian/Ubuntu)
 ```bash
-echo 'deb [trusted=yes] https://apt.nopher.io/ /' | sudo tee /etc/apt/sources.list.d/nopher.list
+echo 'deb [trusted=yes] https://apt.nophr.io/ /' | sudo tee /etc/apt/sources.list.d/nophr.list
 sudo apt update
-sudo apt install nopher
+sudo apt install nophr
 ```
 - GoReleaser creates .deb packages
 - Includes systemd service file
-- Post-install script creates /etc/nopher/nopher.yaml template
+- Post-install script creates /etc/nophr/nophr.yaml template
 
 RPM (Fedora/RHEL/Rocky/Alma)
 ```bash
-sudo dnf config-manager --add-repo https://rpm.nopher.io/nopher.repo
-sudo dnf install nopher
+sudo dnf config-manager --add-repo https://rpm.nophr.io/nophr.repo
+sudo dnf install nophr
 ```
 - GoReleaser creates .rpm packages
 - Includes systemd service file
 
 AUR (Arch Linux)
 ```bash
-yay -S nopher-bin  # binary package
+yay -S nophr-bin  # binary package
 # or
-yay -S nopher      # build from source
+yay -S nophr      # build from source
 ```
 - Maintain PKGBUILD in AUR
 - Community-maintained option
 
 Snap (Ubuntu/Linux)
 ```bash
-sudo snap install nopher
+sudo snap install nophr
 ```
 - Sandboxed environment
 - Auto-updates by default
@@ -98,14 +98,14 @@ sudo snap install nopher
 
 Docker Hub
 ```bash
-docker pull sandwich/nopher:latest
-docker pull sandwich/nopher:v1.0.0
-docker pull sandwich/nopher:v1-alpine
+docker pull sandwich/nophr:latest
+docker pull sandwich/nophr:v1.0.0
+docker pull sandwich/nophr:v1-alpine
 ```
 
 GitHub Container Registry
 ```bash
-docker pull ghcr.io/sandwich/nopher:latest
+docker pull ghcr.io/sandwich/nophr:latest
 ```
 
 Tags:
@@ -118,16 +118,16 @@ Docker Compose Example:
 ```yaml
 version: '3.8'
 services:
-  nopher:
-    image: sandwich/nopher:latest
+  nophr:
+    image: sandwich/nophr:latest
     ports:
       - "70:70"      # Gopher
       - "1965:1965"  # Gemini
       - "79:79"      # Finger
     volumes:
-      - ./nopher.yaml:/etc/nopher/nopher.yaml:ro
-      - ./data:/var/lib/nopher
-      - ./certs:/etc/nopher/certs:ro
+      - ./nophr.yaml:/etc/nophr/nophr.yaml:ro
+      - ./data:/var/lib/nophr
+      - ./certs:/etc/nophr/certs:ro
     environment:
       - NOPHER_NSEC=${NOPHER_NSEC}
     restart: unless-stopped
@@ -143,11 +143,11 @@ Multi-architecture images:
 Go Toolchain Required:
 ```bash
 # Clone repository
-git clone https://github.com/sandwich/nopher.git
-cd nopher
+git clone https://github.com/sandwich/nophr.git
+cd nophr
 
 # Build
-go build -o nopher cmd/nopher/main.go
+go build -o nophr cmd/nophr/main.go
 
 # Or use Makefile
 make build
@@ -172,7 +172,7 @@ go build -tags "sqlite lmdb debug"
 
 Bash Script (Linux/macOS):
 ```bash
-curl -fsSL https://get.nopher.io | sh
+curl -fsSL https://get.nophr.io | sh
 ```
 
 Script behavior:
@@ -180,37 +180,37 @@ Script behavior:
 - Downloads appropriate binary from GitHub releases
 - Verifies checksum
 - Installs to /usr/local/bin (or ~/bin if no sudo)
-- Creates example config at ~/.config/nopher/nopher.yaml
+- Creates example config at ~/.config/nophr/nophr.yaml
 - Prints next steps
 
 PowerShell Script (Windows):
 ```powershell
-iwr -useb https://get.nopher.io/install.ps1 | iex
+iwr -useb https://get.nophr.io/install.ps1 | iex
 ```
 
 6. System Package Details
 
 All packages include:
-- Binary: /usr/bin/nopher
-- Config: /etc/nopher/nopher.example.yaml
-- Data dir: /var/lib/nopher (created, owned by nopher user)
-- Systemd service: /etc/systemd/system/nopher.service
-- Man page: /usr/share/man/man1/nopher.1.gz
-- Documentation: /usr/share/doc/nopher/
+- Binary: /usr/bin/nophr
+- Config: /etc/nophr/nophr.example.yaml
+- Data dir: /var/lib/nophr (created, owned by nophr user)
+- Systemd service: /etc/systemd/system/nophr.service
+- Man page: /usr/share/man/man1/nophr.1.gz
+- Documentation: /usr/share/doc/nophr/
 
 Systemd Service File:
 ```ini
 [Unit]
-Description=Nopher - Nostr to Gopher/Gemini/Finger Gateway
+Description=nophr - Nostr to Gopher/Gemini/Finger Gateway
 After=network.target
-Documentation=https://github.com/sandwich/nopher
+Documentation=https://github.com/sandwich/nophr
 
 [Service]
 Type=simple
-User=nopher
-Group=nopher
-WorkingDirectory=/var/lib/nopher
-ExecStart=/usr/bin/nopher --config /etc/nopher/nopher.yaml
+User=nophr
+Group=nophr
+WorkingDirectory=/var/lib/nophr
+ExecStart=/usr/bin/nophr --config /etc/nophr/nophr.yaml
 Restart=on-failure
 RestartSec=5s
 
@@ -219,7 +219,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/lib/nopher
+ReadWritePaths=/var/lib/nophr
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 
 [Install]
@@ -237,11 +237,11 @@ Caddy (Recommended for Gemini TLS passthrough)
     reverse_proxy localhost:7070
 }
 
-# Gemini - direct TLS passthrough (Nopher handles TLS)
-# No proxy needed - Nopher listens on 1965 directly
+# Gemini - direct TLS passthrough (nophr handles TLS)
+# No proxy needed - nophr listens on 1965 directly
 
 # Optional: HTTPS admin panel
-nopher-admin.example.com {
+nophr-admin.example.com {
     reverse_proxy localhost:8080
 }
 ```
@@ -263,7 +263,7 @@ stream {
 ```
 
 Note: Nginx doesn't natively support Gopher or Gemini protocols.
-Use for TCP proxying only if running Nopher on non-privileged ports.
+Use for TCP proxying only if running nophr on non-privileged ports.
 
 HAProxy (TCP load balancing for multiple instances)
 
@@ -277,18 +277,18 @@ frontend gopher
 backend gopher_servers
     mode tcp
     balance leastconn
-    server nopher1 127.0.0.1:7070 check
-    server nopher2 127.0.0.1:7071 check
+    server nophr1 127.0.0.1:7070 check
+    server nophr2 127.0.0.1:7071 check
 ```
 
 systemd Socket Activation (Privilege separation)
 
 Instead of running as root, use systemd socket activation:
 
-/etc/systemd/system/nopher.socket:
+/etc/systemd/system/nophr.socket:
 ```ini
 [Unit]
-Description=Nopher Socket Activation
+Description=nophr Socket Activation
 
 [Socket]
 ListenStream=70
@@ -299,20 +299,20 @@ ListenStream=79
 WantedBy=sockets.target
 ```
 
-/etc/systemd/system/nopher.service:
+/etc/systemd/system/nophr.service:
 ```ini
 [Unit]
-Description=Nopher Service
-Requires=nopher.socket
+Description=nophr Service
+Requires=nophr.socket
 
 [Service]
 Type=simple
-User=nopher
-ExecStart=/usr/bin/nopher --systemd-socket
+User=nophr
+ExecStart=/usr/bin/nophr --systemd-socket
 StandardInput=socket
 ```
 
-This allows Nopher to run as unprivileged user while binding to privileged ports.
+This allows nophr to run as unprivileged user while binding to privileged ports.
 
 GoReleaser Configuration
 
@@ -324,9 +324,9 @@ before:
     - go generate ./...
 
 builds:
-  - id: nopher
-    main: ./cmd/nopher
-    binary: nopher
+  - id: nophr
+    main: ./cmd/nophr
+    binary: nophr
     env:
       - CGO_ENABLED=0
     goos:
@@ -357,7 +357,7 @@ archives:
     files:
       - README.md
       - LICENSE
-      - configs/nopher.example.yaml
+      - configs/nophr.example.yaml
       - docs/*
 
 checksum:
@@ -374,23 +374,23 @@ changelog:
       - '^test:'
 
 brews:
-  - name: nopher
+  - name: nophr
     tap:
       owner: sandwich
-      name: homebrew-nopher
-    homepage: https://github.com/sandwich/nopher
+      name: homebrew-nophr
+    homepage: https://github.com/sandwich/nophr
     description: "Nostr to Gopher/Gemini/Finger gateway"
     license: MIT
     install: |
-      bin.install "nopher"
-      etc.install "configs/nopher.example.yaml" => "nopher.example.yaml"
+      bin.install "nophr"
+      etc.install "configs/nophr.example.yaml" => "nophr.example.yaml"
     test: |
-      system "#{bin}/nopher", "--version"
+      system "#{bin}/nophr", "--version"
 
 nfpms:
-  - id: nopher-packages
-    package_name: nopher
-    homepage: https://github.com/sandwich/nopher
+  - id: nophr-packages
+    package_name: nophr
+    homepage: https://github.com/sandwich/nophr
     maintainer: Your Name <you@example.com>
     description: Nostr to Gopher/Gemini/Finger gateway
     license: MIT
@@ -400,21 +400,21 @@ nfpms:
       - apk
     bindir: /usr/bin
     contents:
-      - src: configs/nopher.example.yaml
-        dst: /etc/nopher/nopher.example.yaml
+      - src: configs/nophr.example.yaml
+        dst: /etc/nophr/nophr.example.yaml
         type: config
-      - src: scripts/nopher.service
-        dst: /etc/systemd/system/nopher.service
+      - src: scripts/nophr.service
+        dst: /etc/systemd/system/nophr.service
         type: config
     scripts:
       postinstall: scripts/postinstall.sh
 
 dockers:
   - image_templates:
-      - "sandwich/nopher:{{ .Version }}-amd64"
-      - "sandwich/nopher:latest-amd64"
-      - "ghcr.io/sandwich/nopher:{{ .Version }}-amd64"
-      - "ghcr.io/sandwich/nopher:latest-amd64"
+      - "sandwich/nophr:{{ .Version }}-amd64"
+      - "sandwich/nophr:latest-amd64"
+      - "ghcr.io/sandwich/nophr:{{ .Version }}-amd64"
+      - "ghcr.io/sandwich/nophr:latest-amd64"
     dockerfile: Dockerfile
     use: buildx
     build_flag_templates:
@@ -423,14 +423,14 @@ dockers:
       - "--label=org.opencontainers.image.version={{ .Version }}"
 
 docker_manifests:
-  - name_template: sandwich/nopher:{{ .Version }}
+  - name_template: sandwich/nophr:{{ .Version }}
     image_templates:
-      - sandwich/nopher:{{ .Version }}-amd64
-      - sandwich/nopher:{{ .Version }}-arm64
-  - name_template: sandwich/nopher:latest
+      - sandwich/nophr:{{ .Version }}-amd64
+      - sandwich/nophr:{{ .Version }}-arm64
+  - name_template: sandwich/nophr:latest
     image_templates:
-      - sandwich/nopher:latest-amd64
-      - sandwich/nopher:latest-arm64
+      - sandwich/nophr:latest-amd64
+      - sandwich/nophr:latest-arm64
 ```
 
 Dockerfile (Multi-stage)
@@ -449,32 +449,32 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
     -ldflags="-s -w" \
-    -o nopher cmd/nopher/main.go
+    -o nophr cmd/nophr/main.go
 
 # Runtime stage
 FROM alpine:latest
 
 RUN apk --no-cache add ca-certificates tzdata
 
-RUN addgroup -g 1000 nopher && \
-    adduser -D -u 1000 -G nopher nopher
+RUN addgroup -g 1000 nophr && \
+    adduser -D -u 1000 -G nophr nophr
 
 WORKDIR /app
 
-COPY --from=builder /build/nopher /usr/local/bin/nopher
-COPY configs/nopher.example.yaml /etc/nopher/nopher.example.yaml
+COPY --from=builder /build/nophr /usr/local/bin/nophr
+COPY configs/nophr.example.yaml /etc/nophr/nophr.example.yaml
 
-RUN mkdir -p /var/lib/nopher /etc/nopher/certs && \
-    chown -R nopher:nopher /var/lib/nopher /etc/nopher
+RUN mkdir -p /var/lib/nophr /etc/nophr/certs && \
+    chown -R nophr:nophr /var/lib/nophr /etc/nophr
 
-USER nopher
+USER nophr
 
-VOLUME ["/var/lib/nopher", "/etc/nopher"]
+VOLUME ["/var/lib/nophr", "/etc/nophr"]
 
 EXPOSE 70 1965 79
 
-ENTRYPOINT ["/usr/local/bin/nopher"]
-CMD ["--config", "/etc/nopher/nopher.yaml"]
+ENTRYPOINT ["/usr/local/bin/nophr"]
+CMD ["--config", "/etc/nophr/nophr.yaml"]
 ```
 
 Documentation for Users
@@ -484,24 +484,24 @@ Quick Start Guide (in README.md):
 1. Download binary:
    ```bash
    # Linux/macOS one-liner
-   curl -fsSL https://get.nopher.io | sh
+   curl -fsSL https://get.nophr.io | sh
 
    # Or download from releases
-   wget https://github.com/sandwich/nopher/releases/download/v1.0.0/nopher_1.0.0_linux_amd64.tar.gz
-   tar xzf nopher_1.0.0_linux_amd64.tar.gz
-   sudo mv nopher /usr/local/bin/
+   wget https://github.com/sandwich/nophr/releases/download/v1.0.0/nophr_1.0.0_linux_amd64.tar.gz
+   tar xzf nophr_1.0.0_linux_amd64.tar.gz
+   sudo mv nophr /usr/local/bin/
    ```
 
 2. Create config:
    ```bash
-   mkdir -p ~/.config/nopher
-   nopher init > ~/.config/nopher/nopher.yaml
+   mkdir -p ~/.config/nophr
+   nophr init > ~/.config/nophr/nophr.yaml
    # Edit config with your npub and seed relays
    ```
 
 3. Run:
    ```bash
-   nopher --config ~/.config/nopher/nopher.yaml
+   nophr --config ~/.config/nophr/nophr.yaml
    ```
 
 4. Test:

@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/nbd-wtf/go-nostr"
-	"github.com/sandwich/nopher/internal/config"
-	"github.com/sandwich/nopher/internal/storage"
+	"github.com/sandwich/nophr/internal/config"
+	"github.com/sandwich/nophr/internal/storage"
 )
 
 // TestMain sets up and tears down test environment
@@ -48,7 +48,7 @@ func TestEndToEndStorage(t *testing.T) {
 		PubKey:    "pubkey1234567890abcdef0123456789abcdef0123456789abcdef0123456789ab",
 		CreatedAt: nostr.Timestamp(time.Now().Unix()),
 		Kind:      1,
-		Content:   "Hello Nopher integration test!",
+		Content:   "Hello nophr integration test!",
 		Tags:      nostr.Tags{},
 		Sig:       "sig123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 	}

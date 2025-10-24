@@ -2,19 +2,19 @@
 
 **Status:** Production deployment guide
 
-Complete guide to deploying Nopher in production: system configuration, port binding, TLS certificates, systemd services, and monitoring.
+Complete guide to deploying nophr in production: system configuration, port binding, TLS certificates, systemd services, and monitoring.
 
 ## Quick Install
 
-The fastest way to deploy Nopher:
+The fastest way to deploy nophr:
 
 ```bash
 # Download and run installer
-curl -sSL https://nopher.io/install.sh | sh
+curl -sSL https://nophr.io/install.sh | sh
 
 # The installer will:
 # - Download the latest release for your platform
-# - Install to /usr/local/bin/nopher
+# - Install to /usr/local/bin/nophr
 # - Create example configuration
 ```
 
@@ -78,19 +78,19 @@ curl -sSL https://nopher.io/install.sh | sh
 
 ## Port Binding
 
-Ports below 1024 require root privileges. Nopher needs ports 70, 79, and optionally 1965 (usually OK).
+Ports below 1024 require root privileges. nophr needs ports 70, 79, and optionally 1965 (usually OK).
 
 ### Option 1: systemd Socket Activation (Recommended)
 
-Systemd can bind ports as root, then pass sockets to unprivileged Nopher process.
+Systemd can bind ports as root, then pass sockets to unprivileged nophr process.
 
 **Create socket units:**
 
-`/etc/systemd/system/nopher-gopher.socket`:
+`/etc/systemd/system/nophr-gopher.socket`:
 ```ini
 [Unit]
-Description=Nopher Gopher Socket
-PartOf=nopher.service
+Description=nophr Gopher Socket
+PartOf=nophr.service
 
 [Socket]
 ListenStream=0.0.0.0:70
@@ -100,11 +100,11 @@ Accept=no
 WantedBy=sockets.target
 ```
 
-`/etc/systemd/system/nopher-finger.socket`:
+`/etc/systemd/system/nophr-finger.socket`:
 ```ini
 [Unit]
-Description=Nopher Finger Socket
-PartOf=nopher.service
+Description=nophr Finger Socket
+PartOf=nophr.service
 
 [Socket]
 ListenStream=0.0.0.0:79
@@ -114,11 +114,11 @@ Accept=no
 WantedBy=sockets.target
 ```
 
-`/etc/systemd/system/nopher-gemini.socket`:
+`/etc/systemd/system/nophr-gemini.socket`:
 ```ini
 [Unit]
-Description=Nopher Gemini Socket
-PartOf=nopher.service
+Description=nophr Gemini Socket
+PartOf=nophr.service
 
 [Socket]
 ListenStream=0.0.0.0:1965
@@ -130,19 +130,19 @@ WantedBy=sockets.target
 
 **Update service unit:**
 
-`/etc/systemd/system/nopher.service` (add `Requires` and `After`):
+`/etc/systemd/system/nophr.service` (add `Requires` and `After`):
 ```ini
 [Unit]
-Description=Nopher - Nostr to Gopher/Gemini/Finger Gateway
-After=network.target nopher-gopher.socket nopher-finger.socket nopher-gemini.socket
-Requires=nopher-gopher.socket nopher-finger.socket nopher-gemini.socket
+Description=nophr - Nostr to Gopher/Gemini/Finger Gateway
+After=network.target nophr-gopher.socket nophr-finger.socket nophr-gemini.socket
+Requires=nophr-gopher.socket nophr-finger.socket nophr-gemini.socket
 
 [Service]
 Type=simple
-User=nopher
-Group=nopher
-WorkingDirectory=/opt/nopher
-ExecStart=/usr/local/bin/nopher --config /opt/nopher/nopher.yaml
+User=nophr
+Group=nophr
+WorkingDirectory=/opt/nophr
+ExecStart=/usr/local/bin/nophr --config /opt/nophr/nophr.yaml
 Restart=on-failure
 RestartSec=10s
 
@@ -152,23 +152,23 @@ WantedBy=multi-user.target
 
 **Enable and start:**
 ```bash
-sudo systemctl enable nopher-gopher.socket nopher-finger.socket nopher-gemini.socket
-sudo systemctl start nopher-gopher.socket nopher-finger.socket nopher-gemini.socket
-sudo systemctl enable nopher.service
-sudo systemctl start nopher.service
+sudo systemctl enable nophr-gopher.socket nophr-finger.socket nophr-gemini.socket
+sudo systemctl start nophr-gopher.socket nophr-finger.socket nophr-gemini.socket
+sudo systemctl enable nophr.service
+sudo systemctl start nophr.service
 ```
 
 **Verify:**
 ```bash
-sudo systemctl status nopher
+sudo systemctl status nophr
 sudo ss -tlnp | grep -E ':(70|79|1965)'
 ```
 
 ### Option 2: Port Forwarding (iptables)
 
-Forward high ports → low ports, run Nopher on high ports.
+Forward high ports → low ports, run nophr on high ports.
 
-**Configure Nopher on high ports:**
+**Configure nophr on high ports:**
 ```yaml
 protocols:
   gopher:
@@ -209,7 +209,7 @@ sudo systemctl start netfilter-persistent
 **Only for testing!** Do not run production as root.
 
 ```bash
-sudo /usr/local/bin/nopher --config /opt/nopher/nopher.yaml
+sudo /usr/local/bin/nophr --config /opt/nophr/nophr.yaml
 ```
 
 ---
@@ -229,19 +229,19 @@ protocols:
       auto_generate: true
 ```
 
-Nopher generates self-signed cert on first run.
+nophr generates self-signed cert on first run.
 
 **Manual generation:**
 ```bash
-mkdir -p /opt/nopher/certs
+mkdir -p /opt/nophr/certs
 openssl req -x509 -newkey rsa:4096 \
-  -keyout /opt/nopher/certs/key.pem \
-  -out /opt/nopher/certs/cert.pem \
+  -keyout /opt/nophr/certs/key.pem \
+  -out /opt/nophr/certs/cert.pem \
   -days 365 -nodes \
   -subj "/CN=gemini.example.com"
 
-chown nopher:nopher /opt/nopher/certs/*.pem
-chmod 600 /opt/nopher/certs/key.pem
+chown nophr:nophr /opt/nophr/certs/*.pem
+chmod 600 /opt/nophr/certs/key.pem
 ```
 
 **Configuration:**
@@ -249,8 +249,8 @@ chmod 600 /opt/nopher/certs/key.pem
 protocols:
   gemini:
     tls:
-      cert_path: "/opt/nopher/certs/cert.pem"
-      key_path: "/opt/nopher/certs/key.pem"
+      cert_path: "/opt/nophr/certs/cert.pem"
+      key_path: "/opt/nophr/certs/key.pem"
       auto_generate: false
 ```
 
@@ -273,12 +273,12 @@ sudo certbot certonly --standalone -d gemini.example.com
 # /etc/letsencrypt/live/gemini.example.com/privkey.pem
 ```
 
-**Copy to Nopher:**
+**Copy to nophr:**
 ```bash
-sudo cp /etc/letsencrypt/live/gemini.example.com/fullchain.pem /opt/nopher/certs/cert.pem
-sudo cp /etc/letsencrypt/live/gemini.example.com/privkey.pem /opt/nopher/certs/key.pem
-sudo chown nopher:nopher /opt/nopher/certs/*.pem
-sudo chmod 600 /opt/nopher/certs/key.pem
+sudo cp /etc/letsencrypt/live/gemini.example.com/fullchain.pem /opt/nophr/certs/cert.pem
+sudo cp /etc/letsencrypt/live/gemini.example.com/privkey.pem /opt/nophr/certs/key.pem
+sudo chown nophr:nophr /opt/nophr/certs/*.pem
+sudo chmod 600 /opt/nophr/certs/key.pem
 ```
 
 **Configuration:**
@@ -286,8 +286,8 @@ sudo chmod 600 /opt/nopher/certs/key.pem
 protocols:
   gemini:
     tls:
-      cert_path: "/opt/nopher/certs/cert.pem"
-      key_path: "/opt/nopher/certs/key.pem"
+      cert_path: "/opt/nophr/certs/cert.pem"
+      key_path: "/opt/nophr/certs/key.pem"
       auto_generate: false
 ```
 
@@ -295,65 +295,65 @@ protocols:
 
 Certbot creates cron job automatically. Add post-renewal hook:
 
-`/etc/letsencrypt/renewal-hooks/post/nopher-reload.sh`:
+`/etc/letsencrypt/renewal-hooks/post/nophr-reload.sh`:
 ```bash
 #!/bin/bash
-cp /etc/letsencrypt/live/gemini.example.com/fullchain.pem /opt/nopher/certs/cert.pem
-cp /etc/letsencrypt/live/gemini.example.com/privkey.pem /opt/nopher/certs/key.pem
-chown nopher:nopher /opt/nopher/certs/*.pem
-chmod 600 /opt/nopher/certs/key.pem
-systemctl restart nopher
+cp /etc/letsencrypt/live/gemini.example.com/fullchain.pem /opt/nophr/certs/cert.pem
+cp /etc/letsencrypt/live/gemini.example.com/privkey.pem /opt/nophr/certs/key.pem
+chown nophr:nophr /opt/nophr/certs/*.pem
+chmod 600 /opt/nophr/certs/key.pem
+systemctl restart nophr
 ```
 
 ```bash
-sudo chmod +x /etc/letsencrypt/renewal-hooks/post/nopher-reload.sh
+sudo chmod +x /etc/letsencrypt/renewal-hooks/post/nophr-reload.sh
 ```
 
 ---
 
 ## Systemd Service
 
-Run Nopher as a systemd service for automatic startup and management.
+Run nophr as a systemd service for automatic startup and management.
 
 ### Create User
 
 ```bash
-sudo useradd --system --create-home --home-dir /opt/nopher --shell /bin/bash nopher
+sudo useradd --system --create-home --home-dir /opt/nophr --shell /bin/bash nophr
 ```
 
 ### Install Binary
 
 ```bash
-sudo cp dist/nopher /usr/local/bin/nopher
-sudo chmod +x /usr/local/bin/nopher
+sudo cp dist/nophr /usr/local/bin/nophr
+sudo chmod +x /usr/local/bin/nophr
 ```
 
 ### Create Configuration
 
 ```bash
-sudo mkdir -p /opt/nopher/data
-sudo mkdir -p /opt/nopher/certs
-sudo cp nopher.yaml /opt/nopher/nopher.yaml
-sudo chown -R nopher:nopher /opt/nopher
+sudo mkdir -p /opt/nophr/data
+sudo mkdir -p /opt/nophr/certs
+sudo cp nophr.yaml /opt/nophr/nophr.yaml
+sudo chown -R nophr:nophr /opt/nophr
 ```
 
 ### Create Service Unit
 
-`/etc/systemd/system/nopher.service`:
+`/etc/systemd/system/nophr.service`:
 ```ini
 [Unit]
-Description=Nopher - Nostr to Gopher/Gemini/Finger Gateway
+Description=nophr - Nostr to Gopher/Gemini/Finger Gateway
 After=network.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-User=nopher
-Group=nopher
-WorkingDirectory=/opt/nopher
+User=nophr
+Group=nophr
+WorkingDirectory=/opt/nophr
 
 # Main command
-ExecStart=/usr/local/bin/nopher --config /opt/nopher/nopher.yaml
+ExecStart=/usr/local/bin/nophr --config /opt/nophr/nophr.yaml
 
 # Restart policy
 Restart=on-failure
@@ -364,13 +364,13 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/opt/nopher
+ReadWritePaths=/opt/nophr
 
 # Resource limits
 LimitNOFILE=65536
 
 # Environment
-Environment="NOPHER_NSEC_FILE=/opt/nopher/nsec"
+Environment="NOPHER_NSEC_FILE=/opt/nophr/nsec"
 
 [Install]
 WantedBy=multi-user.target
@@ -378,50 +378,50 @@ WantedBy=multi-user.target
 
 **Store nsec securely:**
 ```bash
-echo "nsec1..." | sudo tee /opt/nopher/nsec
-sudo chmod 600 /opt/nopher/nsec
-sudo chown nopher:nopher /opt/nopher/nsec
+echo "nsec1..." | sudo tee /opt/nophr/nsec
+sudo chmod 600 /opt/nophr/nsec
+sudo chown nophr:nophr /opt/nophr/nsec
 ```
 
 ### Enable and Start
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable nopher.service
-sudo systemctl start nopher.service
+sudo systemctl enable nophr.service
+sudo systemctl start nophr.service
 ```
 
 ### Check Status
 
 ```bash
-sudo systemctl status nopher
-sudo journalctl -u nopher -f
+sudo systemctl status nophr
+sudo journalctl -u nophr -f
 ```
 
 ### Manage Service
 
 ```bash
 # Start
-sudo systemctl start nopher
+sudo systemctl start nophr
 
 # Stop
-sudo systemctl stop nopher
+sudo systemctl stop nophr
 
 # Restart
-sudo systemctl restart nopher
+sudo systemctl restart nophr
 
 # Reload config (if supported)
-sudo systemctl reload nopher
+sudo systemctl reload nophr
 
 # View logs
-sudo journalctl -u nopher -n 100
+sudo journalctl -u nophr -n 100
 ```
 
 ---
 
 ## Reverse Proxy
 
-For advanced setups, you can run Nopher behind a reverse proxy (though protocols are non-HTTP).
+For advanced setups, you can run nophr behind a reverse proxy (though protocols are non-HTTP).
 
 ### Gopher Proxy (socat)
 
@@ -430,7 +430,7 @@ Forward Gopher through socat:
 ```bash
 sudo apt install socat
 
-# Forward external :70 → Nopher :7070
+# Forward external :70 → nophr :7070
 socat TCP4-LISTEN:70,fork TCP4:localhost:7070
 ```
 
@@ -460,7 +460,7 @@ Example nginx configuration for Gemini TLS termination.
 sudo apt install nginx
 ```
 
-**Configuration:** `/etc/nginx/nginx.conf` or `/etc/nginx/conf.d/nopher.conf`
+**Configuration:** `/etc/nginx/nginx.conf` or `/etc/nginx/conf.d/nophr.conf`
 
 ```nginx
 # Gemini protocol (port 1965 with TLS)
@@ -472,8 +472,8 @@ stream {
     server {
         listen 1965 ssl;
 
-        ssl_certificate /etc/ssl/certs/nopher.crt;
-        ssl_certificate_key /etc/ssl/private/nopher.key;
+        ssl_certificate /etc/ssl/certs/nophr.crt;
+        ssl_certificate_key /etc/ssl/private/nophr.key;
         ssl_protocols TLSv1.2 TLSv1.3;
         ssl_ciphers HIGH:!aNULL:!MD5;
 
@@ -540,20 +540,20 @@ sudo systemctl restart caddy
 
 ## Docker Deployment
 
-Deploy Nopher using Docker and Docker Compose.
+Deploy nophr using Docker and Docker Compose.
 
 ### Using Docker Compose (Recommended)
 
-Nopher includes a production-ready `docker-compose.yml`:
+nophr includes a production-ready `docker-compose.yml`:
 
 ```bash
 # Clone repository
-git clone https://github.com/sandwichfarm/nopher.git
-cd nopher
+git clone https://github.com/sandwichfarm/nophr.git
+cd nophr
 
 # Copy and edit configuration
-cp configs/nopher.example.yaml configs/nopher.yaml
-nano configs/nopher.yaml
+cp configs/nophr.example.yaml configs/nophr.yaml
+nano configs/nophr.yaml
 
 # Set environment variables
 export NOPHER_NSEC="nsec1..."  # Never commit this!
@@ -563,7 +563,7 @@ export NOPHER_LOG_LEVEL="info"
 docker-compose up -d
 
 # View logs
-docker-compose logs -f nopher
+docker-compose logs -f nophr
 
 # Stop services
 docker-compose down
@@ -574,7 +574,7 @@ docker-compose down
 The included `docker-compose.yml` provides:
 
 **Main service:**
-- Nopher server with all three protocols
+- nophr server with all three protocols
 - Persistent volumes for data and certs
 - Health checks
 - Security hardening (no-new-privileges, minimal capabilities)
@@ -611,31 +611,31 @@ NOPHER_LOG_LEVEL=info
 ```
 
 **Volumes:**
-- `nopher-data` - Database and sync state (persistent)
-- `nopher-certs` - TLS certificates (persistent)
-- `nopher-logs` - Application logs (optional)
+- `nophr-data` - Database and sync state (persistent)
+- `nophr-certs` - TLS certificates (persistent)
+- `nophr-logs` - Application logs (optional)
 
 ### Standalone Docker
 
-Run Nopher directly with Docker:
+Run nophr directly with Docker:
 
 ```bash
 # Pull image (when available)
-docker pull ghcr.io/sandwichfarm/nopher:latest
+docker pull ghcr.io/sandwichfarm/nophr:latest
 
 # Or build locally
-docker build -t nopher:latest .
+docker build -t nophr:latest .
 
 # Run container
 docker run -d \
-  --name nopher \
+  --name nophr \
   -p 70:70 \
   -p 79:79 \
   -p 1965:1965 \
-  -v ./nopher.yaml:/etc/nopher/nopher.yaml:ro \
-  -v nopher-data:/var/lib/nopher \
+  -v ./nophr.yaml:/etc/nophr/nophr.yaml:ro \
+  -v nophr-data:/var/lib/nophr \
   -e NOPHER_NSEC="nsec1..." \
-  ghcr.io/sandwichfarm/nopher:latest
+  ghcr.io/sandwichfarm/nophr:latest
 ```
 
 ### Docker Security
@@ -670,13 +670,13 @@ Redis is an optional cache backend that provides distributed caching, persistenc
 ### When to Use Redis
 
 **Use Redis cache when:**
-- Running multiple Nopher instances (load balancing)
+- Running multiple nophr instances (load balancing)
 - Need persistent cache across restarts
 - Limited memory on host machine
 - Want shared cache for distributed deployment
 
 **Use memory cache when:**
-- Single Nopher instance
+- Single nophr instance
 - Development/testing
 - Simplicity preferred
 - No external dependencies wanted
@@ -740,7 +740,7 @@ sudo systemctl restart redis
 sudo systemctl enable redis
 ```
 
-### Nopher Configuration
+### nophr Configuration
 
 **With Redis on localhost (no password):**
 ```yaml
@@ -834,9 +834,9 @@ redis-cli INFO memory
 redis-cli CLIENT LIST
 ```
 
-### Redis for Multiple Nopher Instances
+### Redis for Multiple nophr Instances
 
-When running multiple Nopher instances behind a load balancer:
+When running multiple nophr instances behind a load balancer:
 
 **Redis server** (shared):
 ```bash
@@ -845,15 +845,15 @@ sudo apt install redis-server
 sudo systemctl enable --now redis
 ```
 
-**Nopher instances** (all pointing to same Redis):
+**nophr instances** (all pointing to same Redis):
 ```bash
 # Instance 1
 export NOPHER_REDIS_URL="redis://:password@redis.example.com:6379/0"
-./nopher --config nopher.yaml
+./nophr --config nophr.yaml
 
 # Instance 2 (same Redis URL)
 export NOPHER_REDIS_URL="redis://:password@redis.example.com:6379/0"
-./nopher --config nopher.yaml
+./nophr --config nophr.yaml
 ```
 
 **Benefits:**
@@ -910,7 +910,7 @@ redis-cli --latency
 
 Monitor these metrics to ensure Redis is performing well:
 
-**Nopher cache stats:**
+**nophr cache stats:**
 ```
 Cache Statistics:
   Hits: 9,500
@@ -946,7 +946,7 @@ sudo ufw enable
 # SSH (important!)
 sudo ufw allow 22/tcp
 
-# Nopher ports
+# nophr ports
 sudo ufw allow 70/tcp    # Gopher
 sudo ufw allow 79/tcp    # Finger
 sudo ufw allow 1965/tcp  # Gemini
@@ -961,7 +961,7 @@ sudo ufw status
 # Allow SSH
 sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
 
-# Allow Nopher
+# Allow nophr
 sudo iptables -A INPUT -p tcp --dport 70 -j ACCEPT
 sudo iptables -A INPUT -p tcp --dport 79 -j ACCEPT
 sudo iptables -A INPUT -p tcp --dport 1965 -j ACCEPT
@@ -991,19 +991,19 @@ sudo firewall-cmd --reload
 
 **View logs:**
 ```bash
-sudo journalctl -u nopher -f
+sudo journalctl -u nophr -f
 ```
 
 **Recent errors:**
 ```bash
-sudo journalctl -u nopher -p err -n 50
+sudo journalctl -u nophr -p err -n 50
 ```
 
 ### Health Checks
 
-**Check if Nopher is running:**
+**Check if nophr is running:**
 ```bash
-sudo systemctl is-active nopher
+sudo systemctl is-active nophr
 ```
 
 **Check ports:**
@@ -1013,9 +1013,9 @@ sudo ss -tlnp | grep -E ':(70|79|1965)'
 
 **Expected output:**
 ```
-LISTEN  0  128  0.0.0.0:70    0.0.0.0:*  users:(("nopher",pid=1234,fd=3))
-LISTEN  0  128  0.0.0.0:79    0.0.0.0:*  users:(("nopher",pid=1234,fd=4))
-LISTEN  0  128  0.0.0.0:1965  0.0.0.0:*  users:(("nopher",pid=1234,fd=5))
+LISTEN  0  128  0.0.0.0:70    0.0.0.0:*  users:(("nophr",pid=1234,fd=3))
+LISTEN  0  128  0.0.0.0:79    0.0.0.0:*  users:(("nophr",pid=1234,fd=4))
+LISTEN  0  128  0.0.0.0:1965  0.0.0.0:*  users:(("nophr",pid=1234,fd=5))
 ```
 
 ### Protocol Tests
@@ -1038,42 +1038,42 @@ echo "" | nc localhost 79
 ### Database Size
 
 ```bash
-du -h /opt/nopher/data/nopher.db
+du -h /opt/nophr/data/nophr.db
 ```
 
 ### Event Count
 
 ```bash
-sqlite3 /opt/nopher/data/nopher.db "SELECT COUNT(*) FROM events;"
+sqlite3 /opt/nophr/data/nophr.db "SELECT COUNT(*) FROM events;"
 ```
 
 ### Automated Monitoring (cron)
 
 **Create monitoring script:**
 
-`/opt/nopher/scripts/health-check.sh`:
+`/opt/nophr/scripts/health-check.sh`:
 ```bash
 #!/bin/bash
-# Check if Nopher is running
-if ! systemctl is-active --quiet nopher; then
-    echo "Nopher is down! Restarting..."
-    systemctl restart nopher
-    echo "Nopher restarted at $(date)" >> /var/log/nopher-health.log
+# Check if nophr is running
+if ! systemctl is-active --quiet nophr; then
+    echo "nophr is down! Restarting..."
+    systemctl restart nophr
+    echo "nophr restarted at $(date)" >> /var/log/nophr-health.log
 fi
 
 # Check database size
-DB_SIZE=$(du -m /opt/nopher/data/nopher.db | cut -f1)
+DB_SIZE=$(du -m /opt/nophr/data/nophr.db | cut -f1)
 if [ "$DB_SIZE" -gt 10000 ]; then
-    echo "Database size exceeded 10GB: ${DB_SIZE}MB" >> /var/log/nopher-health.log
+    echo "Database size exceeded 10GB: ${DB_SIZE}MB" >> /var/log/nophr-health.log
 fi
 ```
 
 **Add to cron:**
 ```bash
-sudo chmod +x /opt/nopher/scripts/health-check.sh
+sudo chmod +x /opt/nophr/scripts/health-check.sh
 sudo crontab -e
 # Add line:
-*/5 * * * * /opt/nopher/scripts/health-check.sh
+*/5 * * * * /opt/nophr/scripts/health-check.sh
 ```
 
 ---
@@ -1084,78 +1084,78 @@ sudo crontab -e
 
 **Backup script:**
 
-`/opt/nopher/scripts/backup.sh`:
+`/opt/nophr/scripts/backup.sh`:
 ```bash
 #!/bin/bash
-BACKUP_DIR="/var/backups/nopher"
+BACKUP_DIR="/var/backups/nophr"
 DATE=$(date +%Y%m%d-%H%M%S)
 
 mkdir -p "$BACKUP_DIR"
 
 # Backup database
-cp /opt/nopher/data/nopher.db "$BACKUP_DIR/nopher-$DATE.db"
+cp /opt/nophr/data/nophr.db "$BACKUP_DIR/nophr-$DATE.db"
 
 # Backup config
-cp /opt/nopher/nopher.yaml "$BACKUP_DIR/nopher-$DATE.yaml"
+cp /opt/nophr/nophr.yaml "$BACKUP_DIR/nophr-$DATE.yaml"
 
 # Keep last 7 days
-find "$BACKUP_DIR" -name "nopher-*.db" -mtime +7 -delete
+find "$BACKUP_DIR" -name "nophr-*.db" -mtime +7 -delete
 
 echo "Backup completed: $DATE"
 ```
 
 **Schedule daily backups:**
 ```bash
-sudo chmod +x /opt/nopher/scripts/backup.sh
+sudo chmod +x /opt/nophr/scripts/backup.sh
 sudo crontab -e
 # Add:
-0 2 * * * /opt/nopher/scripts/backup.sh >> /var/log/nopher-backup.log 2>&1
+0 2 * * * /opt/nophr/scripts/backup.sh >> /var/log/nophr-backup.log 2>&1
 ```
 
 ### Off-site Backups
 
 **rsync to remote server:**
 ```bash
-rsync -avz /var/backups/nopher/ user@backup-server:/backups/nopher/
+rsync -avz /var/backups/nophr/ user@backup-server:/backups/nophr/
 ```
 
 **Or use cloud storage (rclone):**
 ```bash
 sudo apt install rclone
-rclone sync /var/backups/nopher/ remote:nopher-backups/
+rclone sync /var/backups/nophr/ remote:nophr-backups/
 ```
 
 ---
 
 ## Updates
 
-### Update Nopher
+### Update nophr
 
 **Stop service:**
 ```bash
-sudo systemctl stop nopher
+sudo systemctl stop nophr
 ```
 
 **Backup current binary:**
 ```bash
-sudo cp /usr/local/bin/nopher /usr/local/bin/nopher.bak
+sudo cp /usr/local/bin/nophr /usr/local/bin/nophr.bak
 ```
 
 **Install new binary:**
 ```bash
-sudo cp dist/nopher /usr/local/bin/nopher
-sudo chmod +x /usr/local/bin/nopher
+sudo cp dist/nophr /usr/local/bin/nophr
+sudo chmod +x /usr/local/bin/nophr
 ```
 
 **Start service:**
 ```bash
-sudo systemctl start nopher
+sudo systemctl start nophr
 ```
 
 **Verify:**
 ```bash
-sudo systemctl status nopher
-/usr/local/bin/nopher --version
+sudo systemctl status nophr
+/usr/local/bin/nophr --version
 ```
 
 ### Rollback
@@ -1163,9 +1163,9 @@ sudo systemctl status nopher
 If update causes issues:
 
 ```bash
-sudo systemctl stop nopher
-sudo cp /usr/local/bin/nopher.bak /usr/local/bin/nopher
-sudo systemctl start nopher
+sudo systemctl stop nophr
+sudo cp /usr/local/bin/nophr.bak /usr/local/bin/nophr
+sudo systemctl start nophr
 ```
 
 ---
@@ -1178,8 +1178,8 @@ Increase file descriptor limit for high traffic:
 
 `/etc/security/limits.conf`:
 ```
-nopher soft nofile 65536
-nopher hard nofile 65536
+nophr soft nofile 65536
+nophr hard nofile 65536
 ```
 
 Or in systemd service:
@@ -1192,13 +1192,13 @@ LimitNOFILE=65536
 
 **SQLite WAL mode** (already enabled by Khatru):
 ```bash
-sqlite3 /opt/nopher/data/nopher.db "PRAGMA journal_mode=WAL;"
+sqlite3 /opt/nophr/data/nophr.db "PRAGMA journal_mode=WAL;"
 ```
 
 **Vacuum periodically:**
 ```bash
 # Weekly cron
-0 3 * * 0 sqlite3 /opt/nopher/data/nopher.db "VACUUM;"
+0 3 * * 0 sqlite3 /opt/nophr/data/nophr.db "VACUUM;"
 ```
 
 ### LMDB Max Size
@@ -1244,22 +1244,22 @@ sudo ss -tlnp | grep :70
 
 ### Database locked
 
-**Cause:** Multiple Nopher instances or unclean shutdown.
+**Cause:** Multiple nophr instances or unclean shutdown.
 
 **Fix:**
 ```bash
 # Ensure only one instance
-sudo systemctl stop nopher
+sudo systemctl stop nophr
 # Check for stale locks
-rm -f /opt/nopher/data/nopher.db-shm /opt/nopher/data/nopher.db-wal
-sudo systemctl start nopher
+rm -f /opt/nophr/data/nophr.db-shm /opt/nophr/data/nophr.db-wal
+sudo systemctl start nophr
 ```
 
 ### Service crashes on start
 
 **Check logs:**
 ```bash
-sudo journalctl -u nopher -n 100
+sudo journalctl -u nophr -n 100
 ```
 
 **Common causes:**
@@ -1271,14 +1271,14 @@ sudo journalctl -u nopher -n 100
 
 ## Security Checklist
 
-- [ ] Run as non-root user (`nopher`)
+- [ ] Run as non-root user (`nophr`)
 - [ ] Use systemd socket activation or port forwarding
 - [ ] Store nsec in separate file with 600 permissions
 - [ ] Enable firewall (ufw/iptables)
 - [ ] Use proper TLS certs (Let's Encrypt)
 - [ ] Set up automated backups
 - [ ] Monitor logs regularly
-- [ ] Keep Nopher updated
+- [ ] Keep nophr updated
 - [ ] Limit database size (retention policy)
 
 ---

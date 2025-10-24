@@ -2,20 +2,20 @@
 
 **Status:** ✅ VERIFIED
 
-Complete reference for Nopher's YAML configuration file.
+Complete reference for nophr's YAML configuration file.
 
 ## Overview
 
-Nopher uses YAML for configuration with environment variable overrides for secrets. Configuration is validated on startup.
+nophr uses YAML for configuration with environment variable overrides for secrets. Configuration is validated on startup.
 
 **Generate example configuration:**
 ```bash
-nopher init > nopher.yaml
+nophr init > nophr.yaml
 ```
 
 **Load configuration:**
 ```bash
-nopher --config nopher.yaml
+nophr --config nophr.yaml
 ```
 
 ## Configuration Sections
@@ -204,7 +204,7 @@ relays:
 
 **Type:** Array of strings (WebSocket URLs)
 
-Seed relays used for initial relay discovery. After startup, Nopher discovers additional relays via NIP-65 (kind 10002).
+Seed relays used for initial relay discovery. After startup, nophr discovers additional relays via NIP-65 (kind 10002).
 
 **Requirements:**
 - Must start with `wss://` (TLS) or `ws://` (unencrypted)
@@ -601,16 +601,16 @@ Database backend configuration.
 ```yaml
 storage:
   driver: "sqlite"
-  sqlite_path: "./data/nopher.db"
-  lmdb_path: "./data/nopher.lmdb"
+  sqlite_path: "./data/nophr.db"
+  lmdb_path: "./data/nophr.lmdb"
   lmdb_max_size_mb: 10240
 ```
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `driver` | string | `sqlite` | Database backend (`sqlite` or `lmdb`) |
-| `sqlite_path` | string | `./data/nopher.db` | SQLite database file path |
-| `lmdb_path` | string | `./data/nopher.lmdb` | LMDB database directory |
+| `sqlite_path` | string | `./data/nophr.db` | SQLite database file path |
+| `lmdb_path` | string | `./data/nophr.lmdb` | LMDB database directory |
 | `lmdb_max_size_mb` | int | `10240` | LMDB max size (MB) - 10GB default |
 
 **Choosing a backend:**
@@ -794,7 +794,7 @@ caching:
 - Requires external Redis server
 
 **When to use Redis:**
-- Running multiple Nopher instances
+- Running multiple nophr instances
 - Need persistent cache across restarts
 - Limited memory on host
 - Want shared cache for load balancing
@@ -925,7 +925,7 @@ logging:
 **Example:**
 ```bash
 # Debug mode for troubleshooting
-NOPHER_LOG_LEVEL=debug nopher --config nopher.yaml
+NOPHER_LOG_LEVEL=debug nophr --config nophr.yaml
 ```
 
 **Status:** ✅ VERIFIED (validated in internal/config/config.go)
@@ -1016,7 +1016,7 @@ filters:
 
 **Built-in endpoints vs. Custom sections:**
 
-Nopher provides built-in router endpoints:
+nophr provides built-in router endpoints:
 - `/notes` - Short-form notes (kind 1, non-replies)
 - `/articles` - Long-form articles (kind 30023)
 - `/replies` - Replies to your content
@@ -1574,7 +1574,7 @@ footers:
     enabled: true
     content: |
       ---
-      Powered by Nopher
+      Powered by nophr
       {{site.operator}} - {{year}}
 ```
 
@@ -1744,7 +1744,7 @@ Any configuration value can be overridden with `NOPHER_*` environment variables.
 ```bash
 export NOPHER_NSEC="nsec1..."
 export NOPHER_REDIS_URL="redis://localhost:6379"
-nopher --config nopher.yaml
+nophr --config nophr.yaml
 ```
 
 ---
@@ -1766,7 +1766,7 @@ Configuration is validated on startup. Common errors:
 
 **Validate config without starting servers:**
 ```bash
-nopher --config nopher.yaml --validate  # (future feature)
+nophr --config nophr.yaml --validate  # (future feature)
 ```
 
 For now, config is validated on startup. Check output for validation errors.
@@ -1775,7 +1775,7 @@ For now, config is validated on startup. Check output for validation errors.
 
 ## Complete Example
 
-See [configs/nopher.example.yaml](../configs/nopher.example.yaml) for a complete, commented example configuration.
+See [configs/nophr.example.yaml](../configs/nophr.example.yaml) for a complete, commented example configuration.
 
 ---
 

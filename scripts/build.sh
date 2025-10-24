@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build nopher binary
+# Build nophr binary
 
 set -e
 
@@ -8,7 +8,7 @@ COMMIT=${COMMIT:-$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")}
 DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 BUILT_BY=${BUILT_BY:-$(whoami)}
 
-echo "Building nopher..."
+echo "Building nophr..."
 echo "  Version: $VERSION"
 echo "  Commit:  $COMMIT"
 echo "  Date:    $DATE"
@@ -17,9 +17,9 @@ echo ""
 
 go build \
     -ldflags "-X main.version=$VERSION -X main.commit=$COMMIT -X main.date=$DATE -X main.builtBy=$BUILT_BY" \
-    -o nopher \
-    ./cmd/nopher
+    -o nophr \
+    ./cmd/nophr
 
 echo ""
-echo "✓ Build complete: ./nopher"
-./nopher --version
+echo "✓ Build complete: ./nophr"
+./nophr --version

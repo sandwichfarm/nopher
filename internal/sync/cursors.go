@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/nbd-wtf/go-nostr"
-	"github.com/sandwich/nopher/internal/storage"
+	"github.com/sandwich/nophr/internal/storage"
 )
 
 // CursorManager handles sync cursor tracking to prevent re-syncing old events

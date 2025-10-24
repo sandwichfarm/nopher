@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/nbd-wtf/go-nostr"
-	"github.com/sandwich/nopher/internal/aggregates"
-	"github.com/sandwich/nopher/internal/sections"
+	"github.com/sandwich/nophr/internal/aggregates"
+	"github.com/sandwich/nophr/internal/sections"
 )
 
 const itemsPerPage = 9 // Gopher clients use single-digit hotkeys (1-9)
@@ -182,7 +182,7 @@ func (r *Router) handleRoot(ctx context.Context) []byte {
 	// Add header if configured
 	r.addHeaderToGophermap(gmap, "home")
 
-	gmap.AddWelcome("Nopher - Nostr Gateway", "Browse Nostr content via Gopher protocol")
+	gmap.AddWelcome("nophr - Nostr Gateway", "Browse Nostr content via Gopher protocol")
 
 	gmap.AddDirectory("Notes", "/notes")
 	gmap.AddDirectory("Articles", "/articles")
@@ -192,7 +192,7 @@ func (r *Router) handleRoot(ctx context.Context) []byte {
 	gmap.AddDirectory("Search", "/search")
 	gmap.AddDirectory("Diagnostics", "/diagnostics")
 	gmap.AddSpacer()
-	gmap.AddInfo("Powered by Nopher")
+	gmap.AddInfo("Powered by nophr")
 
 	// Add footer if configured
 	r.addFooterToGophermap(gmap, "home")

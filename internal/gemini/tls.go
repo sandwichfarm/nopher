@@ -68,7 +68,7 @@ func (s *Server) generateSelfSignedCert() error {
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			Organization: []string{"Nopher Gemini Server"},
+			Organization: []string{"nophr Gemini Server"},
 			CommonName:   s.host,
 		},
 		NotBefore:             notBefore,

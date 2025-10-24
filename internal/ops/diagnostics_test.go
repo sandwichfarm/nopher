@@ -78,7 +78,7 @@ func TestDiagnosticsFormatAsText(t *testing.T) {
 
 	// Check that all sections are present
 	expectedSections := []string{
-		"=== Nopher Diagnostics ===",
+		"=== nophr Diagnostics ===",
 		"--- System ---",
 		"--- Storage ---",
 		"--- Sync ---",
@@ -129,7 +129,7 @@ func TestDiagnosticsFormatAsGemtext(t *testing.T) {
 
 	// Check for gemtext headings
 	expectedHeadings := []string{
-		"# Nopher Diagnostics",
+		"# nophr Diagnostics",
 		"## System",
 		"## Storage",
 		"## Sync",
@@ -169,7 +169,7 @@ func TestDiagnosticsFormatAsGophermap(t *testing.T) {
 		t.Error("expected gophermap format with tabs and CRLF")
 	}
 
-	if !strings.Contains(gophermap, "Nopher Diagnostics") {
+	if !strings.Contains(gophermap, "nophr Diagnostics") {
 		t.Error("expected gophermap to contain title")
 	}
 

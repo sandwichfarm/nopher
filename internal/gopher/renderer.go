@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"github.com/nbd-wtf/go-nostr"
-	"github.com/sandwich/nopher/internal/aggregates"
-	"github.com/sandwich/nopher/internal/config"
-	"github.com/sandwich/nopher/internal/entities"
-	"github.com/sandwich/nopher/internal/markdown"
-	nostrclient "github.com/sandwich/nopher/internal/nostr"
-	"github.com/sandwich/nopher/internal/presentation"
-	"github.com/sandwich/nopher/internal/storage"
+	"github.com/sandwich/nophr/internal/aggregates"
+	"github.com/sandwich/nophr/internal/config"
+	"github.com/sandwich/nophr/internal/entities"
+	"github.com/sandwich/nophr/internal/markdown"
+	nostrclient "github.com/sandwich/nophr/internal/nostr"
+	"github.com/sandwich/nophr/internal/presentation"
+	"github.com/sandwich/nophr/internal/storage"
 )
 
 // Renderer renders Nostr events as Gopher text

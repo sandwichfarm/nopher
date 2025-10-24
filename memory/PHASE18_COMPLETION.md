@@ -174,7 +174,7 @@ Added default value application to prevent validation errors.
 Created comprehensive example configuration.
 
 **Files Created/Modified**:
-- `configs/nopher.example.yaml` - Added all Phase 18 options with comments
+- `configs/nophr.example.yaml` - Added all Phase 18 options with comments
 
 ## Testing
 
@@ -254,7 +254,7 @@ The following template variables are supported in headers and footers:
 - `internal/gopher/renderer.go` - Uses display config
 - `internal/gemini/renderer.go` - Uses display config
 - `internal/finger/renderer.go` - Uses display config
-- `configs/nopher.example.yaml` - Added Phase 18 configuration
+- `configs/nophr.example.yaml` - Added Phase 18 configuration
 
 ### Test Files Updated
 - `internal/config/config_test.go` - Updated with valid npub, Display/Behavior structs

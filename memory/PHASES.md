@@ -1,8 +1,8 @@
-Nopher Implementation Phases
+nophr Implementation Phases
 
 Overview
 
-This document breaks down Nopher implementation into discrete phases. Each phase builds on the previous one and produces a working, testable increment.
+This document breaks down nophr implementation into discrete phases. Each phase builds on the previous one and produces a working, testable increment.
 
 Phases are designed to be:
 - Independent where possible (can be worked on in parallel)
@@ -36,14 +36,14 @@ Dependencies: None
 
 Files to Create:
 - go.mod, go.sum
-- cmd/nopher/main.go (minimal)
+- cmd/nophr/main.go (minimal)
 - Makefile
 - scripts/test.sh, scripts/lint.sh, scripts/build.sh
 - .github/workflows/*.yml
 - .goreleaser.yml
 - Dockerfile
 - docker-compose.yml
-- configs/nopher.example.yaml
+- configs/nophr.example.yaml
 - README.md, CONTRIBUTING.md
 
 Memory Updates: None (bootstrap)
@@ -56,7 +56,7 @@ Deliverables:
 - Config struct matching memory/configuration.md schema
 - YAML parsing with validation
 - Environment variable override support (NOPHER_*)
-- Config initialization command (nopher init)
+- Config initialization command (nophr init)
 - Embedded example config via //go:embed
 - Unit tests for config loading
 
@@ -64,7 +64,7 @@ Completion Criteria:
 - Can load config from file
 - Can override any config value via env var
 - Validation catches invalid configs
-- `nopher init` generates valid config
+- `nophr init` generates valid config
 - Tests cover all config sections
 
 Dependencies: Phase 0
@@ -74,7 +74,7 @@ Files to Create:
 - internal/config/config_test.go
 - internal/config/validation.go
 - internal/config/env.go
-- configs/nopher.example.yaml (detailed)
+- configs/nophr.example.yaml (detailed)
 
 Memory Updates:
 - configuration.md (if schema changes discovered)
@@ -541,7 +541,7 @@ Files to Create:
 - docs/deployment.md
 - docs/troubleshooting.md
 - docs/examples/*
-- nopher.1 (man page)
+- nophr.1 (man page)
 
 Memory Updates:
 - testing.md (if testing strategy changes)
@@ -571,7 +571,7 @@ Dependencies: Phase 0, all core phases complete
 Files to Create:
 - .goreleaser.yml (finalized)
 - Dockerfile (optimized)
-- scripts/systemd/nopher.service
+- scripts/systemd/nophr.service
 - scripts/install.sh (user installer)
 - docs/reverse-proxy/*
 
@@ -732,7 +732,7 @@ behavior:
 - `internal/gopher/renderer.go` - Updated to use display config
 - `internal/gemini/renderer.go` - Updated to use display config
 - `internal/presentation/loader.go` - NEW: Header/footer loading with caching
-- `configs/nopher.example.yaml` - Added comprehensive Phase 18 configuration
+- `configs/nophr.example.yaml` - Added comprehensive Phase 18 configuration
 
 **Impact**:
 - Users have fine-grained control over what content is displayed

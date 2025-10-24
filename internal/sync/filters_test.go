@@ -3,7 +3,7 @@ package sync
 import (
 	"testing"
 
-	"github.com/sandwich/nopher/internal/config"
+	"github.com/sandwich/nophr/internal/config"
 )
 
 func TestNewFilterBuilder(t *testing.T) {

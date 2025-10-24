@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run nopher in development mode
+# Run nophr in development mode
 
 set -e
 
@@ -11,8 +11,8 @@ if [ ! -f "$CONFIG" ]; then
     exit 1
 fi
 
-echo "Starting nopher in development mode..."
+echo "Starting nophr in development mode..."
 echo "Config: $CONFIG"
 echo ""
 
-go run ./cmd/nopher --config "$CONFIG"
+go run ./cmd/nophr --config "$CONFIG"

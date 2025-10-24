@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sandwich/nopher/internal/config"
+	"github.com/sandwich/nophr/internal/config"
 )
 
 func TestNew(t *testing.T) {

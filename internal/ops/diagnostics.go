@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/sandwich/nopher/internal/storage"
-	"github.com/sandwich/nopher/internal/sync"
+	"github.com/sandwich/nophr/internal/storage"
+	"github.com/sandwich/nophr/internal/sync"
 )
 
 // SystemStats contains overall system statistics
@@ -311,7 +311,7 @@ func (d *Diagnostics) FormatAsText() string {
 	var out string
 
 	// System info
-	out += fmt.Sprintf("=== Nopher Diagnostics ===\n")
+	out += fmt.Sprintf("=== nophr Diagnostics ===\n")
 	out += fmt.Sprintf("Collected: %s\n\n", d.CollectedAt.Format(time.RFC3339))
 
 	out += fmt.Sprintf("--- System ---\n")
@@ -385,7 +385,7 @@ func (d *Diagnostics) FormatAsText() string {
 func (d *Diagnostics) FormatAsGophermap(host string, port int) string {
 	var out string
 
-	out += fmt.Sprintf("iNopher Diagnostics\t\t%s\t%d\r\n", host, port)
+	out += fmt.Sprintf("inophr Diagnostics\t\t%s\t%d\r\n", host, port)
 	out += fmt.Sprintf("i\t\t%s\t%d\r\n", host, port)
 	out += fmt.Sprintf("iCollected: %s\t\t%s\t%d\r\n", d.CollectedAt.Format(time.RFC3339), host, port)
 	out += fmt.Sprintf("i\t\t%s\t%d\r\n", host, port)
@@ -408,7 +408,7 @@ func (d *Diagnostics) FormatAsGophermap(host string, port int) string {
 func (d *Diagnostics) FormatAsGemtext() string {
 	var out string
 
-	out += "# Nopher Diagnostics\n\n"
+	out += "# nophr Diagnostics\n\n"
 	out += fmt.Sprintf("Collected: %s\n\n", d.CollectedAt.Format(time.RFC3339))
 
 	out += "## System\n\n"

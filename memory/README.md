@@ -1,4 +1,4 @@
-Nopher: Config-First Personal Nostr-to-Gopher/Gemini/Finger Gateway
+nophr: Config-First Personal Nostr-to-Gopher/Gemini/Finger Gateway
 
 Overview
 - Serves Nostr content via Gopher (RFC 1436), Gemini (gemini://), and Finger (RFC 742) protocols only.

@@ -8,9 +8,9 @@ import (
 
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip19"
-	"github.com/sandwich/nopher/internal/config"
-	internalnostr "github.com/sandwich/nopher/internal/nostr"
-	"github.com/sandwich/nopher/internal/storage"
+	"github.com/sandwich/nophr/internal/config"
+	internalnostr "github.com/sandwich/nophr/internal/nostr"
+	"github.com/sandwich/nophr/internal/storage"
 )
 
 // Engine manages the synchronization of events from Nostr relays

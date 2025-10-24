@@ -2,11 +2,11 @@
 
 **Status:** ✅ VERIFIED (Integrated and working)
 
-Complete guide to how Nopher integrates with Nostr: relay discovery, event synchronization, social graph computation, and interaction aggregation.
+Complete guide to how nophr integrates with Nostr: relay discovery, event synchronization, social graph computation, and interaction aggregation.
 
 ## Overview
 
-Nopher acts as a personal Nostr archive, syncing events from remote relays to a local storage layer, then serving them via Gopher/Gemini/Finger protocols.
+nophr acts as a personal Nostr archive, syncing events from remote relays to a local storage layer, then serving them via Gopher/Gemini/Finger protocols.
 
 **Data flow:**
 ```
@@ -47,7 +47,7 @@ Remote Nostr Relays
 **NIP:** [NIP-65](https://github.com/nostr-protocol/nips/blob/master/65.md)
 **Status:** 🟡 IMPLEMENTED (`internal/nostr/discovery.go`)
 
-Nopher uses **dynamic relay discovery** via kind 10002 events. This allows you to change your Nostr relays without updating Nopher's config.
+nophr uses **dynamic relay discovery** via kind 10002 events. This allows you to change your Nostr relays without updating nophr's config.
 
 ### How It Works
 
@@ -140,7 +140,7 @@ CREATE TABLE relay_hints (
 
 **Query relay hints:**
 ```bash
-sqlite3 ./data/nopher.db "SELECT * FROM relay_hints WHERE pubkey = 'hex_pubkey';"
+sqlite3 ./data/nophr.db "SELECT * FROM relay_hints WHERE pubkey = 'hex_pubkey';"
 ```
 
 ### Refresh Strategy
@@ -165,7 +165,7 @@ If relay hints are missing/stale:
 
 ## Sync Engine
 
-**Status:** ✅ VERIFIED (Integrated in cmd/nopher/main.go, controlled by `sync.enabled`)
+**Status:** ✅ VERIFIED (Integrated in cmd/nophr/main.go, controlled by `sync.enabled`)
 
 The sync engine pulls events from remote Nostr relays and stores them locally.
 
@@ -176,7 +176,7 @@ sync:
 ```
 
 When enabled, the sync engine:
-- Starts automatically on Nopher startup
+- Starts automatically on nophr startup
 - Connects to relays based on discovery
 - Syncs events matching configured scope
 - Updates cursors to track progress
@@ -365,7 +365,7 @@ kinds: [0, 1, 3, 6, 7, 9735, 30023, 10002, 30311]  # Add app handlers
 
 **Status:** 🟡 IMPLEMENTED (`internal/sync/graph.go`)
 
-Nopher computes the social graph from kind 3 (contacts) events.
+nophr computes the social graph from kind 3 (contacts) events.
 
 ### graph_nodes Table
 
@@ -407,12 +407,12 @@ Alice follows Owner:  alice → owner
 
 **All followers:**
 ```bash
-sqlite3 ./data/nopher.db "SELECT pubkey, depth, mutual FROM graph_nodes WHERE root_pubkey = 'owner_hex';"
+sqlite3 ./data/nophr.db "SELECT pubkey, depth, mutual FROM graph_nodes WHERE root_pubkey = 'owner_hex';"
 ```
 
 **Only mutuals:**
 ```bash
-sqlite3 ./data/nopher.db "SELECT pubkey FROM graph_nodes WHERE root_pubkey = 'owner_hex' AND mutual = 1;"
+sqlite3 ./data/nophr.db "SELECT pubkey FROM graph_nodes WHERE root_pubkey = 'owner_hex' AND mutual = 1;"
 ```
 
 ### Performance
@@ -598,7 +598,7 @@ sync:
 **Manual pruning:**
 ```bash
 # Future feature
-nopher --config nopher.yaml --prune
+nophr --config nophr.yaml --prune
 ```
 
 ### Advanced Retention (Phase 17)
@@ -650,7 +650,7 @@ noise_filters:
 
 ### Outbox (Publishing - Future)
 
-**Planned:** Publish events from Nopher to Nostr relays.
+**Planned:** Publish events from nophr to Nostr relays.
 
 ```yaml
 outbox:
@@ -672,27 +672,27 @@ outbox:
 
 **Event count:**
 ```bash
-sqlite3 ./data/nopher.db "SELECT COUNT(*) FROM events;"
+sqlite3 ./data/nophr.db "SELECT COUNT(*) FROM events;"
 ```
 
 **Events by kind:**
 ```bash
-sqlite3 ./data/nopher.db "SELECT kind, COUNT(*) FROM events GROUP BY kind;"
+sqlite3 ./data/nophr.db "SELECT kind, COUNT(*) FROM events GROUP BY kind;"
 ```
 
 **Sync cursors:**
 ```bash
-sqlite3 ./data/nopher.db "SELECT * FROM sync_state ORDER BY updated_at DESC LIMIT 10;"
+sqlite3 ./data/nophr.db "SELECT * FROM sync_state ORDER BY updated_at DESC LIMIT 10;"
 ```
 
 **Graph size:**
 ```bash
-sqlite3 ./data/nopher.db "SELECT COUNT(*) FROM graph_nodes;"
+sqlite3 ./data/nophr.db "SELECT COUNT(*) FROM graph_nodes;"
 ```
 
 **Relay hints:**
 ```bash
-sqlite3 ./data/nopher.db "SELECT pubkey, COUNT(*) FROM relay_hints GROUP BY pubkey LIMIT 10;"
+sqlite3 ./data/nophr.db "SELECT pubkey, COUNT(*) FROM relay_hints GROUP BY pubkey LIMIT 10;"
 ```
 
 ### Diagnostics Page
@@ -724,10 +724,10 @@ sqlite3 ./data/nopher.db "SELECT pubkey, COUNT(*) FROM relay_hints GROUP BY pubk
 **Debug:**
 ```bash
 # Check if kind 10002 was fetched
-sqlite3 ./data/nopher.db "SELECT * FROM events WHERE kind = 10002;"
+sqlite3 ./data/nophr.db "SELECT * FROM events WHERE kind = 10002;"
 
 # Check relay hints
-sqlite3 ./data/nopher.db "SELECT * FROM relay_hints;"
+sqlite3 ./data/nophr.db "SELECT * FROM relay_hints;"
 ```
 
 ### Slow sync
@@ -754,7 +754,7 @@ sqlite3 ./data/nopher.db "SELECT * FROM relay_hints;"
 
 **Check logs:**
 ```bash
-journalctl -u nopher -f
+journalctl -u nophr -f
 ```
 
 **Common issues:**

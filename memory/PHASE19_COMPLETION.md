@@ -221,7 +221,7 @@ Our implementation follows NIP-50 specification:
 - `internal/gemini/router.go` - Search implementation
 - `internal/finger/renderer.go` - Profile rendering
 - `internal/storage/storage.go` - QuerySync() adapter
-- `configs/nopher.example.yaml` - (no changes needed)
+- `configs/nophr.example.yaml` - (no changes needed)
 
 ## User Impact
 

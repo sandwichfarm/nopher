@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sandwich/nopher/internal/config"
+	"github.com/sandwich/nophr/internal/config"
 )
 
 // Loader handles loading and caching of headers/footers

@@ -5,7 +5,7 @@ set -e
 
 echo "Cleaning build artifacts..."
 
-rm -f nopher
+rm -f nophr
 rm -f coverage.out
 rm -rf dist/
 rm -rf test-data/

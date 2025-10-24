@@ -1,4 +1,4 @@
-module github.com/sandwich/nopher
+module github.com/sandwich/nophr
 
 go 1.25.3
 

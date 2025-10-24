@@ -1,6 +1,6 @@
-# Nopher Installation Guide
+# nophr Installation Guide
 
-This guide covers different ways to install and deploy Nopher.
+This guide covers different ways to install and deploy nophr.
 
 ## Table of Contents
 
@@ -14,17 +14,17 @@ This guide covers different ways to install and deploy Nopher.
 
 ## Quick Install
 
-The easiest way to install Nopher is using our one-line installer:
+The easiest way to install nophr is using our one-line installer:
 
 ```bash
-curl -sSL https://nopher.io/install.sh | sh
+curl -sSL https://nophr.io/install.sh | sh
 ```
 
 This will:
 - Detect your platform and architecture
 - Download the latest release
-- Install to `/usr/local/bin/nopher`
-- Create example configuration at `~/.config/nopher/nopher.yaml`
+- Install to `/usr/local/bin/nophr`
+- Create example configuration at `~/.config/nophr/nophr.yaml`
 
 ## Package Managers
 
@@ -32,21 +32,21 @@ This will:
 
 ```bash
 brew tap sandwichfarm/tap
-brew install nopher
+brew install nophr
 ```
 
 ### Debian/Ubuntu (DEB)
 
 ```bash
 # Download the latest .deb package
-curl -LO https://github.com/sandwichfarm/nopher/releases/download/v0.1.0/nopher_0.1.0_amd64.deb
+curl -LO https://github.com/sandwichfarm/nophr/releases/download/v0.1.0/nophr_0.1.0_amd64.deb
 
 # Install
-sudo dpkg -i nopher_0.1.0_amd64.deb
+sudo dpkg -i nophr_0.1.0_amd64.deb
 
 # The post-install script will:
-# - Create 'nopher' system user
-# - Set up directories (/var/lib/nopher, /etc/nopher)
+# - Create 'nophr' system user
+# - Set up directories (/var/lib/nophr, /etc/nophr)
 # - Install systemd service
 ```
 
@@ -54,22 +54,22 @@ sudo dpkg -i nopher_0.1.0_amd64.deb
 
 ```bash
 # Download the latest .rpm package
-curl -LO https://github.com/sandwichfarm/nopher/releases/download/v0.1.0/nopher_0.1.0_amd64.rpm
+curl -LO https://github.com/sandwichfarm/nophr/releases/download/v0.1.0/nophr_0.1.0_amd64.rpm
 
 # Install
-sudo yum localinstall nopher_0.1.0_amd64.rpm
+sudo yum localinstall nophr_0.1.0_amd64.rpm
 # or
-sudo dnf install nopher_0.1.0_amd64.rpm
+sudo dnf install nophr_0.1.0_amd64.rpm
 ```
 
 ### Alpine (APK)
 
 ```bash
 # Download the latest .apk package
-curl -LO https://github.com/sandwichfarm/nopher/releases/download/v0.1.0/nopher_0.1.0_amd64.apk
+curl -LO https://github.com/sandwichfarm/nophr/releases/download/v0.1.0/nophr_0.1.0_amd64.apk
 
 # Install
-sudo apk add --allow-untrusted nopher_0.1.0_amd64.apk
+sudo apk add --allow-untrusted nophr_0.1.0_amd64.apk
 ```
 
 ## Docker
@@ -78,14 +78,14 @@ sudo apk add --allow-untrusted nopher_0.1.0_amd64.apk
 
 ```bash
 # Clone the repository
-git clone https://github.com/sandwichfarm/nopher.git
-cd nopher
+git clone https://github.com/sandwichfarm/nophr.git
+cd nophr
 
 # Copy example config
-cp configs/nopher.example.yaml configs/nopher.yaml
+cp configs/nophr.example.yaml configs/nophr.yaml
 
 # Edit your configuration
-nano configs/nopher.yaml
+nano configs/nophr.yaml
 
 # Set your NSEC (never commit this!)
 export NOPHER_NSEC="nsec1..."
@@ -94,7 +94,7 @@ export NOPHER_NSEC="nsec1..."
 docker-compose up -d
 
 # View logs
-docker-compose logs -f nopher
+docker-compose logs -f nophr
 
 # Stop the services
 docker-compose down
@@ -104,38 +104,38 @@ docker-compose down
 
 ```bash
 # Pull the latest image
-docker pull ghcr.io/sandwichfarm/nopher:latest
+docker pull ghcr.io/sandwichfarm/nophr:latest
 
 # Run with config
 docker run -d \
-  --name nopher \
+  --name nophr \
   -p 70:70 \
   -p 1965:1965 \
   -p 79:79 \
-  -v ./nopher.yaml:/etc/nopher/nopher.yaml:ro \
-  -v nopher-data:/var/lib/nopher \
+  -v ./nophr.yaml:/etc/nophr/nophr.yaml:ro \
+  -v nophr-data:/var/lib/nophr \
   -e NOPHER_NSEC="nsec1..." \
-  ghcr.io/sandwichfarm/nopher:latest
+  ghcr.io/sandwichfarm/nophr:latest
 ```
 
 ### Building from source with Docker
 
 ```bash
-git clone https://github.com/sandwichfarm/nopher.git
-cd nopher
+git clone https://github.com/sandwichfarm/nophr.git
+cd nophr
 
 # Build the image
-docker build -t nopher:latest .
+docker build -t nophr:latest .
 
 # Run
 docker run -d \
-  --name nopher \
+  --name nophr \
   -p 70:70 \
   -p 1965:1965 \
   -p 79:79 \
-  -v ./nopher.yaml:/etc/nopher/nopher.yaml:ro \
+  -v ./nophr.yaml:/etc/nophr/nophr.yaml:ro \
   -e NOPHER_NSEC="nsec1..." \
-  nopher:latest
+  nophr:latest
 ```
 
 ## From Source
@@ -149,28 +149,28 @@ docker run -d \
 
 ```bash
 # Clone the repository
-git clone https://github.com/sandwichfarm/nopher.git
-cd nopher
+git clone https://github.com/sandwichfarm/nophr.git
+cd nophr
 
 # Build
-go build -o nopher ./cmd/nopher
+go build -o nophr ./cmd/nophr
 
 # Install to /usr/local/bin
-sudo mv nopher /usr/local/bin/
+sudo mv nophr /usr/local/bin/
 
 # Or keep it local
-./nopher --help
+./nophr --help
 ```
 
 ### Development Mode
 
 ```bash
 # Run directly with Go
-go run ./cmd/nopher --config ./test-config.yaml
+go run ./cmd/nophr --config ./test-config.yaml
 
 # Build for development
-go build -o nopher ./cmd/nopher
-./nopher --config ./test-config.yaml
+go build -o nophr ./cmd/nophr
+./nophr --config ./test-config.yaml
 ```
 
 ## Systemd Service
@@ -179,21 +179,21 @@ After installing via package manager, enable and start the service:
 
 ```bash
 # Create your config
-sudo cp /etc/nopher/nopher.example.yaml /etc/nopher/nopher.yaml
-sudo nano /etc/nopher/nopher.yaml
+sudo cp /etc/nophr/nophr.example.yaml /etc/nophr/nophr.yaml
+sudo nano /etc/nophr/nophr.yaml
 
 # Set your NSEC (secure method)
-echo 'NOPHER_NSEC="nsec1..."' | sudo tee /etc/default/nopher
+echo 'NOPHER_NSEC="nsec1..."' | sudo tee /etc/default/nophr
 
 # Enable and start service
-sudo systemctl enable nopher
-sudo systemctl start nopher
+sudo systemctl enable nophr
+sudo systemctl start nophr
 
 # Check status
-sudo systemctl status nopher
+sudo systemctl status nophr
 
 # View logs
-sudo journalctl -u nopher -f
+sudo journalctl -u nophr -f
 ```
 
 ### Manual Systemd Setup
@@ -202,27 +202,27 @@ If you installed from source or via the installer script:
 
 ```bash
 # Copy the service file
-sudo cp scripts/systemd/nopher.service /etc/systemd/system/
+sudo cp scripts/systemd/nophr.service /etc/systemd/system/
 
-# Create nopher user
-sudo useradd --system --no-create-home --shell /bin/false nopher
+# Create nophr user
+sudo useradd --system --no-create-home --shell /bin/false nophr
 
 # Create directories
-sudo mkdir -p /var/lib/nopher /etc/nopher
-sudo chown nopher:nopher /var/lib/nopher
+sudo mkdir -p /var/lib/nophr /etc/nophr
+sudo chown nophr:nophr /var/lib/nophr
 
 # Copy config
-sudo cp configs/nopher.example.yaml /etc/nopher/nopher.yaml
+sudo cp configs/nophr.example.yaml /etc/nophr/nophr.yaml
 
 # Edit config
-sudo nano /etc/nopher/nopher.yaml
+sudo nano /etc/nophr/nophr.yaml
 
 # Reload systemd
 sudo systemctl daemon-reload
 
 # Enable and start
-sudo systemctl enable nopher
-sudo systemctl start nopher
+sudo systemctl enable nophr
+sudo systemctl start nophr
 ```
 
 ## Reverse Proxy Setup
@@ -256,14 +256,14 @@ sudo systemctl reload caddy
 sudo apt install nginx  # Debian/Ubuntu
 
 # Copy the example config
-sudo cp examples/nginx.conf /etc/nginx/sites-available/nopher
+sudo cp examples/nginx.conf /etc/nginx/sites-available/nophr
 
 # Get TLS certificates (using certbot)
 sudo apt install certbot python3-certbot-nginx
 sudo certbot --nginx -d gemini.example.com
 
 # Enable the site
-sudo ln -s /etc/nginx/sites-available/nopher /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/nophr /etc/nginx/sites-enabled/
 
 # Test and reload
 sudo nginx -t
@@ -278,7 +278,7 @@ The bare minimum to get started:
 
 ```yaml
 site:
-  title: "My Nopher Instance"
+  title: "My nophr Instance"
   operator: "Your Name"
 
 identity:
@@ -308,7 +308,7 @@ relays:
 
 storage:
   driver: sqlite
-  sqlite_path: ./nopher.db
+  sqlite_path: ./nophr.db
 ```
 
 ### Environment Variables
@@ -332,14 +332,14 @@ Different installation methods use different paths:
 
 | Installation Method | Config Path | Data Path | Service User |
 |---------------------|-------------|-----------|--------------|
-| Package (DEB/RPM) | `/etc/nopher/nopher.yaml` | `/var/lib/nopher` | `nopher` |
-| Homebrew | `/usr/local/etc/nopher.yaml` | `/usr/local/var/nopher` | current user |
-| Docker | `/etc/nopher/nopher.yaml` (in container) | `/var/lib/nopher` (in container) | `nopher` |
-| From Source | `./nopher.yaml` or `~/.config/nopher/nopher.yaml` | `./data` or specified | current user |
+| Package (DEB/RPM) | `/etc/nophr/nophr.yaml` | `/var/lib/nophr` | `nophr` |
+| Homebrew | `/usr/local/etc/nophr.yaml` | `/usr/local/var/nophr` | current user |
+| Docker | `/etc/nophr/nophr.yaml` (in container) | `/var/lib/nophr` (in container) | `nophr` |
+| From Source | `./nophr.yaml` or `~/.config/nophr/nophr.yaml` | `./data` or specified | current user |
 
 ## Port Requirements
 
-Nopher uses the following standard ports:
+nophr uses the following standard ports:
 
 - **Port 70**: Gopher protocol (TCP)
 - **Port 79**: Finger protocol (TCP)
@@ -372,11 +372,11 @@ sudo iptables -t nat -A PREROUTING -p tcp --dport 1965 -j REDIRECT --to-port 119
 
 ## Verification
 
-After installation, verify Nopher is running:
+After installation, verify nophr is running:
 
 ```bash
 # Check if ports are listening
-ss -tlnp | grep nopher
+ss -tlnp | grep nophr
 
 # Test Gopher (if enabled on port 70)
 echo "" | nc localhost 70
@@ -394,13 +394,13 @@ echo "user@localhost" | nc localhost 79
 
 ```bash
 # Check service status
-sudo systemctl status nopher
+sudo systemctl status nophr
 
 # View full logs
-sudo journalctl -u nopher -n 100 --no-pager
+sudo journalctl -u nophr -n 100 --no-pager
 
 # Check config syntax
-nopher --config /etc/nopher/nopher.yaml --validate
+nophr --config /etc/nophr/nophr.yaml --validate
 ```
 
 ### Permission denied on ports < 1024
@@ -411,7 +411,7 @@ Either:
 3. Grant CAP_NET_BIND_SERVICE capability:
 
 ```bash
-sudo setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/nopher
+sudo setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/nophr
 ```
 
 ### TLS certificate issues
@@ -420,7 +420,7 @@ For Gemini with auto-generated certs:
 
 ```bash
 # Check cert directory permissions
-ls -la ~/.config/nopher/certs/
+ls -la ~/.config/nophr/certs/
 
 # Manually generate certs for testing
 openssl req -x509 -newkey rsa:4096 -nodes \
@@ -436,6 +436,6 @@ openssl req -x509 -newkey rsa:4096 -nodes \
 
 ## Support
 
-- GitHub Issues: https://github.com/sandwichfarm/nopher/issues
-- Documentation: https://github.com/sandwichfarm/nopher
+- GitHub Issues: https://github.com/sandwichfarm/nophr/issues
+- Documentation: https://github.com/sandwichfarm/nophr
 - Nostr: Contact the developer on Nostr!

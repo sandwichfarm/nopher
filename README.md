@@ -1,8 +1,8 @@
-# Nopher
+# nophr
 
 **Nostr to Gopher/Gemini/Finger Gateway**
 
-Nopher is a personal gateway that serves your Nostr content via legacy internet protocols: Gopher (RFC 1436), Gemini, and Finger (RFC 742).
+nophr is a personal gateway that serves your Nostr content via legacy internet protocols: Gopher (RFC 1436), Gemini, and Finger (RFC 742).
 
 ## Overview
 
@@ -40,27 +40,27 @@ The core functionality is implemented and working. Focus is now on polish, optim
 
 ```bash
 # Clone repository
-git clone https://github.com/sandwich/nopher.git
-cd nopher
+git clone https://github.com/sandwich/nophr.git
+cd nophr
 
 # Build
 make build
 
 # Run
-./dist/nopher --version
+./dist/nophr --version
 ```
 
 ### Generate Configuration
 
 ```bash
 # Generate example configuration
-./dist/nopher init > nopher.yaml
+./dist/nophr init > nophr.yaml
 
 # Edit with your npub and seed relays
-vim nopher.yaml
+vim nophr.yaml
 
 # Validate configuration (note: protocol servers not yet implemented)
-./dist/nopher --config nopher.yaml
+./dist/nophr --config nophr.yaml
 ```
 
 ## Development
@@ -93,8 +93,8 @@ make dev
 ### Project Structure
 
 ```
-nopher/
-├── cmd/nopher/          # Main application
+nophr/
+├── cmd/nophr/          # Main application
 ├── internal/            # Private application code
 ├── pkg/                 # Public libraries
 ├── configs/             # Example configurations
@@ -106,7 +106,7 @@ nopher/
 
 ## Architecture
 
-Nopher follows a config-first philosophy with clear separation of concerns:
+nophr follows a config-first philosophy with clear separation of concerns:
 
 - **Storage Layer** - Khatru relay with SQLite/LMDB
 - **Sync Engine** - Discovers and syncs from Nostr relays
@@ -140,8 +140,8 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Support
 
-- Issues: https://github.com/sandwich/nopher/issues
-- Discussions: https://github.com/sandwich/nopher/discussions
+- Issues: https://github.com/sandwich/nophr/issues
+- Discussions: https://github.com/sandwich/nophr/discussions
 
 ---
 

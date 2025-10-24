@@ -7,10 +7,10 @@ import (
 
 	"github.com/fiatjaf/khatru"
 	"github.com/nbd-wtf/go-nostr"
-	"github.com/sandwich/nopher/internal/config"
+	"github.com/sandwich/nophr/internal/config"
 )
 
-// Storage provides the main storage interface for Nopher
+// Storage provides the main storage interface for nophr
 type Storage struct {
 	relay  *khatru.Relay
 	db     *sql.DB

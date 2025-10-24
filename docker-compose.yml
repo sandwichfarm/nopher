@@ -1,12 +1,12 @@
 version: '3.8'
 
 services:
-  nopher:
+  nophr:
     # Use pre-built image or build locally
-    # image: ghcr.io/sandwichfarm/nopher:latest
+    # image: ghcr.io/sandwichfarm/nophr:latest
     build: .
-    image: nopher:latest
-    container_name: nopher
+    image: nophr:latest
+    container_name: nophr
     restart: unless-stopped
 
     ports:
@@ -21,13 +21,13 @@ services:
 
     volumes:
       # Configuration
-      - ./configs/nopher.example.yaml:/etc/nopher/nopher.yaml:ro
+      - ./configs/nophr.example.yaml:/etc/nophr/nophr.yaml:ro
       # Data persistence
-      - nopher-data:/var/lib/nopher
+      - nophr-data:/var/lib/nophr
       # TLS certificates for Gemini (if not using auto-generate)
-      - nopher-certs:/etc/nopher/certs:ro
+      - nophr-certs:/etc/nophr/certs:ro
       # Logs (optional)
-      - nopher-logs:/var/log/nopher
+      - nophr-logs:/var/log/nophr
 
     environment:
       # IMPORTANT: Never commit your nsec to version control!
@@ -58,25 +58,25 @@ services:
       start_period: 10s
 
     networks:
-      - nopher-net
+      - nophr-net
 
   # Optional: Redis cache for better performance
   # Uncomment to enable Redis caching
   # redis:
   #   image: redis:7-alpine
-  #   container_name: nopher-redis
+  #   container_name: nophr-redis
   #   restart: unless-stopped
   #   command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
   #   volumes:
   #     - redis-data:/data
   #   networks:
-  #     - nopher-net
+  #     - nophr-net
 
   # Optional: Caddy reverse proxy for automatic HTTPS
   # Uncomment to enable Caddy for TLS termination
   # caddy:
   #   image: caddy:2-alpine
-  #   container_name: nopher-caddy
+  #   container_name: nophr-caddy
   #   restart: unless-stopped
   #   ports:
   #     - "443:443"
@@ -86,16 +86,16 @@ services:
   #     - caddy-data:/data
   #     - caddy-config:/config
   #   networks:
-  #     - nopher-net
+  #     - nophr-net
   #   depends_on:
-  #     - nopher
+  #     - nophr
 
 volumes:
-  nopher-data:
+  nophr-data:
     driver: local
-  nopher-certs:
+  nophr-certs:
     driver: local
-  nopher-logs:
+  nophr-logs:
     driver: local
   # redis-data:
   #   driver: local
@@ -105,5 +105,5 @@ volumes:
   #   driver: local
 
 networks:
-  nopher-net:
+  nophr-net:
     driver: bridge

@@ -61,7 +61,7 @@ Mermaid (alternative)
 sequenceDiagram
   autonumber
   participant Operator
-  participant App as Nopher App
+  participant App as nophr App
   participant Seeds as Seed Relays
   participant Relays as Active Read Relays
 
@@ -117,7 +117,7 @@ Mermaid error branches (simplified)
 
 ```mermaid
 sequenceDiagram
-  participant App as Nopher App
+  participant App as nophr App
   participant Seeds as Seed Relays
   participant Relays as Active Read Relays
 

@@ -2,24 +2,24 @@
 
 **Status:** Common issues and solutions
 
-Comprehensive troubleshooting guide for Nopher: configuration errors, connection issues, database problems, protocol errors, and more.
+Comprehensive troubleshooting guide for nophr: configuration errors, connection issues, database problems, protocol errors, and more.
 
 ## Quick Diagnostics
 
-**Check if Nopher is running:**
+**Check if nophr is running:**
 ```bash
-systemctl status nopher
+systemctl status nophr
 # or
-ps aux | grep nopher
+ps aux | grep nophr
 ```
 
 **Check logs:**
 ```bash
 # Systemd logs
-journalctl -u nopher -n 100 -f
+journalctl -u nophr -n 100 -f
 
 # Or if running manually
-./dist/nopher --config nopher.yaml 2>&1 | tee nopher.log
+./dist/nophr --config nophr.yaml 2>&1 | tee nophr.log
 ```
 
 **Check ports:**
@@ -154,16 +154,16 @@ storage:
 
 **Error:**
 ```
-failed to initialize storage: unable to open database file: /opt/nopher/data/nopher.db: no such file or directory
+failed to initialize storage: unable to open database file: /opt/nophr/data/nophr.db: no such file or directory
 ```
 
 **Cause:** Data directory doesn't exist.
 
 **Fix:**
 ```bash
-mkdir -p /opt/nopher/data
-# Ensure nopher user can write
-sudo chown -R nopher:nopher /opt/nopher/data
+mkdir -p /opt/nophr/data
+# Ensure nophr user can write
+sudo chown -R nophr:nophr /opt/nophr/data
 ```
 
 ---
@@ -195,7 +195,7 @@ protocols:
 
 **Option 3: Run as root (NOT recommended)**
 ```bash
-sudo /usr/local/bin/nopher --config /opt/nopher/nopher.yaml
+sudo /usr/local/bin/nophr --config /opt/nophr/nophr.yaml
 ```
 
 ---
@@ -218,7 +218,7 @@ sudo ss -tlnp | grep :70
 sudo lsof -i :70
 ```
 
-**Kill the process or change Nopher's port:**
+**Kill the process or change nophr's port:**
 ```yaml
 protocols:
   gopher:
@@ -272,7 +272,7 @@ telnet: Unable to connect to remote host: Connection refused
 ```
 
 **Causes:**
-1. Nopher not running
+1. nophr not running
 2. Gopher server disabled
 3. Wrong port
 4. Firewall blocking
@@ -281,7 +281,7 @@ telnet: Unable to connect to remote host: Connection refused
 
 **Check if running:**
 ```bash
-systemctl status nopher
+systemctl status nophr
 ```
 
 **Check if enabled:**
@@ -322,12 +322,12 @@ $ echo "/" | nc localhost 70
 
 **Check database:**
 ```bash
-sqlite3 ./data/nopher.db "SELECT COUNT(*) FROM events;"
+sqlite3 ./data/nophr.db "SELECT COUNT(*) FROM events;"
 ```
 
 If 0 events, sync hasn't run or failed. Check logs:
 ```bash
-journalctl -u nopher -n 100
+journalctl -u nophr -n 100
 ```
 
 **Try simple selector:**
@@ -364,7 +364,7 @@ $ echo "gemini://localhost/" | openssl s_client -connect localhost:1965
 ```
 
 **Causes:**
-1. Nopher not listening
+1. nophr not listening
 2. TLS handshake failed
 3. Wrong port
 
@@ -384,7 +384,7 @@ Should show certificate details. If hangs, TLS config issue.
 
 **Check logs:**
 ```bash
-journalctl -u nopher | grep -i tls
+journalctl -u nophr | grep -i tls
 ```
 
 ---
@@ -406,7 +406,7 @@ Connection closed by remote host
 
 **Check logs:**
 ```bash
-journalctl -u nopher | grep -i finger
+journalctl -u nophr | grep -i finger
 ```
 
 **Test with raw query:**
@@ -416,7 +416,7 @@ echo "" | nc localhost 79
 
 **Check if profile exists:**
 ```bash
-sqlite3 ./data/nopher.db "SELECT * FROM events WHERE kind = 0 LIMIT 1;"
+sqlite3 ./data/nophr.db "SELECT * FROM events WHERE kind = 0 LIMIT 1;"
 ```
 
 If no kind 0, profile not synced yet.
@@ -436,18 +436,18 @@ failed to query events: database is locked
 
 **Fix:**
 
-**Ensure only one Nopher instance:**
+**Ensure only one nophr instance:**
 ```bash
-ps aux | grep nopher
+ps aux | grep nophr
 # Kill duplicates
-sudo systemctl restart nopher
+sudo systemctl restart nophr
 ```
 
 **Check for stale locks:**
 ```bash
-ls -la ./data/nopher.db*
-# Remove WAL/SHM files if Nopher is stopped
-rm ./data/nopher.db-shm ./data/nopher.db-wal
+ls -la ./data/nophr.db*
+# Remove WAL/SHM files if nophr is stopped
+rm ./data/nophr.db-shm ./data/nophr.db-wal
 ```
 
 **Switch to LMDB (if frequent):**
@@ -475,9 +475,9 @@ storage:
   lmdb_max_size_mb: 20480  # Increase to 20GB
 ```
 
-**Restart Nopher:**
+**Restart nophr:**
 ```bash
-sudo systemctl restart nopher
+sudo systemctl restart nophr
 ```
 
 **Or prune old events:**
@@ -502,17 +502,17 @@ failed to query events: database disk image is malformed
 
 **Restore from backup:**
 ```bash
-sudo systemctl stop nopher
-cp /var/backups/nopher/nopher-20251024.db ./data/nopher.db
-sudo systemctl start nopher
+sudo systemctl stop nophr
+cp /var/backups/nophr/nophr-20251024.db ./data/nophr.db
+sudo systemctl start nophr
 ```
 
 **Or delete and re-sync:**
 ```bash
-sudo systemctl stop nopher
-rm ./data/nopher.db
-sudo systemctl start nopher
-# Nopher will create new database and sync from relays
+sudo systemctl stop nophr
+rm ./data/nophr.db
+sudo systemctl start nophr
+# nophr will create new database and sync from relays
 ```
 
 **Check disk integrity:**
@@ -558,13 +558,13 @@ sync:
 
 **Check logs:**
 ```bash
-journalctl -u nopher | grep -i sync
-journalctl -u nopher | grep -i relay
+journalctl -u nophr | grep -i sync
+journalctl -u nophr | grep -i relay
 ```
 
 **Check relay hints:**
 ```bash
-sqlite3 ./data/nopher.db "SELECT * FROM relay_hints LIMIT 10;"
+sqlite3 ./data/nophr.db "SELECT * FROM relay_hints LIMIT 10;"
 ```
 
 If empty, relay discovery failed.
@@ -634,12 +634,12 @@ inbox:
 
 **Check aggregates:**
 ```bash
-sqlite3 ./data/nopher.db "SELECT * FROM aggregates LIMIT 10;"
+sqlite3 ./data/nophr.db "SELECT * FROM aggregates LIMIT 10;"
 ```
 
 If empty, aggregates not computed. Check logs:
 ```bash
-journalctl -u nopher | grep -i aggregate
+journalctl -u nophr | grep -i aggregate
 ```
 
 ---
@@ -648,7 +648,7 @@ journalctl -u nopher | grep -i aggregate
 
 ### "High CPU usage"
 
-**Symptom:** Nopher uses 50-100% CPU constantly.
+**Symptom:** nophr uses 50-100% CPU constantly.
 
 **Causes:**
 1. Sync engine running (expected during initial sync)
@@ -658,7 +658,7 @@ journalctl -u nopher | grep -i aggregate
 
 **Diagnose:**
 ```bash
-top -p $(pgrep nopher)
+top -p $(pgrep nophr)
 ```
 
 **Fix:**
@@ -681,7 +681,7 @@ caching:
 
 ### "High memory usage"
 
-**Symptom:** Nopher uses >1GB RAM.
+**Symptom:** nophr uses >1GB RAM.
 
 **Causes:**
 1. Large cache (if implemented)
@@ -692,7 +692,7 @@ caching:
 
 **Monitor memory:**
 ```bash
-ps aux | grep nopher
+ps aux | grep nophr
 ```
 
 **Reduce query sizes:**
@@ -720,7 +720,7 @@ storage:
 
 **Check query time:**
 ```bash
-time sqlite3 ./data/nopher.db "SELECT * FROM events WHERE kind = 1 LIMIT 100;"
+time sqlite3 ./data/nophr.db "SELECT * FROM events WHERE kind = 1 LIMIT 100;"
 ```
 
 **Fix (future):**
@@ -741,24 +741,24 @@ logging:
 
 **Or via environment:**
 ```bash
-NOPHER_LOG_LEVEL=debug nopher --config nopher.yaml
+NOPHER_LOG_LEVEL=debug nophr --config nophr.yaml
 ```
 
 **Restart:**
 ```bash
-sudo systemctl restart nopher
+sudo systemctl restart nophr
 ```
 
 **View debug logs:**
 ```bash
-journalctl -u nopher -f
+journalctl -u nophr -f
 ```
 
 ---
 
 ### Common log messages
 
-**"[INFO] Starting nopher"**
+**"[INFO] Starting nophr"**
 - Normal startup message
 
 **"[INFO] Initializing storage... Storage: sqlite initialized"**
@@ -790,12 +790,12 @@ journalctl -u nopher -f
 ### Search issues
 
 Check if issue already reported:
-- GitHub Issues: https://github.com/sandwich/nopher/issues
+- GitHub Issues: https://github.com/sandwich/nophr/issues
 
 ### Report new issue
 
 Include:
-- Nopher version: `nopher --version`
+- nophr version: `nophr --version`
 - Operating system
 - Configuration (remove nsec!)
 - Relevant logs
@@ -803,28 +803,28 @@ Include:
 
 ### Community support
 
-- GitHub Discussions: https://github.com/sandwich/nopher/discussions
+- GitHub Discussions: https://github.com/sandwich/nophr/discussions
 - Nostr: Contact operator (check README for contact info)
 
 ---
 
 ## Emergency Procedures
 
-### Nopher won't start
+### nophr won't start
 
 ```bash
 # Check logs
-journalctl -u nopher -n 100
+journalctl -u nophr -n 100
 
 # Validate config
-cat /opt/nopher/nopher.yaml | grep -E '(npub|driver|enabled)'
+cat /opt/nophr/nophr.yaml | grep -E '(npub|driver|enabled)'
 
 # Check permissions
-ls -la /opt/nopher/
-ls -la /opt/nopher/data/
+ls -la /opt/nophr/
+ls -la /opt/nophr/data/
 
-# Test manually (as nopher user)
-sudo -u nopher /usr/local/bin/nopher --config /opt/nopher/nopher.yaml
+# Test manually (as nophr user)
+sudo -u nophr /usr/local/bin/nophr --config /opt/nophr/nophr.yaml
 ```
 
 ---
@@ -832,20 +832,20 @@ sudo -u nopher /usr/local/bin/nopher --config /opt/nopher/nopher.yaml
 ### Database corrupted
 
 ```bash
-# Stop Nopher
-sudo systemctl stop nopher
+# Stop nophr
+sudo systemctl stop nophr
 
 # Backup current (corrupted) database
-cp /opt/nopher/data/nopher.db /opt/nopher/data/nopher.db.corrupted
+cp /opt/nophr/data/nophr.db /opt/nophr/data/nophr.db.corrupted
 
 # Option 1: Restore from backup
-cp /var/backups/nopher/nopher-20251024.db /opt/nopher/data/nopher.db
+cp /var/backups/nophr/nophr-20251024.db /opt/nophr/data/nophr.db
 
 # Option 2: Start fresh (re-sync)
-rm /opt/nopher/data/nopher.db
+rm /opt/nophr/data/nophr.db
 
-# Start Nopher
-sudo systemctl start nopher
+# Start nophr
+sudo systemctl start nophr
 ```
 
 ---
@@ -857,7 +857,7 @@ sudo systemctl start nopher
 df -h
 
 # Check database size
-du -h /opt/nopher/data/nopher.db
+du -h /opt/nophr/data/nophr.db
 
 # Free space: reduce retention
 sync:
@@ -865,11 +865,11 @@ sync:
     keep_days: 90  # Reduce from 365
 
 # Or manual prune
-sqlite3 /opt/nopher/data/nopher.db "DELETE FROM events WHERE created_at < (strftime('%s', 'now') - 90*86400);"
-sqlite3 /opt/nopher/data/nopher.db "VACUUM;"
+sqlite3 /opt/nophr/data/nophr.db "DELETE FROM events WHERE created_at < (strftime('%s', 'now') - 90*86400);"
+sqlite3 /opt/nophr/data/nophr.db "VACUUM;"
 
 # Restart
-sudo systemctl restart nopher
+sudo systemctl restart nophr
 ```
 
 ---
@@ -879,17 +879,17 @@ sudo systemctl restart nopher
 **Warning: Deletes all data!**
 
 ```bash
-# Stop Nopher
-sudo systemctl stop nopher
+# Stop nophr
+sudo systemctl stop nophr
 
 # Backup config
-cp /opt/nopher/nopher.yaml /opt/nopher/nopher.yaml.bak
+cp /opt/nophr/nophr.yaml /opt/nophr/nophr.yaml.bak
 
 # Delete data
-rm -rf /opt/nopher/data/*
+rm -rf /opt/nophr/data/*
 
-# Start Nopher (will recreate database)
-sudo systemctl start nopher
+# Start nophr (will recreate database)
+sudo systemctl start nophr
 ```
 
 ---

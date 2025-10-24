@@ -1,4 +1,4 @@
-# Nopher Configuration Example
+# nophr Configuration Example
 # For full documentation, see: memory/configuration.md
 
 site:
@@ -86,8 +86,8 @@ outbox:
 
 storage:
   driver: "sqlite"  # sqlite|lmdb (via Khatru eventstore)
-  sqlite_path: "./data/nopher.db"
-  lmdb_path: "./data/nopher.lmdb"  # if driver=lmdb
+  sqlite_path: "./data/nophr.db"
+  lmdb_path: "./data/nophr.lmdb"  # if driver=lmdb
   lmdb_max_size_mb: 10240  # max DB size for LMDB (10GB default)
 
 rendering:

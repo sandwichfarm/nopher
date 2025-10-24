@@ -1,6 +1,6 @@
 # Security Guide
 
-This document describes the security features, best practices, and configuration for Nopher.
+This document describes the security features, best practices, and configuration for nophr.
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@ This document describes the security features, best practices, and configuration
 
 ## Security Architecture
 
-Nopher implements defense-in-depth security with multiple layers:
+nophr implements defense-in-depth security with multiple layers:
 
 1. **Input Validation** - All user input is validated before processing
 2. **Rate Limiting** - Prevents abuse and DoS attacks
@@ -230,7 +230,7 @@ if err != nil {
 
 ### Overview
 
-Nopher handles secrets (private keys) securely:
+nophr handles secrets (private keys) securely:
 - **Environment variables only** - Never read from config files
 - **Memory only** - Never written to disk
 - **Automatic redaction** - Secrets are redacted in logs
@@ -242,8 +242,8 @@ Nopher handles secrets (private keys) securely:
 # Set environment variable
 export NOPHER_NSEC="nsec1..."
 
-# Start nopher (will load from env)
-./nopher
+# Start nophr (will load from env)
+./nophr
 ```
 
 ### Usage
@@ -428,12 +428,12 @@ server {
 
 ### 2. Run as Non-Root User
 
-Never run Nopher as root. Use systemd with `User=nopher`:
+Never run nophr as root. Use systemd with `User=nophr`:
 
 ```ini
 [Service]
-User=nopher
-Group=nopher
+User=nophr
+Group=nophr
 ```
 
 ### 3. Enable Privilege Separation
@@ -445,7 +445,7 @@ Use systemd security features:
 # Filesystem protection
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/lib/nopher
+ReadWritePaths=/var/lib/nophr
 
 # Network isolation
 PrivateNetwork=false
@@ -559,7 +559,7 @@ Check for security updates regularly:
 
 - Subscribe to the GitHub repository releases
 - Monitor the security mailing list
-- Follow @nopher on Nostr for announcements
+- Follow @nophr on Nostr for announcements
 
 ## Additional Resources
 

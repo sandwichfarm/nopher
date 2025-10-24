@@ -12,7 +12,7 @@ import (
 //go:embed example.yaml
 var exampleConfig embed.FS
 
-// Config represents the complete Nopher configuration
+// Config represents the complete nophr configuration
 type Config struct {
 	Site       Site       `yaml:"site"`
 	Identity   Identity   `yaml:"identity"`
@@ -599,8 +599,8 @@ func Default() *Config {
 		},
 		Storage: Storage{
 			Driver:        "sqlite",
-			SQLitePath:    "./data/nopher.db",
-			LMDBPath:      "./data/nopher.lmdb",
+			SQLitePath:    "./data/nophr.db",
+			LMDBPath:      "./data/nophr.lmdb",
 			LMDBMaxSizeMB: 10240,
 		},
 		Rendering: Rendering{

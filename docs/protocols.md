@@ -2,11 +2,11 @@
 
 **Status:** 🟡 IMPLEMENTED (Code complete, undergoing verification)
 
-Complete guide to Nopher's protocol servers: Gopher, Gemini, and Finger.
+Complete guide to nophr's protocol servers: Gopher, Gemini, and Finger.
 
 ## Overview
 
-Nopher serves your Nostr content via three legacy internet protocols:
+nophr serves your Nostr content via three legacy internet protocols:
 
 | Protocol | Port | TLS | RFC | Purpose |
 |----------|------|-----|-----|---------|
@@ -198,7 +198,7 @@ protocols:
 
 **Auto-generate (self-signed):**
 
-If `auto_generate: true` and cert files missing, Nopher creates a self-signed certificate.
+If `auto_generate: true` and cert files missing, nophr creates a self-signed certificate.
 
 **Manual generation:**
 ```bash
@@ -736,7 +736,7 @@ Recent notes: ...
 - Or generate proper cert
 
 **"Empty response"**
-- Check logs: `journalctl -u nopher -f`
+- Check logs: `journalctl -u nophr -f`
 - Verify database initialized
 - Check config validation
 

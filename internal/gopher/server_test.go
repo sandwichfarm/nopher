@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sandwich/nopher/internal/aggregates"
-	"github.com/sandwich/nopher/internal/config"
-	"github.com/sandwich/nopher/internal/storage"
+	"github.com/sandwich/nophr/internal/aggregates"
+	"github.com/sandwich/nophr/internal/config"
+	"github.com/sandwich/nophr/internal/storage"
 )
 
 func TestGopherProtocol(t *testing.T) {
@@ -58,8 +58,8 @@ func TestGopherProtocol(t *testing.T) {
 	// Test 1: Empty selector (root)
 	t.Run("RootSelector", func(t *testing.T) {
 		response := sendGopherRequest(t, gopherCfg.Port, "")
-		if !strings.Contains(response, "Nopher") {
-			t.Errorf("Root response should contain 'Nopher', got: %s", response)
+		if !strings.Contains(response, "nophr") {
+			t.Errorf("Root response should contain 'nophr', got: %s", response)
 		}
 		if !strings.HasSuffix(response, ".\r\n") {
 			t.Errorf("Response should end with gopher terminator '.\\r\\n'")

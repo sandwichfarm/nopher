@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// runMigrations creates the custom tables for Nopher
+// runMigrations creates the custom tables for nophr
 func (s *Storage) runMigrations(ctx context.Context) error {
 	if s.db == nil {
 		return fmt.Errorf("database not initialized")

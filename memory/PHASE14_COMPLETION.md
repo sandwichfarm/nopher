@@ -5,7 +5,7 @@
 
 ## Overview
 
-Phase 14 implements comprehensive security and privacy features for Nopher, providing defense-in-depth protection against abuse, injection attacks, and unauthorized access.
+Phase 14 implements comprehensive security and privacy features for nophr, providing defense-in-depth protection against abuse, injection attacks, and unauthorized access.
 
 ## Components Implemented
 
@@ -259,7 +259,7 @@ Comprehensive security guide covering:
 
 ### Defense in Depth
 
-Nopher implements multiple security layers:
+nophr implements multiple security layers:
 
 1. **Network Layer**: TLS/HTTPS, firewall rules
 2. **Application Layer**: Rate limiting, input validation
@@ -619,7 +619,7 @@ With Phase 14 complete, the next phase is:
 
 ## Summary
 
-Phase 14 successfully implements defense-in-depth security for Nopher:
+Phase 14 successfully implements defense-in-depth security for nophr:
 
 ✅ **Deny Lists**: Block unwanted pubkeys and content
 ✅ **Rate Limiting**: Prevent abuse with token buckets

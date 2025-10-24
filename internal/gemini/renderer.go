@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"github.com/nbd-wtf/go-nostr"
-	"github.com/sandwich/nopher/internal/aggregates"
-	"github.com/sandwich/nopher/internal/config"
-	"github.com/sandwich/nopher/internal/entities"
-	"github.com/sandwich/nopher/internal/markdown"
-	nostrclient "github.com/sandwich/nopher/internal/nostr"
-	"github.com/sandwich/nopher/internal/presentation"
-	"github.com/sandwich/nopher/internal/storage"
+	"github.com/sandwich/nophr/internal/aggregates"
+	"github.com/sandwich/nophr/internal/config"
+	"github.com/sandwich/nophr/internal/entities"
+	"github.com/sandwich/nophr/internal/markdown"
+	nostrclient "github.com/sandwich/nophr/internal/nostr"
+	"github.com/sandwich/nophr/internal/presentation"
+	"github.com/sandwich/nophr/internal/storage"
 )
 
 // Renderer renders Nostr events as Gemtext
@@ -38,7 +38,7 @@ func NewRenderer(cfg *config.Config, st *storage.Storage) *Renderer {
 func (r *Renderer) RenderHome() string {
 	var sb strings.Builder
 
-	sb.WriteString("# Nopher - Nostr Gateway\n\n")
+	sb.WriteString("# nophr - Nostr Gateway\n\n")
 	sb.WriteString("Browse Nostr content via Gemini protocol\n\n")
 	sb.WriteString("## Navigation\n\n")
 	sb.WriteString("=> /notes Notes\n")
@@ -48,7 +48,7 @@ func (r *Renderer) RenderHome() string {
 	sb.WriteString("=> /search Search\n")
 	sb.WriteString("=> /diagnostics Diagnostics\n")
 	sb.WriteString("\n")
-	sb.WriteString("Powered by Nopher\n")
+	sb.WriteString("Powered by nophr\n")
 
 	return r.applyHeadersFooters(sb.String(), "home")
 }

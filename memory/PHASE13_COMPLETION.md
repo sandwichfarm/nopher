@@ -2,7 +2,7 @@
 
 ## Overview
 
-Phase 13 focused on making Nopher production-ready and easily installable for end users. This phase implemented comprehensive distribution mechanisms, packaging, and deployment tooling.
+Phase 13 focused on making nophr production-ready and easily installable for end users. This phase implemented comprehensive distribution mechanisms, packaging, and deployment tooling.
 
 **Status**: ✅ Complete
 
@@ -28,16 +28,16 @@ Phase 13 focused on making Nopher production-ready and easily installable for en
 - GPG signing support
 - Archive creation (tar.gz, zip)
 
-**Docker Registry**: `ghcr.io/sandwichfarm/nopher`
+**Docker Registry**: `ghcr.io/sandwichfarm/nophr`
 
 **Homebrew Tap**: `sandwichfarm/tap`
 
 ### 2. Systemd Service File ✅
 
-**File**: `scripts/systemd/nopher.service`
+**File**: `scripts/systemd/nophr.service`
 
 **Features**:
-- Runs as dedicated `nopher` system user
+- Runs as dedicated `nophr` system user
 - Automatic restart on failure
 - Security hardening:
   - `NoNewPrivileges=true`
@@ -55,10 +55,10 @@ Phase 13 focused on making Nopher production-ready and easily installable for en
 **File**: `scripts/postinstall.sh`
 
 **Functions**:
-- Creates `nopher` system user if not exists
+- Creates `nophr` system user if not exists
 - Creates required directories:
-  - `/var/lib/nopher` (data storage)
-  - `/etc/nopher` (configuration)
+  - `/var/lib/nophr` (data storage)
+  - `/etc/nophr` (configuration)
 - Sets proper permissions and ownership
 - Reloads systemd daemon
 - Provides installation instructions
@@ -71,14 +71,14 @@ Phase 13 focused on making Nopher production-ready and easily installable for en
 
 **Usage**:
 ```bash
-curl -sSL https://nopher.io/install.sh | sh
+curl -sSL https://nophr.io/install.sh | sh
 ```
 
 **Features**:
 - Automatic platform/architecture detection
 - Downloads latest release from GitHub
 - Installs binary to `/usr/local/bin`
-- Creates config directory at `~/.config/nopher`
+- Creates config directory at `~/.config/nophr`
 - Generates example configuration
 - Handles sudo elevation when needed
 - Provides package manager alternatives (brew, apt, yum)
@@ -117,7 +117,7 @@ func GetExampleConfig() ([]byte, error) {
 **File**: `docker-compose.yml`
 
 **Services**:
-1. **nopher** (main service)
+1. **nophr** (main service)
    - Ports: 70 (Gopher), 79 (Finger), 1965 (Gemini), 8080 (health)
    - Volume mounts for config, data, certs, logs
    - Environment variable support
@@ -154,7 +154,7 @@ func GetExampleConfig() ([]byte, error) {
 - HTTP health check endpoint (port 8080)
 - TLS 1.2/1.3 support
 - Secure cipher configuration
-- Backend proxy to Nopher
+- Backend proxy to nophr
 
 **Use Case**: Manual TLS certificate management
 
@@ -200,13 +200,13 @@ func GetExampleConfig() ([]byte, error) {
 - Release notes with changelog
 
 ### 2. Package Managers
-- **Homebrew**: `brew install sandwichfarm/tap/nopher`
+- **Homebrew**: `brew install sandwichfarm/tap/nophr`
 - **APT**: `.deb` packages for Debian/Ubuntu
 - **YUM/DNF**: `.rpm` packages for RHEL/CentOS/Fedora
 - **APK**: Alpine Linux packages
 
 ### 3. Container Registries
-- **GitHub Container Registry**: `ghcr.io/sandwichfarm/nopher`
+- **GitHub Container Registry**: `ghcr.io/sandwichfarm/nophr`
 - Multi-arch manifests (amd64, arm64)
 - Versioned tags and `latest`
 
@@ -251,7 +251,7 @@ func GetExampleConfig() ([]byte, error) {
 ## File Structure
 
 ```
-nopher/
+nophr/
 ├── .goreleaser.yml           # Release automation
 ├── docker-compose.yml         # Docker Compose setup
 ├── Dockerfile                 # Container image build
@@ -259,7 +259,7 @@ nopher/
 │   ├── install.sh            # One-line installer
 │   ├── postinstall.sh        # Package post-install
 │   └── systemd/
-│       └── nopher.service    # Systemd unit file
+│       └── nophr.service    # Systemd unit file
 ├── examples/
 │   ├── nginx.conf            # Nginx reverse proxy
 │   └── Caddyfile             # Caddy reverse proxy
@@ -267,7 +267,7 @@ nopher/
 │   ├── config.go             # Config with go:embed
 │   └── example.yaml          # Embedded example config
 ├── configs/
-│   └── nopher.example.yaml   # Standalone example config
+│   └── nophr.example.yaml   # Standalone example config
 └── docs/
     ├── INSTALLATION.md       # Installation guide
     └── PHASE13_COMPLETION.md # This document
@@ -277,28 +277,28 @@ nopher/
 
 ### Scenario 1: Quick Start (Development)
 ```bash
-curl -sSL https://nopher.io/install.sh | sh
-nopher --config ~/.config/nopher/nopher.yaml
+curl -sSL https://nophr.io/install.sh | sh
+nophr --config ~/.config/nophr/nophr.yaml
 ```
 
 ### Scenario 2: Production Server (Systemd)
 ```bash
 # Install via package manager
-sudo apt install ./nopher_0.1.0_amd64.deb
+sudo apt install ./nophr_0.1.0_amd64.deb
 
 # Configure
-sudo vim /etc/nopher/nopher.yaml
-echo 'NOPHER_NSEC="nsec1..."' | sudo tee /etc/default/nopher
+sudo vim /etc/nophr/nophr.yaml
+echo 'NOPHER_NSEC="nsec1..."' | sudo tee /etc/default/nophr
 
 # Start service
-sudo systemctl enable --now nopher
+sudo systemctl enable --now nophr
 ```
 
 ### Scenario 3: Docker Production
 ```bash
-git clone https://github.com/sandwichfarm/nopher.git
-cd nopher
-cp configs/nopher.example.yaml configs/nopher.yaml
+git clone https://github.com/sandwichfarm/nophr.git
+cd nophr
+cp configs/nophr.example.yaml configs/nophr.yaml
 # Edit config...
 export NOPHER_NSEC="nsec1..."
 docker-compose up -d
@@ -306,8 +306,8 @@ docker-compose up -d
 
 ### Scenario 4: Reverse Proxy with Caddy
 ```bash
-# Install Nopher
-sudo apt install ./nopher_0.1.0_amd64.deb
+# Install nophr
+sudo apt install ./nophr_0.1.0_amd64.deb
 
 # Install Caddy
 sudo apt install caddy
@@ -317,7 +317,7 @@ sudo cp examples/Caddyfile /etc/caddy/Caddyfile
 # Edit with your domain...
 
 # Start both services
-sudo systemctl enable --now nopher caddy
+sudo systemctl enable --now nophr caddy
 ```
 
 ## Metrics
@@ -377,7 +377,7 @@ sudo systemctl enable --now nopher caddy
 
 ## Conclusion
 
-Phase 13 has successfully made Nopher production-ready with:
+Phase 13 has successfully made nophr production-ready with:
 - Multiple installation methods for different user preferences
 - Comprehensive packaging for major platforms
 - Production-grade deployment configurations

@@ -2,7 +2,7 @@ Architecture Overview
 
 High-Level Design
 
-Nopher bridges the Nostr protocol with classic internet protocols (Gopher/Gemini/Finger).
+nophr bridges the Nostr protocol with classic internet protocols (Gopher/Gemini/Finger).
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -130,7 +130,7 @@ Component Breakdown
 - Receives events via StoreEvent()
 - Provides events via QueryEvents(filter)
 - Handles all event validation and storage logic
-- Not exposed externally (private relay for Nopher only)
+- Not exposed externally (private relay for nophr only)
 
 3. Query Layer
 - Queries Khatru for events matching section filters

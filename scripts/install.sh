@@ -1,6 +1,6 @@
 #!/bin/sh
 # One-line installer for Nopher
-# Usage: curl -sSL https://nopher.io/install.sh | sh
+# Usage: curl -sSL https://nophr.io/install.sh | sh
 
 set -e
 
@@ -56,7 +56,7 @@ detect_platform() {
 # Get latest release version
 get_latest_version() {
     echo "${YELLOW}Fetching latest version...${NC}"
-    VERSION=$(curl -sSL https://api.github.com/repos/sandwichfarm/nopher/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+    VERSION=$(curl -sSL https://api.github.com/repos/sandwichfarm/nophr/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
 
     if [ -z "$VERSION" ]; then
         echo "${RED}Failed to get latest version${NC}"
@@ -68,14 +68,14 @@ get_latest_version() {
 
 # Download and install binary
 install_binary() {
-    BINARY_NAME="nopher_${VERSION}_${OS}_${ARCH}"
+    BINARY_NAME="nophr_${VERSION}_${OS}_${ARCH}"
     if [ "$OS" = "linux" ]; then
         ARCHIVE_NAME="${BINARY_NAME}.tar.gz"
     else
         ARCHIVE_NAME="${BINARY_NAME}.tar.gz"
     fi
 
-    DOWNLOAD_URL="https://github.com/sandwichfarm/nopher/releases/download/v${VERSION}/${ARCHIVE_NAME}"
+    DOWNLOAD_URL="https://github.com/sandwichfarm/nophr/releases/download/v${VERSION}/${ARCHIVE_NAME}"
 
     echo "${YELLOW}Downloading ${ARCHIVE_NAME}...${NC}"
     TEMP_DIR=$(mktemp -d)
@@ -104,8 +104,8 @@ install_binary() {
     fi
 
     echo "${YELLOW}Installing to ${INSTALL_DIR}...${NC}"
-    $SUDO mv nopher "$INSTALL_DIR/nopher"
-    $SUDO chmod +x "$INSTALL_DIR/nopher"
+    $SUDO mv nophr "$INSTALL_DIR/nophr"
+    $SUDO chmod +x "$INSTALL_DIR/nophr"
 
     cd - > /dev/null
     rm -rf "$TEMP_DIR"
@@ -118,19 +118,19 @@ install_via_package_manager() {
     if [ "$OS" = "linux" ]; then
         if command -v apt-get > /dev/null 2>&1; then
             echo "${YELLOW}Detected Debian/Ubuntu. You can also install via apt:${NC}"
-            echo "  curl -sSL https://github.com/sandwichfarm/nopher/releases/download/v${VERSION}/nopher_${VERSION}_amd64.deb -o nopher.deb"
-            echo "  sudo dpkg -i nopher.deb"
+            echo "  curl -sSL https://github.com/sandwichfarm/nophr/releases/download/v${VERSION}/nophr_${VERSION}_amd64.deb -o nophr.deb"
+            echo "  sudo dpkg -i nophr.deb"
             echo ""
         elif command -v yum > /dev/null 2>&1; then
             echo "${YELLOW}Detected RHEL/CentOS. You can also install via yum:${NC}"
-            echo "  curl -sSL https://github.com/sandwichfarm/nopher/releases/download/v${VERSION}/nopher_${VERSION}_amd64.rpm -o nopher.rpm"
-            echo "  sudo yum localinstall nopher.rpm"
+            echo "  curl -sSL https://github.com/sandwichfarm/nophr/releases/download/v${VERSION}/nophr_${VERSION}_amd64.rpm -o nophr.rpm"
+            echo "  sudo yum localinstall nophr.rpm"
             echo ""
         fi
     elif [ "$OS" = "darwin" ]; then
         if command -v brew > /dev/null 2>&1; then
             echo "${YELLOW}Detected Homebrew. You can also install via brew:${NC}"
-            echo "  brew install sandwichfarm/tap/nopher"
+            echo "  brew install sandwichfarm/tap/nophr"
             echo ""
         fi
     fi
@@ -138,16 +138,16 @@ install_via_package_manager() {
 
 # Create config directory
 setup_config() {
-    CONFIG_DIR="$HOME/.config/nopher"
+    CONFIG_DIR="$HOME/.config/nophr"
 
     if [ ! -d "$CONFIG_DIR" ]; then
         echo "${YELLOW}Creating config directory...${NC}"
         mkdir -p "$CONFIG_DIR"
     fi
 
-    if [ ! -f "$CONFIG_DIR/nopher.yaml" ]; then
+    if [ ! -f "$CONFIG_DIR/nophr.yaml" ]; then
         echo "${YELLOW}Creating example config...${NC}"
-        cat > "$CONFIG_DIR/nopher.yaml" <<'EOF'
+        cat > "$CONFIG_DIR/nophr.yaml" <<'EOF'
 # Nopher Configuration
 
 logging:
@@ -165,8 +165,8 @@ identity:
 
 storage:
   driver: sqlite
-  sqlite_path: ~/.local/share/nopher/nopher.db
-  lmdb_path: ~/.local/share/nopher/lmdb
+  sqlite_path: ~/.local/share/nophr/nophr.db
+  lmdb_path: ~/.local/share/nophr/lmdb
   lmdb_max_size_mb: 1024
 
 protocols:
@@ -182,8 +182,8 @@ protocols:
     port: 11965
     bind: "0.0.0.0"
     tls:
-      cert_path: ~/.config/nopher/certs/gemini.crt
-      key_path: ~/.config/nopher/certs/gemini.key
+      cert_path: ~/.config/nophr/certs/gemini.crt
+      key_path: ~/.config/nophr/certs/gemini.key
       auto_generate: true
 
   finger:
@@ -214,7 +214,7 @@ inbox:
   include_reposts: false
 EOF
 
-        echo "${GREEN}Created config at ${CONFIG_DIR}/nopher.yaml${NC}"
+        echo "${GREEN}Created config at ${CONFIG_DIR}/nophr.yaml${NC}"
         echo "${YELLOW}Please edit this file to configure your Nopher instance${NC}"
     fi
 }
@@ -227,16 +227,16 @@ print_usage() {
     echo "${GREEN}==================================================${NC}"
     echo ""
     echo "Quick start:"
-    echo "  1. Edit your config: $HOME/.config/nopher/nopher.yaml"
-    echo "  2. Run Nopher: nopher --config $HOME/.config/nopher/nopher.yaml"
+    echo "  1. Edit your config: $HOME/.config/nophr/nophr.yaml"
+    echo "  2. Run Nopher: nophr --config $HOME/.config/nophr/nophr.yaml"
     echo ""
     echo "For production deployment:"
-    echo "  - Systemd: https://github.com/sandwichfarm/nopher/tree/main/scripts/systemd"
-    echo "  - Docker: https://github.com/sandwichfarm/nopher#docker"
-    echo "  - Reverse Proxy: https://github.com/sandwichfarm/nopher/tree/main/examples"
+    echo "  - Systemd: https://github.com/sandwichfarm/nophr/tree/main/scripts/systemd"
+    echo "  - Docker: https://github.com/sandwichfarm/nophr#docker"
+    echo "  - Reverse Proxy: https://github.com/sandwichfarm/nophr/tree/main/examples"
     echo ""
-    echo "Documentation: https://github.com/sandwichfarm/nopher"
-    echo "Report issues: https://github.com/sandwichfarm/nopher/issues"
+    echo "Documentation: https://github.com/sandwichfarm/nophr"
+    echo "Report issues: https://github.com/sandwichfarm/nophr/issues"
     echo ""
 }
 

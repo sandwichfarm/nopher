@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sandwich/nopher/internal/aggregates"
-	"github.com/sandwich/nopher/internal/config"
-	"github.com/sandwich/nopher/internal/storage"
+	"github.com/sandwich/nophr/internal/aggregates"
+	"github.com/sandwich/nophr/internal/config"
+	"github.com/sandwich/nophr/internal/storage"
 )
 
 func TestGeminiProtocol(t *testing.T) {
@@ -68,8 +68,8 @@ func TestGeminiProtocol(t *testing.T) {
 		if !strings.Contains(response, "20 ") {
 			t.Errorf("Root response should have status 20, got: %s", response[:20])
 		}
-		if !strings.Contains(response, "Nopher") {
-			t.Errorf("Root response should contain 'Nopher'")
+		if !strings.Contains(response, "nophr") {
+			t.Errorf("Root response should contain 'nophr'")
 		}
 	})
 
@@ -227,7 +227,7 @@ func TestRendererOutput(t *testing.T) {
 	t.Run("HomeRendering", func(t *testing.T) {
 		home := renderer.RenderHome()
 
-		if !strings.Contains(home, "# Nopher") {
+		if !strings.Contains(home, "# nophr") {
 			t.Errorf("Home should contain title")
 		}
 		if !strings.Contains(home, "=> /notes") {

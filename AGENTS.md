@@ -1,8 +1,8 @@
-Agent Instructions for Nopher Development
+Agent Instructions for nophr Development
 
 Purpose
 
-This document provides instructions for AI agents (like Claude) working on Nopher. It explains how to:
+This document provides instructions for AI agents (like Claude) working on nophr. It explains how to:
 - Execute on phases and todo lists
 - Interface with memory/ documentation
 - Handle plan changes and keep documentation updated
@@ -447,16 +447,16 @@ Background processes from testing can accumulate and cause issues. Follow these 
 **❌ NEVER: Run parallel background processes**
 ```bash
 # BAD: Multiple background servers running simultaneously
-./nopher --config test1.yaml > log1.log 2>&1 &
-./nopher --config test2.yaml > log2.log 2>&1 &
-./nopher --config test3.yaml > log3.log 2>&1 &
+./nophr --config test1.yaml > log1.log 2>&1 &
+./nophr --config test2.yaml > log2.log 2>&1 &
+./nophr --config test3.yaml > log3.log 2>&1 &
 # Now you have 3 processes fighting for ports and resources!
 ```
 
 **✅ ALWAYS: Sequential testing with cleanup**
 ```bash
 # GOOD: One test at a time, with cleanup
-./nopher --config test-config.yaml &
+./nophr --config test-config.yaml &
 PID=$!
 
 # Do your testing...
@@ -485,19 +485,19 @@ wait $PID
 3. **Process Management** ✅
    ```bash
    # Start process
-   ./nopher --config test.yaml > test.log 2>&1 &
+   ./nophr --config test.yaml > test.log 2>&1 &
    PID=$!
 
    # Always save the PID!
-   echo $PID > /tmp/nopher-test.pid
+   echo $PID > /tmp/nophr-test.pid
 
    # Test...
    sleep 2
    # ... your tests here ...
 
    # Clean up
-   kill $(cat /tmp/nopher-test.pid) 2>/dev/null
-   rm /tmp/nopher-test.pid
+   kill $(cat /tmp/nophr-test.pid) 2>/dev/null
+   rm /tmp/nophr-test.pid
 
    # Verify cleanup
    ps aux | grep "[n]opher" || echo "✓ Clean"
@@ -524,7 +524,7 @@ wait $PID
 **Test Execution Checklist**
 
 Before starting tests:
-- [ ] No existing nopher processes running
+- [ ] No existing nophr processes running
 - [ ] Ports are available (70, 1965, 79)
 - [ ] Test database/storage is clean
 
@@ -545,7 +545,7 @@ After tests:
 🚩 **"Fire and Forget"** - Starting background processes without tracking PIDs
 ```bash
 # BAD: No PID tracking
-./nopher --config test.yaml &
+./nophr --config test.yaml &
 # Later: How do I kill this?
 ```
 
@@ -553,16 +553,16 @@ After tests:
 ```bash
 # BAD: Port conflicts guaranteed
 for config in test*.yaml; do
-    ./nopher --config $config &  # All trying to bind port 70!
+    ./nophr --config $config &  # All trying to bind port 70!
 done
 ```
 
 🚩 **"Zombie Horde"** - Not cleaning up after tests
 ```bash
 # BAD: Processes accumulate
-./nopher --config test1.yaml &
+./nophr --config test1.yaml &
 # Test something...
-./nopher --config test2.yaml &
+./nophr --config test2.yaml &
 # Test something else...
 # Now have 2 zombie processes!
 ```
@@ -570,8 +570,8 @@ done
 🚩 **"Log Pollution"** - All output to same file
 ```bash
 # BAD: Logs mixed together
-./nopher --config test1.yaml > test.log 2>&1 &
-./nopher --config test2.yaml > test.log 2>&1 &
+./nophr --config test1.yaml > test.log 2>&1 &
+./nophr --config test2.yaml > test.log 2>&1 &
 # Logs are now useless jumble
 ```
 
@@ -586,12 +586,12 @@ set -e  # Exit on error
 # Cleanup function
 cleanup() {
     echo "Cleaning up..."
-    if [ -f /tmp/nopher-test.pid ]; then
-        kill $(cat /tmp/nopher-test.pid) 2>/dev/null || true
-        rm /tmp/nopher-test.pid
+    if [ -f /tmp/nophr-test.pid ]; then
+        kill $(cat /tmp/nophr-test.pid) 2>/dev/null || true
+        rm /tmp/nophr-test.pid
     fi
-    pkill -f "nopher --config test-config.yaml" 2>/dev/null || true
-    rm -f test-data/nopher.db test.log
+    pkill -f "nophr --config test-config.yaml" 2>/dev/null || true
+    rm -f test-data/nophr.db test.log
     echo "✓ Cleanup complete"
 }
 
@@ -599,26 +599,26 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # Verify clean state
-if pgrep -f "nopher --config" > /dev/null; then
-    echo "ERROR: Nopher already running. Clean up first."
+if pgrep -f "nophr --config" > /dev/null; then
+    echo "ERROR: nophr already running. Clean up first."
     exit 1
 fi
 
 # Build
 echo "Building..."
-go build -o nopher cmd/nopher/main.go
+go build -o nophr cmd/nophr/main.go
 
 # Start server
 echo "Starting server..."
-./nopher --config test-config.yaml > test.log 2>&1 &
-echo $! > /tmp/nopher-test.pid
+./nophr --config test-config.yaml > test.log 2>&1 &
+echo $! > /tmp/nophr-test.pid
 
 # Wait for startup
 echo "Waiting for startup..."
 sleep 3
 
 # Verify it started
-if ! ps -p $(cat /tmp/nopher-test.pid) > /dev/null; then
+if ! ps -p $(cat /tmp/nophr-test.pid) > /dev/null; then
     echo "ERROR: Server failed to start"
     cat test.log
     exit 1
@@ -646,14 +646,14 @@ go test ./internal/config -v
 go test -run TestSpecificTest ./...
 
 # Build for integration testing
-go build -o nopher cmd/nopher/main.go
+go build -o nophr cmd/nophr/main.go
 
 # Start test server (save PID!)
-./nopher --config test-config.yaml > test.log 2>&1 &
-echo $! > /tmp/nopher.pid
+./nophr --config test-config.yaml > test.log 2>&1 &
+echo $! > /tmp/nophr.pid
 
 # Check if running
-ps -p $(cat /tmp/nopher.pid)
+ps -p $(cat /tmp/nophr.pid)
 
 # View logs
 tail -f test.log
@@ -663,15 +663,15 @@ echo "" | nc localhost 70  # Gopher
 echo "gemini://localhost/" | openssl s_client -connect localhost:1965 -quiet 2>/dev/null  # Gemini
 
 # Clean up
-kill $(cat /tmp/nopher.pid)
-wait $(cat /tmp/nopher.pid) 2>/dev/null
-rm /tmp/nopher.pid
+kill $(cat /tmp/nophr.pid)
+wait $(cat /tmp/nophr.pid) 2>/dev/null
+rm /tmp/nophr.pid
 
 # Verify cleanup
 ps aux | grep "[n]opher" || echo "✓ All clean"
 
 # Nuclear cleanup (if needed)
-pkill -9 -f "nopher --config"
+pkill -9 -f "nophr --config"
 ```
 
 **Summary: Testing Philosophy**
@@ -1291,8 +1291,8 @@ Agent: "Phase 0 requires:
 Reading memory/cicd.md and memory/distribution.md for specifications..."
 
 Agent: "Creating project structure:
-- go mod init github.com/user/nopher
-- mkdir -p cmd/nopher internal pkg scripts .github/workflows
+- go mod init github.com/user/nophr
+- mkdir -p cmd/nophr internal pkg scripts .github/workflows
 - Creating Makefile from memory/cicd.md examples
 - Creating GitHub Actions workflows from memory/cicd.md specs"
 
@@ -1382,7 +1382,7 @@ Agent: "Continuing implementation with corrected NIP-10 interpretation..."
 
 Summary
 
-As an agent working on Nopher:
+As an agent working on nophr:
 
 1. **Always read memory/ before implementing**
 2. **Update memory/ when you discover gaps or changes**

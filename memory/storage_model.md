@@ -22,7 +22,7 @@ What Khatru Handles
 
 Custom Tables (augment Khatru's event storage)
 
-Since Khatru handles core event storage, we only need additional tables for Nopher-specific features:
+Since Khatru handles core event storage, we only need additional tables for nophr-specific features:
 
 - relay_hints (from NIP-65 kind 10002)
   - pubkey TEXT NOT NULL
