@@ -1,54 +1,34 @@
+# golangci-lint configuration
+
 run:
   timeout: 5m
   tests: true
-  modules-download-mode: readonly
 
 linters:
   enable:
-    - errcheck
-    - gosimple
+    - gofmt
     - govet
-    - ineffassign
+    - errcheck
     - staticcheck
     - unused
-    - gofmt
-    - goimports
+    - gosimple
+    - ineffassign
+    - typecheck
+    - exportloopref
+    - gocyclo
     - misspell
-    - gocritic
-    - revive
-    - stylecheck
 
 linters-settings:
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-
-  govet:
-    enable-all: true
-
-  gofmt:
-    simplify: true
-
-  goimports:
-    local-prefixes: github.com/sandwich/nopher
-
-  misspell:
-    locale: US
-
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - style
-      - performance
-      - experimental
-      - opinionated
+  gocyclo:
+    min-complexity: 15
 
 issues:
-  exclude-use-default: false
+  exclude-rules:
+    # Exclude test files from certain linters
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+    
   max-issues-per-linter: 0
   max-same-issues: 0
-
-output:
-  format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true

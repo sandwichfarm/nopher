@@ -60,9 +60,23 @@ Since Khatru handles core event storage, we only need additional tables for Noph
   - last_interaction_at INTEGER
   Purpose: Cache interaction counts for Gopher/Gemini display; computed from refs in events.
 
+- retention_metadata (advanced retention tracking) [PHASE 17]
+  - event_id TEXT PRIMARY KEY
+  - rule_name TEXT NOT NULL
+  - rule_priority INTEGER NOT NULL
+  - retain_until INTEGER           # Unix timestamp or NULL for permanent
+  - last_evaluated_at INTEGER NOT NULL
+  - score INTEGER                  # Calculated score for cap enforcement
+  - protected BOOLEAN DEFAULT 0    # Cannot be deleted by caps
+  - FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+  Purpose: Track retention decisions from advanced retention rules; used for pruning.
+
 Indexes
 - relay_hints(pubkey, freshness DESC)
 - graph_nodes(root_pubkey, depth, mutual)
+- retention_metadata(retain_until)
+- retention_metadata(score)
+- retention_metadata(protected)
 
 Implementation Notes
 - Khatru's eventstore handles the events table with its own optimized schema.

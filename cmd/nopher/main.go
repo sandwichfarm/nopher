@@ -14,6 +14,7 @@ import (
 	"github.com/sandwich/nopher/internal/gemini"
 	"github.com/sandwich/nopher/internal/gopher"
 	"github.com/sandwich/nopher/internal/storage"
+	"github.com/sandwich/nopher/internal/sync"
 )
 
 var (
@@ -93,6 +94,18 @@ func run(cfg *config.Config) error {
 	fmt.Println("Initializing aggregates manager...")
 	aggMgr := aggregates.NewManager(st, cfg)
 	fmt.Println("  Aggregates manager ready")
+
+	// Initialize sync engine if enabled
+	var syncEngine *sync.Engine
+	if cfg.Sync.Enabled {
+		fmt.Println("Initializing sync engine...")
+		syncEngine = sync.NewEngine(st, cfg)
+		if err := syncEngine.Start(); err != nil {
+			return fmt.Errorf("failed to start sync engine: %w", err)
+		}
+		defer syncEngine.Stop()
+		fmt.Println("  Sync engine started")
+	}
 
 	// Initialize protocol servers
 	var servers []interface{ Stop() error }

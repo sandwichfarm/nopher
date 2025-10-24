@@ -15,4 +15,11 @@ Config Reload
 - Optional SIGHUP or file watcher to reload config without restart (best-effort, safe-only fields).
 
 Retention Jobs
-- Scheduled pruning according to sync.retention; report skipped/pruned counts.
+- Simple mode: Scheduled pruning according to sync.retention.keep_days; report skipped/pruned counts.
+- Advanced mode (optional, Phase 17): Multi-dimensional retention with configurable rules, caps, and priorities.
+  - Rule-based retention: Evaluate events against priority-ordered rules with various gates (time, size, kind, social distance, references).
+  - Global caps: Enforce max_total_events, max_storage_mb, max_events_per_kind.
+  - Protected events: Owner content and high-priority events never deleted by caps.
+  - Incremental evaluation: Evaluate new events on ingestion, re-evaluate periodically.
+  - Detailed diagnostics: Per-rule statistics, storage utilization, pruning reports.
+  - See memory/retention_advanced.md for full specification.

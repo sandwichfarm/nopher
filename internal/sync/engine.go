@@ -30,7 +30,7 @@ type Engine struct {
 	eventChan chan *nostr.Event
 }
 
-// New creates a new sync engine
+// New creates a new sync engine (legacy signature for compatibility)
 func New(ctx context.Context, cfg *config.Config, st *storage.Storage, client *internalnostr.Client) *Engine {
 	engineCtx, cancel := context.WithCancel(ctx)
 
@@ -43,6 +43,33 @@ func New(ctx context.Context, cfg *config.Config, st *storage.Storage, client *i
 		config:        cfg,
 		storage:       st,
 		nostrClient:   client,
+		discovery:     discovery,
+		filterBuilder: filterBuilder,
+		graph:         graph,
+		cursors:       cursors,
+		ctx:           engineCtx,
+		cancel:        cancel,
+		eventChan:     make(chan *nostr.Event, 1000),
+	}
+}
+
+// NewEngine creates a new sync engine with storage and config only
+func NewEngine(st *storage.Storage, cfg *config.Config) *Engine {
+	ctx := context.Background()
+	engineCtx, cancel := context.WithCancel(ctx)
+
+	// Create nostr client
+	nostrClient := internalnostr.New(ctx, &cfg.Relays)
+
+	discovery := internalnostr.NewDiscovery(nostrClient, st)
+	filterBuilder := NewFilterBuilder(&cfg.Sync)
+	graph := NewGraph(st, &cfg.Sync.Scope)
+	cursors := NewCursorManager(st)
+
+	return &Engine{
+		config:        cfg,
+		storage:       st,
+		nostrClient:   nostrClient,
 		discovery:     discovery,
 		filterBuilder: filterBuilder,
 		graph:         graph,

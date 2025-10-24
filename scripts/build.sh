@@ -1,28 +1,25 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+# Build nopher binary
 
-VERSION="${VERSION:-dev}"
-COMMIT="${COMMIT:-$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')}"
-DATE="${DATE:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}"
+set -e
 
-echo "==> Building nopher..."
-echo "    Version: $VERSION"
-echo "    Commit:  $COMMIT"
-echo "    Date:    $DATE"
+VERSION=${VERSION:-dev}
+COMMIT=${COMMIT:-$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")}
+DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+BUILT_BY=${BUILT_BY:-$(whoami)}
 
-# Build flags
-LDFLAGS="-s -w"
-LDFLAGS="$LDFLAGS -X main.version=$VERSION"
-LDFLAGS="$LDFLAGS -X main.commit=$COMMIT"
-LDFLAGS="$LDFLAGS -X main.date=$DATE"
+echo "Building nopher..."
+echo "  Version: $VERSION"
+echo "  Commit:  $COMMIT"
+echo "  Date:    $DATE"
+echo "  Built by: $BUILT_BY"
+echo ""
 
-# Build binary
-CGO_ENABLED=0 go build \
-    -ldflags "$LDFLAGS" \
-    -o dist/nopher \
+go build \
+    -ldflags "-X main.version=$VERSION -X main.commit=$COMMIT -X main.date=$DATE -X main.builtBy=$BUILT_BY" \
+    -o nopher \
     ./cmd/nopher
 
-echo "==> Build complete: dist/nopher"
-
-# Show version
-./dist/nopher --version
+echo ""
+echo "✓ Build complete: ./nopher"
+./nopher --version

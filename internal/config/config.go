@@ -105,6 +105,7 @@ type Discovery struct {
 
 // Sync contains synchronization settings
 type Sync struct {
+	Enabled   bool      `yaml:"enabled"`
 	Kinds     []int     `yaml:"kinds"`
 	Scope     SyncScope `yaml:"scope"`
 	Retention Retention `yaml:"retention"`

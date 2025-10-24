@@ -1,0 +1,29 @@
+# Caddy configuration for Nopher
+# Caddy automatically handles TLS certificates via Let's Encrypt
+
+# Gemini protocol with automatic HTTPS
+gemini.example.com:1965 {
+    reverse_proxy localhost:11965
+    tls {
+        protocols tls1.2 tls1.3
+    }
+}
+
+# Optional: Web-based status/monitoring page
+status.example.com {
+    reverse_proxy localhost:8080
+    log {
+        output file /var/log/caddy/nopher-status.log
+    }
+}
+
+# Gopher and Finger protocols (ports 70 and 79)
+# These typically run without TLS, but you can proxy them if needed:
+#
+# :70 {
+#     reverse_proxy localhost:7070
+# }
+#
+# :79 {
+#     reverse_proxy localhost:7079
+# }

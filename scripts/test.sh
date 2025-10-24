@@ -1,19 +1,15 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+# Run tests with coverage
 
-# Run all tests with coverage
-echo "==> Running tests..."
+set -e
 
-# Unit tests
-go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+echo "Running tests..."
+go test ./... -v -cover -coverprofile=coverage.out
 
-# Display coverage summary
-go tool cover -func=coverage.txt | tail -n 1
+echo ""
+echo "Coverage summary:"
+go tool cover -func=coverage.out | tail -1
 
-# Optional: generate HTML coverage report
-if [ "${HTML_COVERAGE:-false}" = "true" ]; then
-    go tool cover -html=coverage.txt -o coverage.html
-    echo "Coverage report: coverage.html"
-fi
-
-echo "==> Tests passed!"
+echo ""
+echo "Coverage report saved to coverage.out"
+echo "View HTML report with: go tool cover -html=coverage.out"

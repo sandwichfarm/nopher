@@ -1,54 +1,56 @@
-.PHONY: help build test lint clean install dev release release-snapshot docker docker-compose-up docker-compose-down ci-setup ci-verify fmt check
+# Nopher Makefile
 
-# Variables
-VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
-COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+.PHONY: all build test lint clean install dev help
 
-help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
+# Default target
+all: test build
 
-build: ## Build binary
-	@VERSION=$(VERSION) COMMIT=$(COMMIT) DATE=$(DATE) ./scripts/build.sh
+# Build the binary
+build:
+	@./scripts/build.sh
 
-test: ## Run tests
+# Run tests
+test:
 	@./scripts/test.sh
 
-lint: ## Run linters
+# Run linter
+lint:
 	@./scripts/lint.sh
 
-clean: ## Clean build artifacts
-	rm -rf dist/ coverage.txt coverage.html
+# Clean build artifacts
+clean:
+	@./scripts/clean.sh
 
-install: build ## Install to /usr/local/bin
-	install -m 755 dist/nopher /usr/local/bin/nopher
+# Install to GOPATH/bin
+install: build
+	@echo "Installing nopher..."
+	@cp nopher $(shell go env GOPATH)/bin/
+	@echo "✓ Installed to $(shell go env GOPATH)/bin/nopher"
 
-dev: ## Run in development mode
-	go run ./cmd/nopher --config ./configs/nopher.example.yaml
+# Run in development mode
+dev:
+	@./scripts/dev.sh
 
-release: ## Create a release (requires goreleaser)
-	goreleaser release --clean
+# Run with custom config
+run:
+	@./scripts/dev.sh $(CONFIG)
 
-release-snapshot: ## Create a snapshot release
-	goreleaser release --snapshot --clean
+# Build Docker image
+docker:
+	@docker build -t nopher:latest .
 
-docker: ## Build Docker image
-	docker build -t nopher:$(VERSION) .
-
-docker-compose-up: ## Start with docker-compose
-	docker-compose up -d
-
-docker-compose-down: ## Stop docker-compose
-	docker-compose down
-
-ci-setup: ## Setup CI environment
-	@./scripts/ci/setup.sh
-
-ci-verify: ## Verify build artifacts
-	@./scripts/ci/verify.sh
-
-fmt: ## Format code
-	gofmt -w .
-	go mod tidy
-
-check: lint test ## Run all checks
+# Show help
+help:
+	@echo "Nopher Makefile targets:"
+	@echo ""
+	@echo "  make build    - Build the nopher binary"
+	@echo "  make test     - Run tests with coverage"
+	@echo "  make lint     - Run golangci-lint"
+	@echo "  make clean    - Clean build artifacts"
+	@echo "  make install  - Install to GOPATH/bin"
+	@echo "  make dev      - Run in development mode (uses test-config.yaml)"
+	@echo "  make run CONFIG=<path> - Run with custom config"
+	@echo "  make docker   - Build Docker image"
+	@echo "  make all      - Run tests and build"
+	@echo "  make help     - Show this help message"
+	@echo ""

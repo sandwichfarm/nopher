@@ -2,28 +2,107 @@ version: '3.8'
 
 services:
   nopher:
+    # Use pre-built image or build locally
+    # image: ghcr.io/sandwichfarm/nopher:latest
     build: .
     image: nopher:latest
     container_name: nopher
-    ports:
-      - "70:70"      # Gopher
-      - "1965:1965"  # Gemini
-      - "79:79"      # Finger
-    volumes:
-      - ./configs/nopher.example.yaml:/etc/nopher/nopher.yaml:ro
-      - nopher-data:/var/lib/nopher
-      - nopher-certs:/etc/nopher/certs:ro
-    environment:
-      - NOPHER_NSEC=${NOPHER_NSEC:-}
     restart: unless-stopped
+
+    ports:
+      # Gopher protocol (port 70)
+      - "70:70"
+      # Gemini protocol (port 1965 with TLS)
+      - "1965:1965"
+      # Finger protocol (port 79)
+      - "79:79"
+      # Optional: monitoring/health endpoint
+      - "8080:8080"
+
+    volumes:
+      # Configuration
+      - ./configs/nopher.example.yaml:/etc/nopher/nopher.yaml:ro
+      # Data persistence
+      - nopher-data:/var/lib/nopher
+      # TLS certificates for Gemini (if not using auto-generate)
+      - nopher-certs:/etc/nopher/certs:ro
+      # Logs (optional)
+      - nopher-logs:/var/log/nopher
+
+    environment:
+      # IMPORTANT: Never commit your nsec to version control!
+      # Set this via .env file or pass at runtime
+      - NOPHER_NSEC=${NOPHER_NSEC}
+      # Optional: Redis URL if using Redis cache
+      - NOPHER_REDIS_URL=${NOPHER_REDIS_URL:-}
+      # Optional: Override log level
+      - NOPHER_LOG_LEVEL=${NOPHER_LOG_LEVEL:-info}
+
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "70"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
     networks:
       - nopher-net
+
+  # Optional: Redis cache for better performance
+  # Uncomment to enable Redis caching
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: nopher-redis
+  #   restart: unless-stopped
+  #   command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+  #   volumes:
+  #     - redis-data:/data
+  #   networks:
+  #     - nopher-net
+
+  # Optional: Caddy reverse proxy for automatic HTTPS
+  # Uncomment to enable Caddy for TLS termination
+  # caddy:
+  #   image: caddy:2-alpine
+  #   container_name: nopher-caddy
+  #   restart: unless-stopped
+  #   ports:
+  #     - "443:443"
+  #     - "443:443/udp"
+  #   volumes:
+  #     - ./examples/Caddyfile:/etc/caddy/Caddyfile:ro
+  #     - caddy-data:/data
+  #     - caddy-config:/config
+  #   networks:
+  #     - nopher-net
+  #   depends_on:
+  #     - nopher
 
 volumes:
   nopher-data:
     driver: local
   nopher-certs:
     driver: local
+  nopher-logs:
+    driver: local
+  # redis-data:
+  #   driver: local
+  # caddy-data:
+  #   driver: local
+  # caddy-config:
+  #   driver: local
 
 networks:
   nopher-net:

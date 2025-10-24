@@ -49,4 +49,5 @@ Operations:
 - operations.md (operational procedures)
 - diagnostics.md (monitoring and diagnostics)
 - security_privacy.md (security and privacy features)
+- retention_advanced.md (Phase 17: advanced configurable retention system)
 

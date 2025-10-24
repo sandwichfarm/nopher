@@ -80,6 +80,49 @@ sync:
     keep_days: 365
     prune_on_start: true
 
+    # Advanced retention (optional, see memory/retention_advanced.md)
+    advanced:
+      enabled: false         # Must explicitly enable
+      mode: "rules"          # rules|caps
+
+      evaluation:
+        on_ingest: true
+        re_eval_interval_hours: 168
+        batch_size: 1000
+
+      global_caps:
+        max_total_events: 1000000
+        max_storage_mb: 5000
+        max_events_per_kind:
+          1: 100000
+          30023: 10000
+
+      rules:
+        - name: "protect_owner"
+          description: "Never delete owner's content"
+          priority: 1000
+          conditions:
+            author_is_owner: true
+          action:
+            retain: true
+
+        - name: "close_network"
+          description: "Keep direct follows for 1 year"
+          priority: 800
+          conditions:
+            social_distance_max: 1
+            kinds: [1, 30023]
+          action:
+            retain_days: 365
+
+        - name: "default"
+          description: "Default retention for other events"
+          priority: 100
+          conditions:
+            all: true
+          action:
+            retain_days: 90
+
 inbox:
   include_replies: true
   include_reactions: true     # kind 7
