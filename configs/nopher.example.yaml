@@ -53,7 +53,17 @@ discovery:
   max_relays_per_author: 8  # Safety cap
 
 sync:
-  kinds: [0, 1, 3, 6, 7, 9735, 30023, 10002]
+  # Granular control over which event kinds to sync
+  kinds:
+    profiles: true      # kind 0 - user profiles/metadata
+    notes: true         # kind 1 - short text notes
+    contact_list: true  # kind 3 - following lists
+    reposts: true       # kind 6 - reposts/boosts
+    reactions: true     # kind 7 - reactions (likes, emoji)
+    zaps: true          # kind 9735 - lightning zaps
+    articles: true      # kind 30023 - long-form articles
+    relay_list: true    # kind 10002 - relay preferences (NIP-65)
+    allowlist: []       # Additional custom kinds to sync
   scope:
     mode: "foaf"  # self|following|mutual|foaf
     depth: 2  # used when mode=foaf
@@ -129,8 +139,95 @@ caching:
 
 logging:
   level: "info"  # debug|info|warn|error
+  format: "text"  # text|json
 
 layout:
   # See memory/layouts_sections.md for full spec
   sections: {}
   pages: {}
+
+# ============================================================================
+# PHASE 18: Display Customization and Content Control
+# ============================================================================
+
+display:
+  # Controls what information is shown in feed/list views vs detail views
+  feed:
+    show_interactions: true  # Show aggregate stats (replies, reactions, zaps)
+    show_reactions: true     # Include reaction counts in aggregates
+    show_zaps: true          # Include zap amounts in aggregates
+    show_replies: true       # Include reply counts in aggregates
+
+  detail:
+    show_interactions: true  # Show aggregate stats on individual note pages
+    show_reactions: true     # Include reaction breakdown
+    show_zaps: true          # Include zap total
+    show_replies: true       # Include reply count
+    show_thread: true        # Show thread context/replies
+
+  limits:
+    summary_length: 100         # Characters to show in list previews
+    max_content_length: 5000    # Maximum content length before truncation
+    max_thread_depth: 10        # Maximum depth for thread display
+    max_replies_in_feed: 3      # Max replies to show in feed items
+    truncate_indicator: "..."   # String to append when content is truncated
+
+presentation:
+  # Visual presentation and layout customization
+  headers:
+    global:
+      enabled: false
+      content: ""              # Inline header text
+      file_path: ""            # Or load from file (e.g., "./headers/global.txt")
+    per_page: {}               # Page-specific headers, e.g.:
+      # notes:
+      #   enabled: true
+      #   content: "My Notes Collection"
+
+  footers:
+    global:
+      enabled: false
+      content: ""              # Inline footer text
+      file_path: ""            # Or load from file (e.g., "./footers/global.txt")
+    per_page: {}               # Page-specific footers
+
+  separators:
+    # Protocol-specific separators between items and sections
+    item:
+      gopher: ""               # Empty = no separator between list items
+      gemini: ""
+      finger: ""
+    section:
+      gopher: "---"            # Default: 70 dashes
+      gemini: "---"            # Separator between major sections
+      finger: "---"
+
+behavior:
+  # Query behavior and content filtering
+  content_filtering:
+    enabled: false             # Master switch for content filtering
+    min_reactions: 0           # Minimum reactions to display note
+    min_zap_sats: 0            # Minimum sats zapped to display note
+    min_engagement: 0          # Minimum combined engagement score
+    hide_no_interactions: false # Hide notes with no interactions at all
+    allowed_content_types: []  # Future: filter by content type
+
+  sort_preferences:
+    # Sort mode for each section: chronological|engagement|zaps|reactions
+    notes: "chronological"     # How to sort notes list
+    articles: "chronological"  # How to sort articles list
+    replies: "chronological"   # How to sort replies list
+    mentions: "chronological"  # How to sort mentions list
+
+  pagination:
+    enabled: false             # Enable pagination (future feature)
+    items_per_page: 50         # Items per page when enabled
+    max_pages: 10              # Maximum pages to generate
+
+# Template variables for headers/footers:
+# {{site.title}}       - Site title from site.title
+# {{site.description}} - Site description
+# {{site.operator}}    - Operator name
+# {{date}}             - Current date (YYYY-MM-DD)
+# {{datetime}}         - Current date and time
+# {{year}}             - Current year

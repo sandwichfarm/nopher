@@ -603,3 +603,169 @@ Minimum Viable Product (MVP):
 Full Feature Set:
 - All 16 phases
 - Gives: Gopher + Gemini + Finger with full features
+
+---
+
+## Phase 17: Endpoint Refactoring and Bug Fixes
+
+**Status**: ✅ Complete
+
+**Goal**: Refactor protocol handlers to use new QueryHelper methods and fix critical bugs in thread retrieval and reply filtering.
+
+**Key Changes**:
+- Updated Gopher and Gemini handlers to use new section-based query methods (GetNotes, GetArticles, GetReplies, GetMentions)
+- Fixed thread retrieval logic to properly handle root events and replies
+- Improved reply filtering to distinguish actual replies from mentions
+- Added proper error handling for empty result sets
+- Consolidated query logic in aggregates package
+
+**Files Modified**:
+- `internal/gopher/handler.go` - Updated to use QueryHelper methods
+- `internal/gemini/handler.go` - Updated to use QueryHelper methods
+- `internal/aggregates/queries.go` - Fixed thread retrieval logic
+
+**Impact**:
+- More consistent behavior across protocols
+- Better separation of concerns
+- Easier to maintain and extend
+
+---
+
+## Phase 18: Display Customization and Content Control
+
+**Status**: ✅ Complete
+
+**Goal**: Provide comprehensive configuration options for display, presentation, and behavior customization.
+
+**Key Features**:
+
+### 1. Display Configuration
+- **Feed vs Detail Views**: Separate control for showing interactions in list views vs detail views
+- **Selective Interaction Display**: Toggle replies, reactions, and zaps independently
+- **Content Limits**: Configurable summary lengths, max content length, thread depth limits
+- **Truncation Control**: Custom truncation indicators
+
+### 2. Presentation System
+- **Headers/Footers**: Global and per-page headers/footers
+- **Content Sources**: Inline content or file-based loading
+- **Template Variables**: `{{site.title}}`, `{{date}}`, `{{year}}`, etc.
+- **Caching**: 5-minute TTL for loaded content
+- **Protocol Separators**: Customizable item and section separators per protocol
+
+### 3. Behavior Configuration
+- **Content Filtering**: Min reactions, min zap sats, min engagement thresholds
+- **Quality Filters**: Hide notes with no interactions
+- **Sort Preferences**: Per-section sorting (chronological, engagement, zaps, reactions)
+- **Pagination**: Framework for future pagination support
+
+### 4. Granular Sync Control
+- **Kind Filtering**: Boolean flags for each event kind instead of array
+- **User-Friendly**: Named flags (profiles, notes, articles, etc.)
+- **Backward Compatible**: ToIntSlice() method converts to integer array
+
+**Configuration Schema**:
+```yaml
+display:
+  feed:
+    show_interactions: true
+    show_reactions: true
+    show_zaps: true
+    show_replies: true
+  detail:
+    show_interactions: true
+    show_reactions: true
+    show_zaps: true
+    show_replies: true
+    show_thread: true
+  limits:
+    summary_length: 100
+    max_content_length: 5000
+    max_thread_depth: 10
+    max_replies_in_feed: 3
+    truncate_indicator: "..."
+
+presentation:
+  headers:
+    global:
+      enabled: false
+      content: ""
+      file_path: ""
+    per_page: {}
+  footers:
+    global:
+      enabled: false
+      content: ""
+      file_path: ""
+    per_page: {}
+  separators:
+    item:
+      gopher: ""
+      gemini: ""
+      finger: ""
+    section:
+      gopher: "---"
+      gemini: "---"
+      finger: "---"
+
+behavior:
+  content_filtering:
+    enabled: false
+    min_reactions: 0
+    min_zap_sats: 0
+    min_engagement: 0
+    hide_no_interactions: false
+  sort_preferences:
+    notes: "chronological"
+    articles: "chronological"
+    replies: "chronological"
+    mentions: "chronological"
+  pagination:
+    enabled: false
+    items_per_page: 50
+    max_pages: 10
+```
+
+**Files Modified**:
+- `internal/config/config.go` - Extended with Display, Presentation, Behavior structs
+- `internal/config/sync.go` - Changed SyncKinds to struct with ToIntSlice()
+- `internal/aggregates/queries.go` - Added filterAndSortEvents and passesContentFilter methods
+- `internal/gopher/renderer.go` - Updated to use display config
+- `internal/gemini/renderer.go` - Updated to use display config
+- `internal/presentation/loader.go` - NEW: Header/footer loading with caching
+- `configs/nopher.example.yaml` - Added comprehensive Phase 18 configuration
+
+**Impact**:
+- Users have fine-grained control over what content is displayed
+- Customizable visual presentation per protocol
+- Quality filtering to reduce noise
+- Flexible sorting options for different use cases
+- Professional appearance with headers/footers
+
+**Template Variables**:
+- `{{site.title}}` - Site title from site.title
+- `{{site.description}}` - Site description
+- `{{site.operator}}` - Operator name
+- `{{date}}` - Current date (YYYY-MM-DD)
+- `{{datetime}}` - Current date and time
+- `{{year}}` - Current year
+
+
+---
+
+## Summary (Updated)
+
+**Total Phases**: 18  
+**Status**: Active Development
+
+**Phase Breakdown**:
+- ✅ Phases 1-18: Complete
+- 🚧 Future: Additional features and optimizations
+
+**Current Focus**: Display customization, content control, and user experience refinement
+
+**Architecture Highlights**:
+- Multi-protocol support (Gopher, Gemini, Finger)
+- Intelligent relay discovery (NIP-65)
+- Aggregate computation and caching
+- Flexible content filtering and sorting
+- Customizable presentation system
