@@ -211,7 +211,17 @@ func TestGeminiResponseFormat(t *testing.T) {
 }
 
 func TestRendererOutput(t *testing.T) {
-	renderer := NewRenderer()
+	cfg := &config.Config{
+		Display: config.Display{
+			Feed: config.FeedDisplay{
+				ShowInteractions: true,
+			},
+			Detail: config.DetailDisplay{
+				ShowInteractions: true,
+			},
+		},
+	}
+	renderer := NewRenderer(cfg)
 
 	// Test home rendering
 	t.Run("HomeRendering", func(t *testing.T) {
@@ -220,11 +230,11 @@ func TestRendererOutput(t *testing.T) {
 		if !strings.Contains(home, "# Nopher") {
 			t.Errorf("Home should contain title")
 		}
-		if !strings.Contains(home, "=> /outbox") {
-			t.Errorf("Home should contain outbox link")
+		if !strings.Contains(home, "=> /notes") {
+			t.Errorf("Home should contain notes link")
 		}
-		if !strings.Contains(home, "=> /inbox") {
-			t.Errorf("Home should contain inbox link")
+		if !strings.Contains(home, "=> /replies") {
+			t.Errorf("Home should contain replies link")
 		}
 	})
 

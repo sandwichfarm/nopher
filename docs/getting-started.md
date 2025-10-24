@@ -164,6 +164,9 @@ The generated configuration includes many sections:
 | `logging` | Log level configuration | ✅ Verified |
 | `layout` | Sections and layouts (filtering/pagination/archives) | ✅ Verified |
 | `security` | Security features (deny lists, rate limiting, validation) | ✅ Verified |
+| `display` | Display control (feed/detail views, limits) | ✅ Verified |
+| `presentation` | Visual presentation (headers, footers, separators) | ✅ Verified |
+| `behavior` | Behavior control (filtering, sorting) | ✅ Verified |
 
 For complete configuration documentation, see [configuration.md](configuration.md).
 

@@ -8,7 +8,10 @@ import (
 
 func TestNewFilterBuilder(t *testing.T) {
 	cfg := &config.Sync{
-		Kinds: []int{1, 3},
+		Kinds: config.SyncKinds{
+			Notes:       true,
+			ContactList: true,
+		},
 	}
 
 	fb := NewFilterBuilder(cfg)
@@ -32,7 +35,10 @@ func TestBuildFilters(t *testing.T) {
 		{
 			name: "with configured kinds",
 			cfg: &config.Sync{
-				Kinds: []int{1, 3},
+				Kinds: config.SyncKinds{
+					Notes:       true,
+					ContactList: true,
+				},
 			},
 			authors:       []string{"pubkey1", "pubkey2"},
 			since:         12345,
@@ -40,10 +46,10 @@ func TestBuildFilters(t *testing.T) {
 		},
 		{
 			name:          "with default kinds",
-			cfg:           &config.Sync{},
+			cfg:           &config.Sync{Kinds: config.SyncKinds{}},
 			authors:       []string{"pubkey1"},
 			since:         0,
-			expectedKinds: 8, // Default has 8 kinds
+			expectedKinds: 8, // Empty SyncKinds falls back to 8 default kinds
 		},
 		{
 			name:          "empty authors",
@@ -81,7 +87,9 @@ func TestBuildFilters(t *testing.T) {
 
 func TestBuildMentionFilter(t *testing.T) {
 	cfg := &config.Sync{
-		Kinds: []int{1},
+		Kinds: config.SyncKinds{
+			Notes: true,
+		},
 	}
 
 	fb := NewFilterBuilder(cfg)
@@ -207,14 +215,18 @@ func TestGetConfiguredKinds(t *testing.T) {
 		{
 			name: "custom kinds",
 			cfg: &config.Sync{
-				Kinds: []int{1, 3, 7},
+				Kinds: config.SyncKinds{
+					Notes:       true,
+					ContactList: true,
+					Reactions:   true,
+				},
 			},
 			expected: 3,
 		},
 		{
-			name:     "default kinds",
-			cfg:      &config.Sync{},
-			expected: 8,
+			name:     "empty kinds (defaults)",
+			cfg:      &config.Sync{Kinds: config.SyncKinds{}},
+			expected: 8, // Falls back to 8 default kinds
 		},
 	}
 

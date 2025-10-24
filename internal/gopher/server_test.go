@@ -146,7 +146,28 @@ func TestGophermapFormat(t *testing.T) {
 }
 
 func TestRendererOutput(t *testing.T) {
-	renderer := NewRenderer()
+	cfg := &config.Config{
+		Display: config.Display{
+			Limits: config.DisplayLimits{
+				SummaryLength:      100,
+				TruncateIndicator: "...",
+			},
+			Feed: config.FeedDisplay{
+				ShowInteractions: true,
+			},
+		},
+		Presentation: config.Presentation{
+			Separators: config.Separators{
+				Item: config.SeparatorConfig{
+					Gopher: "",
+				},
+				Section: config.SeparatorConfig{
+					Gopher: "---",
+				},
+			},
+		},
+	}
+	renderer := NewRenderer(cfg)
 
 	// Test note list rendering
 	notes := []*aggregates.EnrichedEvent{}

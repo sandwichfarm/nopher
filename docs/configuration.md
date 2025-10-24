@@ -34,6 +34,9 @@ nopher --config nopher.yaml
 - [logging](#logging) - Logging configuration
 - [layout](#layout) - Custom sections and pages
 - [security](#security) - Security features (deny lists, rate limiting, validation)
+- [display](#display) - Display control (feed/detail views, limits)
+- [presentation](#presentation) - Visual presentation (headers, footers, separators)
+- [behavior](#behavior) - Behavior control (filtering, sorting, pagination)
 
 ---
 
@@ -274,7 +277,16 @@ Event synchronization scope and retention.
 ```yaml
 sync:
   enabled: true  # Enable/disable sync engine
-  kinds: [0, 1, 3, 6, 7, 9735, 30023, 10002]
+  kinds:
+    profiles: true      # kind 0 - user profiles/metadata
+    notes: true         # kind 1 - short text notes
+    contact_list: true  # kind 3 - following lists
+    reposts: true       # kind 6 - reposts/boosts
+    reactions: true     # kind 7 - reactions (likes, emoji)
+    zaps: true          # kind 9735 - lightning zaps
+    articles: true      # kind 30023 - long-form articles
+    relay_list: true    # kind 10002 - relay preferences (NIP-65)
+    allowlist: []       # Additional custom kinds to sync
   scope:
     mode: "foaf"
     depth: 2
@@ -315,25 +327,69 @@ sync:
 
 ### sync.kinds
 
-**Type:** Array of integers
+**Type:** Object with boolean flags and allowlist array
 
-Nostr event kinds to synchronize.
+Granular control over which Nostr event kinds to synchronize.
 
-| Kind | Description | Purpose |
-|------|-------------|---------|
-| `0` | Profile (metadata) | User info, names, avatars |
-| `1` | Short note | Text posts |
-| `3` | Contacts (follows) | Social graph |
-| `6` | Repost | Shares/boosts |
-| `7` | Reaction | Likes, emoji reactions |
-| `9735` | Zap receipt | Lightning tips |
-| `30023` | Long-form article | Blog posts |
-| `10002` | Relay hints (NIP-65) | Relay discovery |
+| Field | Type | Default | Kind | Description |
+|-------|------|---------|------|-------------|
+| `profiles` | bool | `true` | 0 | User profiles/metadata (name, avatar, bio) |
+| `notes` | bool | `true` | 1 | Short text notes and posts |
+| `contact_list` | bool | `true` | 3 | Following lists (social graph) |
+| `reposts` | bool | `true` | 6 | Reposts/boosts of other notes |
+| `reactions` | bool | `true` | 7 | Reactions (likes, emoji responses) |
+| `zaps` | bool | `true` | 9735 | Lightning zap receipts (tips) |
+| `articles` | bool | `true` | 30023 | Long-form articles (blog posts) |
+| `relay_list` | bool | `true` | 10002 | Relay preferences (NIP-65) |
+| `allowlist` | []int | `[]` | - | Additional custom kinds to sync |
 
-**Add more kinds:**
+**Selective sync examples:**
+
 ```yaml
-kinds: [0, 1, 3, 6, 7, 9735, 30023, 10002, 30311]  # Add NIP-89 app handlers
+# Sync only notes and profiles (minimal)
+kinds:
+  profiles: true
+  notes: true
+  contact_list: false
+  reposts: false
+  reactions: false
+  zaps: false
+  articles: false
+  relay_list: false
 ```
+
+```yaml
+# Sync everything except reactions and zaps
+kinds:
+  profiles: true
+  notes: true
+  contact_list: true
+  reposts: true
+  reactions: false  # Don't sync reactions
+  zaps: false       # Don't sync zaps
+  articles: true
+  relay_list: true
+```
+
+```yaml
+# Add custom kinds with allowlist
+kinds:
+  profiles: true
+  notes: true
+  contact_list: true
+  reposts: true
+  reactions: true
+  zaps: true
+  articles: true
+  relay_list: true
+  allowlist: [30311, 34235]  # Add NIP-89 app handlers, NIP-94 file metadata
+```
+
+**Benefits of granular control:**
+- Reduce storage requirements by disabling unused kinds
+- Improve sync speed by syncing fewer event types
+- Fine-tune content for your use case
+- Easily add custom NIPs with allowlist
 
 ### sync.scope
 
@@ -1279,6 +1335,332 @@ Monitor these metrics:
 **See also:** [SECURITY.md](SECURITY.md) for comprehensive security guide
 
 **Status:** ✅ VERIFIED (Phase 14 complete - implemented in internal/security/)
+
+---
+
+## display
+
+Control what information is shown in feed/list views versus detail/individual event views.
+
+```yaml
+display:
+  feed:
+    show_interactions: true  # Show aggregate stats in list views
+    show_reactions: true     # Include reaction counts
+    show_zaps: true          # Include zap amounts
+    show_replies: true       # Include reply counts
+
+  detail:
+    show_interactions: true  # Show aggregate stats on event pages
+    show_reactions: true     # Include reaction breakdown
+    show_zaps: true          # Include zap total
+    show_replies: true       # Include reply count
+    show_thread: true        # Show thread context/replies
+
+  limits:
+    summary_length: 100         # Characters to show in list previews
+    max_content_length: 5000    # Maximum content length before truncation
+    max_thread_depth: 10        # Maximum depth for thread display
+    max_replies_in_feed: 3      # Max replies to show in feed items
+    truncate_indicator: "..."   # String to append when content is truncated
+```
+
+### display.feed
+
+Controls what appears in feed/list views (e.g., `/notes`, `/articles`).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `show_interactions` | bool | `true` | Show interaction stats for each item |
+| `show_reactions` | bool | `true` | Include reaction counts in stats |
+| `show_zaps` | bool | `true` | Include zap amounts in stats |
+| `show_replies` | bool | `true` | Include reply counts in stats |
+
+**Example - minimal feed view:**
+```yaml
+feed:
+  show_interactions: false  # Hide all interaction stats in lists
+```
+
+**Example - show only replies:**
+```yaml
+feed:
+  show_interactions: true
+  show_reactions: false
+  show_zaps: false
+  show_replies: true  # Only show reply counts
+```
+
+### display.detail
+
+Controls what appears on individual event pages (e.g., `/event/abc123`).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `show_interactions` | bool | `true` | Show interaction stats |
+| `show_reactions` | bool | `true` | Show reaction breakdown |
+| `show_zaps` | bool | `true` | Show total zap amount |
+| `show_replies` | bool | `true` | Show reply count |
+| `show_thread` | bool | `true` | Show full thread context |
+
+**Example - hide all interactions on detail pages:**
+```yaml
+detail:
+  show_interactions: false
+  show_thread: false
+```
+
+### display.limits
+
+Truncation and display limits.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `summary_length` | int | `100` | Max characters in list previews |
+| `max_content_length` | int | `5000` | Max content length before truncation |
+| `max_thread_depth` | int | `10` | Max depth for thread display |
+| `max_replies_in_feed` | int | `3` | Max replies shown per feed item |
+| `truncate_indicator` | string | `"..."` | Append when content truncated |
+
+**Example - longer previews:**
+```yaml
+limits:
+  summary_length: 200
+  max_content_length: 10000
+  truncate_indicator: " [continued...]"
+```
+
+**Status:** ✅ VERIFIED (Phase 18 - implemented in internal/gopher/renderer.go, internal/gemini/renderer.go)
+
+---
+
+## presentation
+
+Visual presentation and layout customization including headers, footers, and separators.
+
+```yaml
+presentation:
+  headers:
+    global:
+      enabled: false
+      content: ""              # Inline header text
+      file_path: ""            # Or load from file
+    per_page: {}               # Page-specific headers
+
+  footers:
+    global:
+      enabled: false
+      content: ""              # Inline footer text
+      file_path: ""            # Or load from file
+    per_page: {}               # Page-specific footers
+
+  separators:
+    item:
+      gopher: ""               # Between list items
+      gemini: ""
+      finger: ""
+    section:
+      gopher: "---"            # Between major sections
+      gemini: "---"
+      finger: "---"
+```
+
+### presentation.headers
+
+Add custom headers to pages.
+
+**Global header** (appears on all pages):
+```yaml
+headers:
+  global:
+    enabled: true
+    content: |
+      Welcome to My Nostr Gateway
+      Updated: {{date}}
+```
+
+**Load from file:**
+```yaml
+headers:
+  global:
+    enabled: true
+    file_path: "./headers/global.txt"
+```
+
+**Per-page headers:**
+```yaml
+headers:
+  per_page:
+    notes:
+      enabled: true
+      content: "My Personal Notes Collection"
+    articles:
+      enabled: true
+      content: "Long-form Articles and Essays"
+```
+
+### presentation.footers
+
+Add custom footers to pages (same structure as headers).
+
+```yaml
+footers:
+  global:
+    enabled: true
+    content: |
+      ---
+      Powered by Nopher
+      {{site.operator}} - {{year}}
+```
+
+### presentation.separators
+
+Customize separators between items and sections.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `item.gopher` | string | `""` | Between items in Gopher lists |
+| `item.gemini` | string | `""` | Between items in Gemini lists |
+| `item.finger` | string | `""` | Between items in Finger responses |
+| `section.gopher` | string | `"---"` | Between major sections (Gopher) |
+| `section.gemini` | string | `"---"` | Between major sections (Gemini) |
+| `section.finger` | string | `"---"` | Between major sections (Finger) |
+
+**Example - custom separators:**
+```yaml
+separators:
+  item:
+    gopher: "- - -"
+    gemini: "━━━"
+  section:
+    gopher: "========================================"
+    gemini: "════════════════════════════════════════"
+```
+
+### Template Variables
+
+Headers and footers support template variables:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `{{site.title}}` | Site title | "My Nostr Site" |
+| `{{site.description}}` | Site description | "Personal gateway" |
+| `{{site.operator}}` | Operator name | "Alice" |
+| `{{date}}` | Current date | "2025-10-24" |
+| `{{datetime}}` | Current date/time | "2025-10-24 15:30:00" |
+| `{{year}}` | Current year | "2025" |
+
+**Example with templates:**
+```yaml
+footers:
+  global:
+    enabled: true
+    content: |
+      This gateway is operated by {{site.operator}}
+      Last updated: {{datetime}}
+      © {{year}} - All rights reserved
+```
+
+**Status:** ✅ VERIFIED (Phase 18 - implemented in internal/presentation/loader.go)
+
+---
+
+## behavior
+
+Query behavior, content filtering, and sorting preferences.
+
+```yaml
+behavior:
+  content_filtering:
+    enabled: false             # Master switch for content filtering
+    min_reactions: 0           # Minimum reactions to display note
+    min_zap_sats: 0            # Minimum sats zapped to display note
+    min_engagement: 0          # Minimum combined engagement score
+    hide_no_interactions: false # Hide notes with no interactions
+
+  sort_preferences:
+    notes: "chronological"     # chronological|engagement|zaps|reactions
+    articles: "chronological"
+    replies: "chronological"
+    mentions: "chronological"
+
+  pagination:
+    enabled: false             # Enable pagination (future)
+    items_per_page: 50
+    max_pages: 10
+```
+
+### behavior.content_filtering
+
+Filter content based on engagement thresholds.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | bool | `false` | Enable content filtering |
+| `min_reactions` | int | `0` | Minimum reactions required |
+| `min_zap_sats` | int | `0` | Minimum sats zapped required |
+| `min_engagement` | int | `0` | Minimum combined engagement score |
+| `hide_no_interactions` | bool | `false` | Hide notes with zero interactions |
+
+**Example - show only popular content:**
+```yaml
+content_filtering:
+  enabled: true
+  min_reactions: 5        # At least 5 reactions
+  min_zap_sats: 1000      # At least 1000 sats zapped
+  min_engagement: 10      # Engagement score >= 10
+```
+
+**Engagement score calculation:**
+- 1 point per reaction
+- 1 point per 100 sats zapped
+- 2 points per reply
+
+**Example - hide unpopular content:**
+```yaml
+content_filtering:
+  enabled: true
+  hide_no_interactions: true  # Only show notes with some interaction
+```
+
+### behavior.sort_preferences
+
+Control how content is sorted in each section.
+
+| Field | Type | Default | Options |
+|-------|------|---------|---------|
+| `notes` | string | `chronological` | `chronological`, `engagement`, `zaps`, `reactions` |
+| `articles` | string | `chronological` | `chronological`, `engagement`, `zaps`, `reactions` |
+| `replies` | string | `chronological` | `chronological`, `engagement`, `zaps`, `reactions` |
+| `mentions` | string | `chronological` | `chronological`, `engagement`, `zaps`, `reactions` |
+
+**Sort modes:**
+- `chronological`: Newest first (by created_at timestamp)
+- `engagement`: Most engaged first (by total engagement score)
+- `zaps`: Most zapped first (by total sats)
+- `reactions`: Most reacted first (by reaction count)
+
+**Example - engagement-based sorting:**
+```yaml
+sort_preferences:
+  notes: "engagement"    # Show most engaged notes first
+  articles: "zaps"       # Show most zapped articles first
+  replies: "chronological" # Keep replies in chronological order
+```
+
+### behavior.pagination
+
+Pagination settings (future feature).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | bool | `false` | Enable pagination |
+| `items_per_page` | int | `50` | Items per page |
+| `max_pages` | int | `10` | Maximum pages to generate |
+
+**Note:** Pagination is planned but not yet implemented.
+
+**Status:** ✅ VERIFIED (Phase 18 - content filtering and sorting implemented)
 
 ---
 
