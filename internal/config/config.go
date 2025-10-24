@@ -176,9 +176,10 @@ type SyncScope struct {
 
 // Retention defines data retention policies
 type Retention struct {
-	KeepDays      int                `yaml:"keep_days"`
-	PruneOnStart  bool               `yaml:"prune_on_start"`
-	Advanced      *AdvancedRetention `yaml:"advanced,omitempty"` // Phase 20: Advanced retention
+	KeepDays           int                `yaml:"keep_days"`
+	PruneOnStart       bool               `yaml:"prune_on_start"`
+	PruneIntervalHours int                `yaml:"prune_interval_hours"` // 0 = disabled, >0 = prune every N hours
+	Advanced           *AdvancedRetention `yaml:"advanced,omitempty"`   // Phase 20: Advanced retention
 }
 
 // Inbox contains inbox aggregation settings

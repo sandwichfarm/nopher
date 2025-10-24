@@ -18,6 +18,10 @@ type RetentionManager struct {
 	logger          *Logger
 	retentionEngine *retention.Engine // Phase 20: Advanced retention
 	ownerPubkey     string
+
+	// Background worker control
+	stopChan chan struct{}
+	doneChan chan struct{}
 }
 
 // NewRetentionManager creates a new retention manager
@@ -27,6 +31,8 @@ func NewRetentionManager(st *storage.Storage, cfg *config.Retention, logger *Log
 		config:      cfg,
 		logger:      logger.WithComponent("retention"),
 		ownerPubkey: ownerPubkey,
+		stopChan:    make(chan struct{}),
+		doneChan:    make(chan struct{}),
 	}
 
 	// Initialize advanced retention engine if enabled
@@ -411,4 +417,158 @@ func (a *graphAdapter) IsMutual(ownerPubkey, targetPubkey string) bool {
 		return false
 	}
 	return node.Mutual
+}
+
+// ============================================================================
+// Background Re-evaluation Worker
+// ============================================================================
+
+// StartReEvaluationWorker starts the background re-evaluation worker
+func (r *RetentionManager) StartReEvaluationWorker(ctx context.Context) {
+	// Only start if advanced retention is enabled with re-evaluation configured
+	if r.config.Advanced == nil || !r.config.Advanced.Enabled {
+		return
+	}
+
+	if r.config.Advanced.Evaluation.ReEvalIntervalHrs <= 0 {
+		r.logger.Info("re-evaluation worker not started (interval not configured)")
+		return
+	}
+
+	interval := time.Duration(r.config.Advanced.Evaluation.ReEvalIntervalHrs) * time.Hour
+	r.logger.Info("starting re-evaluation worker",
+		"interval_hours", r.config.Advanced.Evaluation.ReEvalIntervalHrs)
+
+	go r.reEvaluationLoop(ctx, interval)
+}
+
+// reEvaluationLoop runs the periodic re-evaluation
+func (r *RetentionManager) reEvaluationLoop(ctx context.Context, interval time.Duration) {
+	defer close(r.doneChan)
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			r.logger.Info("re-evaluation worker stopped (context done)")
+			return
+		case <-r.stopChan:
+			r.logger.Info("re-evaluation worker stopped (shutdown)")
+			return
+		case <-ticker.C:
+			r.logger.Info("starting periodic re-evaluation")
+			if err := r.reEvaluateEvents(ctx); err != nil {
+				r.logger.Error("re-evaluation failed", "error", err)
+			}
+		}
+	}
+}
+
+// reEvaluateEvents re-evaluates events that need updating
+func (r *RetentionManager) reEvaluateEvents(ctx context.Context) error {
+	start := time.Now()
+
+	if r.retentionEngine == nil {
+		return fmt.Errorf("retention engine not initialized")
+	}
+
+	// Get events that need re-evaluation
+	cutoff := time.Now().Add(-time.Duration(r.config.Advanced.Evaluation.ReEvalIntervalHrs) * time.Hour)
+	batchSize := r.config.Advanced.Evaluation.BatchSize
+	if batchSize == 0 {
+		batchSize = 1000
+	}
+
+	eventIDs, err := r.storage.GetEventsForReEvaluation(ctx, cutoff, batchSize)
+	if err != nil {
+		return fmt.Errorf("failed to get events for re-evaluation: %w", err)
+	}
+
+	if len(eventIDs) == 0 {
+		r.logger.Info("no events need re-evaluation")
+		return nil
+	}
+
+	r.logger.Info("re-evaluating events", "count", len(eventIDs))
+
+	evaluated := 0
+	errors := 0
+
+	// Re-evaluate each event
+	for _, eventID := range eventIDs {
+		// Get the full event
+		filter := nostr.Filter{
+			IDs:   []string{eventID},
+			Limit: 1,
+		}
+
+		events, err := r.storage.QueryEvents(ctx, filter)
+		if err != nil || len(events) == 0 {
+			errors++
+			continue
+		}
+
+		// Re-evaluate retention
+		if err := r.EvaluateEvent(ctx, events[0]); err != nil {
+			r.logger.Error("failed to re-evaluate event", "event_id", eventID, "error", err)
+			errors++
+			continue
+		}
+
+		evaluated++
+	}
+
+	r.logger.Info("re-evaluation complete",
+		"evaluated", evaluated,
+		"errors", errors,
+		"duration_ms", time.Since(start).Milliseconds())
+
+	return nil
+}
+
+// Stop stops the re-evaluation worker gracefully
+func (r *RetentionManager) Stop() {
+	close(r.stopChan)
+	<-r.doneChan
+}
+
+// ============================================================================
+// Background Pruning Scheduler
+// ============================================================================
+
+// StartPruningScheduler starts the background pruning scheduler
+// This runs periodic pruning independent of re-evaluation
+func (r *RetentionManager) StartPruningScheduler(ctx context.Context, interval time.Duration) {
+	if interval <= 0 {
+		r.logger.Info("pruning scheduler not started (interval not configured)")
+		return
+	}
+
+	r.logger.Info("starting pruning scheduler", "interval", interval)
+
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				r.logger.Info("pruning scheduler stopped (context done)")
+				return
+			case <-r.stopChan:
+				r.logger.Info("pruning scheduler stopped (shutdown)")
+				return
+			case <-ticker.C:
+				r.logger.Info("starting scheduled pruning")
+				deleted, err := r.PruneOldEvents(ctx)
+				if err != nil {
+					r.logger.Error("scheduled pruning failed", "error", err)
+				} else {
+					r.logger.Info("scheduled pruning complete", "deleted", deleted)
+				}
+			}
+		}
+	}()
 }

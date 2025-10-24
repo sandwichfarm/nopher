@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/sandwich/nophr/internal/aggregates"
 	"github.com/sandwich/nophr/internal/config"
@@ -113,6 +114,18 @@ func run(cfg *config.Config) error {
 			fmt.Printf("  ✓ Startup pruning complete: %d events deleted\n", deleted)
 		}
 	}
+
+	// Start re-evaluation worker if advanced retention is enabled
+	retentionMgr.StartReEvaluationWorker(ctx)
+
+	// Start periodic pruning scheduler if configured
+	if cfg.Sync.Retention.PruneIntervalHours > 0 {
+		interval := time.Duration(cfg.Sync.Retention.PruneIntervalHours) * time.Hour
+		retentionMgr.StartPruningScheduler(ctx, interval)
+		fmt.Printf("  Periodic pruning enabled: every %d hours\n", cfg.Sync.Retention.PruneIntervalHours)
+	}
+
+	defer retentionMgr.Stop()
 
 	// Initialize sync engine if enabled
 	var syncEngine *sync.Engine
