@@ -10,7 +10,7 @@ site:
   description: "Testing Nopher integration"
 
 identity:
-  npub: "npub1test1234567890abcdefghijklmnopqrstuvwxyz123456789"
+  npub: "npub1uac67zc9er54ln0kl6e4qp2y6ta3enfcg7ywnayshvlw9r5w6ehsqq99rx"
   nsec: ""
 
 storage:
@@ -50,7 +50,7 @@ relays:
     enabled: false
 
 sync:
-  enabled: false
+  enabled: true
   scope:
     mode: self
   interval_minutes: 60

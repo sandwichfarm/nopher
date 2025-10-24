@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/nbd-wtf/go-nostr"
+	"github.com/nbd-wtf/go-nostr/nip19"
 	"github.com/sandwich/nopher/internal/config"
 	internalnostr "github.com/sandwich/nopher/internal/nostr"
 	"github.com/sandwich/nopher/internal/storage"
@@ -109,9 +110,21 @@ func (e *Engine) Stop() {
 	e.wg.Wait()
 }
 
+// getOwnerPubkey decodes the npub to hex pubkey
+func (e *Engine) getOwnerPubkey() (string, error) {
+	if _, hex, err := nip19.Decode(e.config.Identity.Npub); err != nil {
+		return "", fmt.Errorf("failed to decode npub: %w", err)
+	} else {
+		return hex.(string), nil
+	}
+}
+
 // bootstrap performs initial discovery and graph building
 func (e *Engine) bootstrap() error {
-	ownerPubkey := e.config.Identity.Npub
+	ownerPubkey, err := e.getOwnerPubkey()
+	if err != nil {
+		return err
+	}
 
 	// Step 1: Fetch owner's profile, contacts, and relay hints from seeds
 	if err := e.discovery.BootstrapFromSeeds(e.ctx, ownerPubkey); err != nil {
@@ -179,7 +192,10 @@ func (e *Engine) continuousSync() {
 
 // syncOnce performs a single sync iteration
 func (e *Engine) syncOnce() error {
-	ownerPubkey := e.config.Identity.Npub
+	ownerPubkey, err := e.getOwnerPubkey()
+	if err != nil {
+		return err
+	}
 
 	// Get authors in scope
 	authors, err := e.graph.GetAuthorsInScope(e.ctx, ownerPubkey)
@@ -322,7 +338,10 @@ func (e *Engine) periodicRefresh() {
 
 // refreshReplaceables refreshes replaceable events (kinds 0, 3, 10002)
 func (e *Engine) refreshReplaceables() error {
-	ownerPubkey := e.config.Identity.Npub
+	ownerPubkey, err := e.getOwnerPubkey()
+	if err != nil {
+		return err
+	}
 
 	// Get authors in scope
 	authors, err := e.graph.GetAuthorsInScope(e.ctx, ownerPubkey)
