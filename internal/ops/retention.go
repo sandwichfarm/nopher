@@ -5,34 +5,71 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nbd-wtf/go-nostr"
 	"github.com/sandwich/nophr/internal/config"
+	"github.com/sandwich/nophr/internal/retention"
 	"github.com/sandwich/nophr/internal/storage"
 )
 
 // RetentionManager handles data retention and pruning
 type RetentionManager struct {
-	storage *storage.Storage
-	config  *config.Retention
-	logger  *Logger
+	storage         *storage.Storage
+	config          *config.Retention
+	logger          *Logger
+	retentionEngine *retention.Engine // Phase 20: Advanced retention
+	ownerPubkey     string
 }
 
 // NewRetentionManager creates a new retention manager
-func NewRetentionManager(st *storage.Storage, cfg *config.Retention, logger *Logger) *RetentionManager {
-	return &RetentionManager{
-		storage: st,
-		config:  cfg,
-		logger:  logger.WithComponent("retention"),
+func NewRetentionManager(st *storage.Storage, cfg *config.Retention, logger *Logger, ownerPubkey string) *RetentionManager {
+	rm := &RetentionManager{
+		storage:     st,
+		config:      cfg,
+		logger:      logger.WithComponent("retention"),
+		ownerPubkey: ownerPubkey,
 	}
+
+	// Initialize advanced retention engine if enabled
+	if cfg.Advanced != nil && cfg.Advanced.Enabled {
+		// Create adapters for storage and social graph interfaces
+		storageAdapter := &storageAdapter{storage: st}
+		graphAdapter := &graphAdapter{storage: st}
+
+		rm.retentionEngine = retention.NewEngine(
+			cfg.Advanced,
+			storageAdapter,
+			graphAdapter,
+			ownerPubkey,
+		)
+
+		logger.Info("advanced retention enabled",
+			"mode", cfg.Advanced.Mode,
+			"rules", len(cfg.Advanced.Rules))
+	}
+
+	return rm
 }
 
-// PruneOldEvents deletes events older than the retention period
+// PruneOldEvents deletes events based on retention rules
+// Routes to advanced or simple pruning based on configuration
 func (r *RetentionManager) PruneOldEvents(ctx context.Context) (int64, error) {
+	// Check if advanced retention is enabled
+	if r.config.Advanced != nil && r.config.Advanced.Enabled && r.retentionEngine != nil {
+		return r.PruneAdvanced(ctx)
+	}
+
+	// Fallback to simple time-based pruning
+	return r.pruneSimple(ctx)
+}
+
+// pruneSimple performs simple time-based pruning (original implementation)
+func (r *RetentionManager) pruneSimple(ctx context.Context) (int64, error) {
 	start := time.Now()
 
 	// Calculate cutoff time
 	cutoff := time.Now().AddDate(0, 0, -r.config.KeepDays)
 
-	r.logger.Info("starting retention pruning",
+	r.logger.Info("starting simple retention pruning",
 		"cutoff", cutoff.Format(time.RFC3339),
 		"keep_days", r.config.KeepDays)
 
@@ -171,4 +208,207 @@ func (p *PeriodicPruner) Start(ctx context.Context) {
 // Stop stops the periodic pruner
 func (p *PeriodicPruner) Stop() {
 	close(p.stopChan)
+}
+
+// ============================================================================
+// Phase 20: Advanced Retention Methods
+// ============================================================================
+
+// PruneAdvanced performs advanced retention pruning using rules and caps
+func (r *RetentionManager) PruneAdvanced(ctx context.Context) (int64, error) {
+	if r.retentionEngine == nil {
+		return 0, fmt.Errorf("advanced retention engine not initialized")
+	}
+
+	start := time.Now()
+	r.logger.Info("starting advanced retention pruning")
+
+	totalDeleted := int64(0)
+
+	// Step 1: Prune expired events (based on retention_metadata)
+	expired, err := r.pruneExpiredEvents(ctx)
+	if err != nil {
+		r.logger.Error("failed to prune expired events", "error", err)
+	} else {
+		totalDeleted += expired
+		r.logger.Info("pruned expired events", "count", expired)
+	}
+
+	// Step 2: Enforce global caps
+	if r.config.Advanced.GlobalCaps.MaxTotalEvents > 0 || r.config.Advanced.GlobalCaps.MaxStorageMB > 0 {
+		capped, err := r.enforceGlobalCaps(ctx)
+		if err != nil {
+			r.logger.Error("failed to enforce global caps", "error", err)
+		} else {
+			totalDeleted += capped
+			r.logger.Info("enforced global caps", "deleted", capped)
+		}
+	}
+
+	r.logger.Info("advanced retention pruning completed",
+		"total_deleted", totalDeleted,
+		"duration_ms", time.Since(start).Milliseconds())
+
+	return totalDeleted, nil
+}
+
+// pruneExpiredEvents deletes events that have passed their retain_until date
+func (r *RetentionManager) pruneExpiredEvents(ctx context.Context) (int64, error) {
+	// Get expired event IDs from retention_metadata
+	expiredIDs, err := r.storage.GetExpiredEvents(ctx, 1000) // Process in batches
+	if err != nil {
+		return 0, fmt.Errorf("failed to get expired events: %w", err)
+	}
+
+	if len(expiredIDs) == 0 {
+		return 0, nil
+	}
+
+	// Delete events
+	deleted := int64(0)
+	for _, eventID := range expiredIDs {
+		// Delete event from storage
+		if err := r.storage.DeleteEvent(ctx, eventID); err != nil {
+			r.logger.Error("failed to delete expired event", "event_id", eventID, "error", err)
+			continue
+		}
+		deleted++
+	}
+
+	return deleted, nil
+}
+
+// enforceGlobalCaps enforces storage caps by deleting lowest-priority events
+func (r *RetentionManager) enforceGlobalCaps(ctx context.Context) (int64, error) {
+	caps := r.config.Advanced.GlobalCaps
+
+	// Check if we're over the total events cap
+	totalEvents, err := r.storage.CountEvents(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count events: %w", err)
+	}
+
+	eventsToDelete := 0
+	if caps.MaxTotalEvents > 0 && int(totalEvents) > caps.MaxTotalEvents {
+		eventsToDelete = int(totalEvents) - caps.MaxTotalEvents
+		r.logger.Info("total events cap exceeded",
+			"current", totalEvents,
+			"max", caps.MaxTotalEvents,
+			"to_delete", eventsToDelete)
+	}
+
+	if eventsToDelete == 0 {
+		return 0, nil
+	}
+
+	// Get lowest-priority events by score
+	candidates, err := r.storage.GetEventsByScore(ctx, eventsToDelete)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get events by score: %w", err)
+	}
+
+	// Delete events
+	deleted := int64(0)
+	for _, meta := range candidates {
+		if err := r.storage.DeleteEvent(ctx, meta.EventID); err != nil {
+			r.logger.Error("failed to delete low-priority event", "event_id", meta.EventID, "error", err)
+			continue
+		}
+		deleted++
+	}
+
+	return deleted, nil
+}
+
+// EvaluateEvent evaluates retention for a single event
+func (r *RetentionManager) EvaluateEvent(ctx context.Context, event *nostr.Event) error {
+	if r.retentionEngine == nil {
+		return nil // Advanced retention not enabled, skip
+	}
+
+	decision, err := r.retentionEngine.EvaluateEvent(ctx, event)
+	if err != nil {
+		return fmt.Errorf("failed to evaluate event: %w", err)
+	}
+
+	// Store retention metadata
+	meta := &storage.RetentionMetadata{
+		EventID:         decision.EventID,
+		RuleName:        decision.RuleName,
+		RulePriority:    decision.RulePriority,
+		RetainUntil:     decision.RetainUntil,
+		LastEvaluatedAt: time.Now(),
+		Score:           decision.Score,
+		Protected:       decision.Protected,
+	}
+
+	if err := r.storage.StoreRetentionMetadata(ctx, meta); err != nil {
+		return fmt.Errorf("failed to store retention metadata: %w", err)
+	}
+
+	return nil
+}
+
+// ============================================================================
+// Adapters for retention engine interfaces
+// ============================================================================
+
+// storageAdapter adapts storage.Storage to retention.StorageReader
+type storageAdapter struct {
+	storage *storage.Storage
+}
+
+func (a *storageAdapter) GetAggregateByID(eventID string) (*retention.AggregateData, error) {
+	ctx := context.Background()
+	agg, err := a.storage.GetAggregate(ctx, eventID)
+	if err != nil {
+		return nil, err
+	}
+	if agg == nil {
+		return &retention.AggregateData{}, nil
+	}
+
+	return &retention.AggregateData{
+		ReplyCount:    agg.ReplyCount,
+		ReactionTotal: agg.ReactionTotal,
+		ZapSatsTotal:  agg.ZapSatsTotal,
+	}, nil
+}
+
+func (a *storageAdapter) CountEventsByAuthor(pubkey string) (int, error) {
+	// This would need a new storage method, for now return 0
+	return 0, nil
+}
+
+func (a *storageAdapter) CountEventsByKind(kind int) (int, error) {
+	// This would need a new storage method, for now return 0
+	return 0, nil
+}
+
+// graphAdapter adapts storage.Storage to retention.SocialGraphReader
+type graphAdapter struct {
+	storage *storage.Storage
+}
+
+func (a *graphAdapter) GetDistance(ownerPubkey, targetPubkey string) int {
+	ctx := context.Background()
+	// Query graph_nodes table
+	node, err := a.storage.GetGraphNode(ctx, ownerPubkey, targetPubkey)
+	if err != nil || node == nil {
+		return -1 // Not in graph
+	}
+	return node.Depth
+}
+
+func (a *graphAdapter) IsFollowing(ownerPubkey, targetPubkey string) bool {
+	return a.GetDistance(ownerPubkey, targetPubkey) == 1
+}
+
+func (a *graphAdapter) IsMutual(ownerPubkey, targetPubkey string) bool {
+	ctx := context.Background()
+	node, err := a.storage.GetGraphNode(ctx, ownerPubkey, targetPubkey)
+	if err != nil || node == nil {
+		return false
+	}
+	return node.Mutual
 }

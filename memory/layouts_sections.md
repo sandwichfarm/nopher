@@ -137,11 +137,10 @@ sectionManager.RegisterSection(&sections.Section{
 })
 ```
 
-Example 2: Future YAML Configuration (NOT YET IMPLEMENTED)
+Example 2: YAML Configuration (IMPLEMENTED)
 
 ```yaml
-# This is the planned YAML configuration format
-# Currently sections must be registered in Go code
+# Sections can be configured via YAML in your nophr config file
 sections:
   diy-preview:
     path: "/"
@@ -212,7 +211,7 @@ Implementation Notes
 - Advanced filter fields (is_reply, mentions, etc.)
 
 📝 **Usage Pattern**:
-1. Register sections in Go code (e.g., in main() or init())
+1. Define sections in YAML config file (or register in Go code for advanced use cases)
 2. Sections with same Path are rendered together, sorted by Order
 3. Preview sections use small Limit (3-5) and MoreLink
 4. Full sections use larger Limit (9 for Gopher pagination)

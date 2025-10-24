@@ -2,13 +2,14 @@
 
 **Status**: ✅ Complete
 **Completed**: 2025-10-24 (after Phase 19 completion)
-**Updated**: 2025-10-24 (added Gemini protocol parity)
+**Updated**: 2025-10-24 (added Gemini protocol parity + YAML configuration)
 
 ## Overview
 
-After completing Phase 19, we added two major features:
+After completing Phase 19, we added three major features:
 1. **NIP-19 Entity Resolution** - Parse and resolve `nostr:` URIs to human-readable names
 2. **Sections System Enhancements** - Support multiple sections per path with "more" links
+3. **YAML Configuration for Sections** - Define sections in config files without Go code
 
 ## Deliverables
 
@@ -358,13 +359,76 @@ Operators can now:
 4. **Curated feeds**: Following + mutual + foaf sections
 5. **Tag-based navigation**: Each tag gets its own section
 
+### 3. YAML Configuration for Sections ✅
+
+Allow sections to be configured entirely via YAML without writing Go code.
+
+**Files Created**:
+- `internal/sections/loader.go` - Convert YAML config to Section instances
+
+**Config Structure**:
+```yaml
+sections:
+  - name: diy-preview
+    path: /
+    title: Recent DIY Projects
+    order: 1
+    limit: 5
+    filters:
+      tags:
+        t: [diy]
+    show_dates: true
+    show_authors: true
+    more_link:
+      text: More DIY posts
+      section_ref: diy-full
+
+  - name: diy-full
+    path: /diy
+    title: All DIY Projects
+    limit: 9
+    filters:
+      tags:
+        t: [diy]
+    show_dates: true
+    show_authors: true
+    sort_by: created_at
+    sort_order: desc
+```
+
+**Key Features**:
+- Define sections in YAML config file
+- Time filtering with RFC3339 timestamps or durations ("-24h", "-7d")
+- Automatic conversion to Section instances
+- Loaded at startup for both Gopher and Gemini servers
+- No Go code required for basic section configuration
+
+**Implementation**:
+```go
+// Load sections from config
+if len(cfg.Sections) > 0 {
+    if err := sections.LoadFromConfig(server.GetSectionManager(), cfg.Sections); err != nil {
+        return fmt.Errorf("failed to load sections: %w", err)
+    }
+}
+```
+
+**Time Parsing**:
+```go
+// Supports multiple formats:
+since: "2024-01-01T00:00:00Z"  // RFC3339
+since: "-24h"                   // 24 hours ago
+since: "-7d"                    // 7 days ago
+```
+
 ## Files Summary
 
-### New Files (2)
+### New Files (3)
 - `internal/entities/resolver.go` - NIP-19 entity resolution
 - `internal/entities/formatters.go` - Protocol-specific formatters
+- `internal/sections/loader.go` - YAML config to Section conversion
 
-### Modified Files (7)
+### Modified Files (10)
 - `internal/sections/sections.go` - MoreLink, Order, GetSectionsByPath()
 - `internal/gopher/router.go` - handleSections(), sections check
 - `internal/gopher/server.go` - Added sectionManager field
@@ -372,9 +436,13 @@ Operators can now:
 - `internal/gemini/router.go` - handleSections(), sections check
 - `internal/gemini/server.go` - Added sectionManager field
 - `internal/gemini/renderer.go` - Entity resolution integration
+- `internal/config/config.go` - Added SectionConfig structs
+- `cmd/nophr/main.go` - Load sections from config
+- `configs/nophr.example.yaml` - Added section examples
 
-### Documentation Files (1)
+### Documentation Files (2)
 - `memory/PHASE19_ADDITIONS.md` - This document
+- `memory/layouts_sections.md` - Updated to mark YAML as implemented
 
 ## Completion Criteria
 
@@ -388,6 +456,9 @@ All requirements met:
 - [x] "More" links work in sections
 - [x] Multiple sections per path supported
 - [x] Section ordering works correctly
+- [x] YAML configuration implemented
+- [x] Time duration parsing working ("-24h", "-7d")
+- [x] Config loaded at startup
 - [x] Backward compatibility maintained
 - [x] Build succeeds
 - [x] No regressions

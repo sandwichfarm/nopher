@@ -176,8 +176,9 @@ type SyncScope struct {
 
 // Retention defines data retention policies
 type Retention struct {
-	KeepDays      int  `yaml:"keep_days"`
-	PruneOnStart  bool `yaml:"prune_on_start"`
+	KeepDays      int                `yaml:"keep_days"`
+	PruneOnStart  bool               `yaml:"prune_on_start"`
+	Advanced      *AdvancedRetention `yaml:"advanced,omitempty"` // Phase 20: Advanced retention
 }
 
 // Inbox contains inbox aggregation settings
@@ -853,6 +854,13 @@ func Validate(cfg *Config) error {
 		}
 		if cfg.Behavior.Pagination.MaxPages < 1 || cfg.Behavior.Pagination.MaxPages > 100 {
 			return fmt.Errorf("behavior.pagination.max_pages must be between 1 and 100")
+		}
+	}
+
+	// Validate advanced retention (Phase 20)
+	if cfg.Sync.Retention.Advanced != nil {
+		if err := cfg.Sync.Retention.Advanced.Validate(); err != nil {
+			return fmt.Errorf("advanced retention validation failed: %w", err)
 		}
 	}
 

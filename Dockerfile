@@ -15,7 +15,7 @@ COPY . .
 RUN apk add --no-cache gcc musl-dev sqlite-dev
 RUN CGO_ENABLED=1 GOOS=linux go build -a \
     -ldflags="-s -w" \
-    -o nopher cmd/nopher/main.go
+    -o nopher cmd/nophr/main.go
 
 # Runtime stage
 FROM alpine:latest

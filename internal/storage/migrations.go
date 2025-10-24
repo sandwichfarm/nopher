@@ -55,6 +55,24 @@ func (s *Storage) runMigrations(ctx context.Context) error {
 			zap_sats_total INTEGER NOT NULL DEFAULT 0,
 			last_interaction_at INTEGER NOT NULL
 		)`,
+
+		// retention_metadata: Advanced retention metadata (Phase 20)
+		`CREATE TABLE IF NOT EXISTS retention_metadata (
+			event_id TEXT PRIMARY KEY,
+			rule_name TEXT NOT NULL,
+			rule_priority INTEGER NOT NULL,
+			retain_until INTEGER,
+			last_evaluated_at INTEGER NOT NULL,
+			score INTEGER,
+			protected BOOLEAN DEFAULT 0,
+			FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_retention_metadata_retain_until
+		 ON retention_metadata(retain_until)`,
+		`CREATE INDEX IF NOT EXISTS idx_retention_metadata_score
+		 ON retention_metadata(score)`,
+		`CREATE INDEX IF NOT EXISTS idx_retention_metadata_protected
+		 ON retention_metadata(protected)`,
 	}
 
 	for i, migration := range migrations {
