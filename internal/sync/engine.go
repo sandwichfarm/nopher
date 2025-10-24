@@ -68,7 +68,7 @@ func New(ctx context.Context, cfg *config.Config, st *storage.Storage, client *i
 		cursors:       cursors,
 		ctx:           engineCtx,
 		cancel:        cancel,
-		eventChan:     make(chan *nostr.Event, 1000),
+		eventChan:     make(chan *nostr.Event, 5000), // Tier 2: Larger buffer for burst handling
 		eventCache:    NewEventCache(5000),        // Tier 1: Cache last 5000 event IDs
 		aggregateChan: make(chan *AggregateUpdate, 1000), // Tier 2: Async aggregate queue
 	}
@@ -97,7 +97,7 @@ func NewEngine(st *storage.Storage, cfg *config.Config) *Engine {
 		cursors:       cursors,
 		ctx:           engineCtx,
 		cancel:        cancel,
-		eventChan:     make(chan *nostr.Event, 1000),
+		eventChan:     make(chan *nostr.Event, 5000), // Tier 2: Larger buffer for burst handling
 		eventCache:    NewEventCache(5000),        // Tier 1: Cache last 5000 event IDs
 		aggregateChan: make(chan *AggregateUpdate, 1000), // Tier 2: Async aggregate queue
 	}
@@ -110,9 +110,16 @@ func (e *Engine) Start() error {
 		return fmt.Errorf("bootstrap failed: %w", err)
 	}
 
-	// Start event ingestion worker
-	e.wg.Add(1)
-	go e.ingestEvents()
+	// Tier 2 Optimization: Start event ingestion workers for parallel processing
+	workerCount := e.config.Sync.Performance.Workers
+	if workerCount <= 0 {
+		workerCount = 4 // Safety fallback
+	}
+	fmt.Printf("[SYNC] Starting %d event processing workers\n", workerCount)
+	for i := 0; i < workerCount; i++ {
+		e.wg.Add(1)
+		go e.eventWorker(i + 1)
+	}
 
 	// Tier 2 Optimization: Start async aggregate worker
 	e.wg.Add(1)
@@ -376,26 +383,26 @@ func (e *Engine) subscribeRelay(relay string, filters []nostr.Filter) {
 	}
 }
 
-// ingestEvents processes events from the event channel
-func (e *Engine) ingestEvents() {
+// eventWorker processes events from the event channel (Tier 2: parallel processing)
+func (e *Engine) eventWorker(workerID int) {
 	defer e.wg.Done()
 
-	fmt.Printf("[SYNC] Event ingestion worker started\n")
+	fmt.Printf("[SYNC] Worker %d started\n", workerID)
 	eventCount := 0
 
 	for event := range e.eventChan {
 		eventCount++
 		if eventCount%10 == 1 {
-			fmt.Printf("[SYNC] Processing event %d (kind %d, author: %s)\n", eventCount, event.Kind, event.PubKey[:16]+"...")
+			fmt.Printf("[SYNC] Worker %d: Processing event %d (kind %d, author: %s)\n", workerID, eventCount, event.Kind, event.PubKey[:16]+"...")
 		}
 
 		if err := e.processEvent(event); err != nil {
 			// Log error but continue
-			fmt.Printf("[SYNC] ⚠ Event processing error: %v\n", err)
+			fmt.Printf("[SYNC] ⚠ Worker %d: Event processing error: %v\n", workerID, err)
 		}
 	}
 
-	fmt.Printf("[SYNC] Event ingestion worker stopped (processed %d events)\n", eventCount)
+	fmt.Printf("[SYNC] Worker %d stopped (processed %d events)\n", workerID, eventCount)
 }
 
 // processEvent handles a single event

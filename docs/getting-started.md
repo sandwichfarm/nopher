@@ -30,7 +30,7 @@ This will:
 - Install to `/usr/local/bin/nophr`
 - Create example configuration
 
-**For more installation options** (Docker, packages, etc.), see [INSTALLATION.md](INSTALLATION.md).
+**For more installation options** (Docker, packages, etc.), see [installation.md](installation.md).
 
 ### Build from Source
 

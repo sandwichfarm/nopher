@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Go 1.21 or later
+- Go 1.25 or later
 - SQLite3 command-line tool
 - netcat (`nc`) for Gopher protocol testing
 - OpenSSL for Gemini protocol testing (optional)

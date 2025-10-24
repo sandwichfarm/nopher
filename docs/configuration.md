@@ -27,7 +27,6 @@ nophr --config nophr.yaml
 - [discovery](#discovery) - Relay discovery (NIP-65)
 - [sync](#sync) - Event synchronization scope
 - [inbox](#inbox) - Interaction aggregation
-- [outbox](#outbox) - Publishing settings
 - [storage](#storage) - Database backend
 - [rendering](#rendering) - Protocol-specific rendering
 - [caching](#caching) - Response caching
@@ -98,10 +97,7 @@ identity:
   npub: "npub1a2b3c4d5e6f7g8h9i0j..."
 ```
 
-```bash
-# Set private key for publishing (optional)
-export NOPHR_NSEC="nsec1x2y3z4..."
-```
+ 
 
 ---
 
@@ -571,31 +567,7 @@ inbox:
 
 ---
 
-## outbox
-
  
-
-```yaml
-outbox:
-  publish:
-    notes: true
-    reactions: false
-    zaps: false
-  draft_dir: "./content"
-  auto_sign: false
-```
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `publish.notes` | bool | `true` | Publish notes (kind 1) |
-| `publish.reactions` | bool | `false` | Publish reactions (kind 7) |
-| `publish.zaps` | bool | `false` | Publish zaps (kind 9735) |
-| `draft_dir` | string | `./content` | Directory for draft notes |
-| `auto_sign` | bool | `false` | Auto-sign with nsec |
-
- 
-
----
 
 ## storage
 
@@ -1395,7 +1367,7 @@ Monitor these metrics:
 - Deny list blocks
 - Content filter matches
 
-**See also:** [SECURITY.md](SECURITY.md) for comprehensive security guide
+**See also:** [security.md](security.md) for comprehensive security guide
 
  
 

@@ -73,6 +73,8 @@ sync:
   retention:
     keep_days: 365
     prune_on_start: true
+  performance:
+    workers: 4  # Number of parallel event processing workers (default: 4)
 
 inbox:
   include_replies: true

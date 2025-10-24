@@ -110,10 +110,16 @@ type Discovery struct {
 
 // Sync contains synchronization settings
 type Sync struct {
-	Enabled   bool      `yaml:"enabled"`
-	Kinds     SyncKinds `yaml:"kinds"`
-	Scope     SyncScope `yaml:"scope"`
-	Retention Retention `yaml:"retention"`
+	Enabled     bool            `yaml:"enabled"`
+	Kinds       SyncKinds       `yaml:"kinds"`
+	Scope       SyncScope       `yaml:"scope"`
+	Retention   Retention       `yaml:"retention"`
+	Performance SyncPerformance `yaml:"performance"`
+}
+
+// SyncPerformance contains performance tuning options
+type SyncPerformance struct {
+	Workers int `yaml:"workers"` // Number of parallel event processing workers (default: 4)
 }
 
 // SyncKinds defines granular control over which event kinds to sync
@@ -445,6 +451,11 @@ func applyDefaults(cfg *Config) {
 	if cfg.Layout.Pages == nil {
 		cfg.Layout.Pages = make(map[string]interface{})
 	}
+
+	// Apply Sync performance defaults
+	if cfg.Sync.Performance.Workers == 0 {
+		cfg.Sync.Performance.Workers = defaults.Sync.Performance.Workers
+	}
 }
 
 // Load reads and parses a configuration file
@@ -579,6 +590,9 @@ func Default() *Config {
 			Retention: Retention{
 				KeepDays:     365,
 				PruneOnStart: true,
+			},
+			Performance: SyncPerformance{
+				Workers: 4, // Default: 4 parallel event processing workers
 			},
 		},
 		Inbox: Inbox{

@@ -120,7 +120,7 @@ seeds:
 
 **Parsing:**
 - Read relays: used to fetch that author's events
-- Write relays: used when publishing
+- Write relays: reserved for write operations
 
 ### relay_hints Table
 

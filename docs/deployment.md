@@ -18,7 +18,7 @@ curl -sSL https://nophr.io/install.sh | sh
 # - Create example configuration
 ```
 
-**For detailed installation options** (Docker, packages, building from source), see [INSTALLATION.md](INSTALLATION.md).
+**For detailed installation options** (Docker, packages, building from source), see [installation.md](installation.md).
 
 ## Prerequisites
 

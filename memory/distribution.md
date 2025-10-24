@@ -403,7 +403,7 @@ nfpms:
       - src: configs/nophr.example.yaml
         dst: /etc/nophr/nophr.example.yaml
         type: config
-      - src: scripts/nophr.service
+      - src: scripts/systemd/nophr.service
         dst: /etc/systemd/system/nophr.service
         type: config
     scripts:

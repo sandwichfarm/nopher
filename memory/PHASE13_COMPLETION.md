@@ -173,7 +173,7 @@ func GetExampleConfig() ([]byte, error) {
 
 ### 8. Installation Documentation ✅
 
-**File**: `docs/INSTALLATION.md`
+**File**: `docs/installation.md`
 
 **Sections**:
 1. **Quick Install**: One-line installer
@@ -269,7 +269,7 @@ nophr/
 ├── configs/
 │   └── nophr.example.yaml   # Standalone example config
 └── docs/
-    ├── INSTALLATION.md       # Installation guide
+    ├── installation.md       # Installation guide
     └── PHASE13_COMPLETION.md # This document
 ```
 
