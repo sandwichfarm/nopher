@@ -578,6 +578,106 @@ page, _ := manager.GetPage(ctx, "notes", 1)
 
 ---
 
+### 10. Security
+
+**Location:** `internal/security/`
+
+**Purpose:** Defense-in-depth security with deny lists, rate limiting, input validation, content filtering, and secret management.
+
+**Architecture:**
+```
+┌─────────────────────────┐
+│   Security Manager      │
+└───────┬─────────────────┘
+        │
+    ┌───┴───────────────────┐
+    ↓           ↓           ↓
+┌──────────┐ ┌──────────┐ ┌──────────┐
+│DenyList  │ │RateLimit │ │Validator │
+└──────────┘ └──────────┘ └──────────┘
+    ↓           ↓           ↓
+┌──────────────────────────┐
+│   Content Filter         │
+└──────────────────────────┘
+    ↓
+┌──────────────────────────┐
+│   Secret Manager         │
+└──────────────────────────┘
+```
+
+**Key files:**
+- `denylist.go` - Pubkey and content blocking
+- `ratelimit.go` - Token bucket rate limiting
+- `validation.go` - Input validation and sanitization
+- `secrets.go` - Secure secret handling
+- `security_test.go` - Comprehensive tests
+
+**Features:**
+- **Deny List**: Block specific pubkeys, thread-safe, dynamic add/remove
+- **Content Filter**: Banned words filtering, case-sensitive/insensitive
+- **Rate Limiting**: Token bucket algorithm, per-client, per-protocol limits
+- **Input Validation**: CRLF/null byte/traversal protection, XSS prevention
+- **Secret Management**: Environment-only loading, memory-only storage, automatic redaction
+- **Combined Filtering**: Deny list + content filter integration
+
+**Defense layers:**
+```
+Request → Rate Limiter → Input Validator → Deny List → Content Filter → Process
+```
+
+**Security protections:**
+- **CRLF injection**: `\r\n` removed from all inputs
+- **Null byte injection**: `\x00` removed
+- **Directory traversal**: `..` sequences blocked
+- **XSS attacks**: Script tags sanitized
+- **DoS attacks**: Rate limiting per client
+- **Abuse prevention**: Deny list for bad actors
+- **Content moderation**: Banned words filtering
+
+**Rate limiting algorithm:**
+```
+Token Bucket:
+- Each client gets N tokens (burst_size)
+- Each request consumes 1 token
+- Tokens refill at rate R (requests_per_minute / 60 per second)
+- When bucket empty, requests denied until refill
+- Old buckets auto-cleaned up after inactivity
+```
+
+**Secret management:**
+```go
+// Secrets never touch disk
+sm := security.NewSecretManager()
+nsec, _ := sm.LoadNsecFromEnv()  // NOPHER_NSEC only
+
+// Automatic redaction
+ss := security.NewSecureString("secret123")
+fmt.Println(ss.String())  // "secr...e123" (redacted)
+actual := ss.Get()         // "secret123" (actual value)
+
+// Safe logging
+logger := security.NewSafeLogger()
+safe := logger.SanitizeMessage(msg)  // Redacts any secrets
+```
+
+**Integration:**
+- All protocol servers use validator for input
+- Rate limiter middleware applied per-protocol
+- Deny list filters events before rendering
+- Content filter applied after deny list
+- Secret manager handles nsec loading
+
+**Performance:**
+- Thread-safe with minimal lock contention
+- RWMutex for concurrent reads (deny list)
+- Per-client buckets for rate limiting
+- Automatic cleanup of stale data
+- Cache-friendly validation
+
+**Status:** ✅ Phase 14 complete
+
+---
+
 ## Code Organization
 
 ```
@@ -637,6 +737,13 @@ nopher/
 │   │   ├── archives.go      # Archive generation
 │   │   ├── sections_test.go # Tests
 │   │   └── filters_test.go  # Filter tests
+│   │
+│   ├── security/            # Security features
+│   │   ├── denylist.go      # Pubkey blocking
+│   │   ├── ratelimit.go     # Rate limiting
+│   │   ├── validation.go    # Input validation
+│   │   ├── secrets.go       # Secret management
+│   │   └── security_test.go # Security tests
 │   │
 │   ├── markdown/            # Markdown conversion
 │   │   ├── parser.go        # AST parsing
@@ -1026,13 +1133,6 @@ func (s *Server) Start() {
 - Publish to write relays
 - Retry/backoff logic
 - Draft management
-
-### Phase 14: Security
-
-- Deny-list enforcement
-- Rate limiting
-- Input validation
-- Privilege separation
 
 ### Phase 15: Testing
 

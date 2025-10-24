@@ -163,8 +163,11 @@ The generated configuration includes many sections:
 | `caching` | Response caching (memory/Redis) | ✅ Verified |
 | `logging` | Log level configuration | ✅ Verified |
 | `layout` | Sections and layouts (filtering/pagination/archives) | ✅ Verified |
+| `security` | Security features (deny lists, rate limiting, validation) | ✅ Verified |
 
 For complete configuration documentation, see [configuration.md](configuration.md).
+
+For security guidance, see [SECURITY.md](SECURITY.md).
 
 ## Storage Backend
 

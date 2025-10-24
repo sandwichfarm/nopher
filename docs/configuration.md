@@ -33,6 +33,7 @@ nopher --config nopher.yaml
 - [caching](#caching) - Response caching
 - [logging](#logging) - Logging configuration
 - [layout](#layout) - Custom sections and pages
+- [security](#security) - Security features (deny lists, rate limiting, validation)
 
 ---
 
@@ -1052,6 +1053,232 @@ Sections generate archives automatically:
 - Calendar: Monthly calendar with event counts per day
 
 **Status:** ✅ VERIFIED (Phase 11 complete - implemented in internal/sections/)
+
+---
+
+## security
+
+Security features including deny lists, rate limiting, input validation, and content filtering.
+
+```yaml
+security:
+  # Deny list configuration
+  denylist:
+    enabled: true
+    pubkeys:
+      - "deadbeef1234567890abcdef1234567890abcdef1234567890abcdef12345678"
+      - "cafebabe1234567890abcdef1234567890abcdef1234567890abcdef12345678"
+
+  # Content filtering
+  content_filter:
+    enabled: true
+    banned_words:
+      - "spam"
+      - "scam"
+    case_sensitive: false
+
+  # Rate limiting
+  ratelimit:
+    enabled: true
+    global:
+      requests_per_minute: 60
+      burst_size: 10
+    per_protocol:
+      gopher:
+        requests_per_minute: 30
+        burst_size: 5
+      gemini:
+        requests_per_minute: 60
+        burst_size: 10
+      finger:
+        requests_per_minute: 20
+        burst_size: 3
+
+  # Input validation
+  validation:
+    enabled: true
+    max_selector_length: 1024
+    max_query_length: 2048
+    max_path_length: 2048
+    strict_mode: true
+
+  # Security policy
+  policy:
+    allow_anonymous: true
+    require_nip05: false
+    block_tor: false
+    block_vpn: false
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `denylist.enabled` | bool | `true` | Enable deny list filtering |
+| `denylist.pubkeys` | []string | `[]` | Blocked pubkeys (hex format) |
+| `content_filter.enabled` | bool | `true` | Enable content filtering |
+| `content_filter.banned_words` | []string | `[]` | List of banned words |
+| `content_filter.case_sensitive` | bool | `false` | Case-sensitive matching |
+| `ratelimit.enabled` | bool | `true` | Enable rate limiting |
+| `ratelimit.global.requests_per_minute` | int | `60` | Global rate limit |
+| `ratelimit.global.burst_size` | int | `10` | Burst allowance |
+| `ratelimit.per_protocol.*` | object | - | Per-protocol rate limits |
+| `validation.enabled` | bool | `true` | Enable input validation |
+| `validation.max_selector_length` | int | `1024` | Max Gopher selector length |
+| `validation.max_query_length` | int | `2048` | Max Gemini query length |
+| `validation.max_path_length` | int | `2048` | Max path length |
+| `validation.strict_mode` | bool | `true` | Strict validation mode |
+| `policy.allow_anonymous` | bool | `true` | Allow anonymous access |
+| `policy.require_nip05` | bool | `false` | Require NIP-05 verification |
+
+### security.denylist
+
+Block specific Nostr pubkeys from appearing in your gateway.
+
+**Pubkey format:** Full 64-character hex pubkey (not npub)
+
+**Usage:**
+```yaml
+denylist:
+  enabled: true
+  pubkeys:
+    - "deadbeef1234567890abcdef1234567890abcdef1234567890abcdef12345678"
+```
+
+**Dynamic management:**
+- Pubkeys can be added/removed at runtime
+- Thread-safe concurrent access
+- Applies to all protocol servers
+
+**What gets blocked:**
+- Events authored by blocked pubkeys
+- Profile information
+- All interactions (replies, reactions, zaps) from blocked pubkeys
+
+### security.content_filter
+
+Filter events based on content patterns and banned words.
+
+**Configuration:**
+```yaml
+content_filter:
+  enabled: true
+  banned_words:
+    - "spam"
+    - "phishing"
+    - "scam"
+  case_sensitive: false
+```
+
+**Behavior:**
+- Checks event content for banned words
+- Can be case-sensitive or insensitive
+- Combines with deny list for comprehensive filtering
+- Does not modify content, only filters visibility
+
+### security.ratelimit
+
+Prevent abuse with token bucket rate limiting.
+
+**Algorithm:**
+- Each client gets a bucket with N tokens
+- Each request consumes 1 token
+- Tokens refill over time (requests_per_minute / 60 per second)
+- When bucket empty, requests are denied until refill
+
+**Global rate limit:**
+```yaml
+ratelimit:
+  enabled: true
+  global:
+    requests_per_minute: 60  # 1 request per second average
+    burst_size: 10           # Allow bursts up to 10 requests
+```
+
+**Per-protocol limits:**
+```yaml
+ratelimit:
+  per_protocol:
+    gopher:
+      requests_per_minute: 30  # Slower for Gopher
+    gemini:
+      requests_per_minute: 60  # Normal for Gemini
+    finger:
+      requests_per_minute: 20  # Slowest for Finger
+```
+
+**Client identification:**
+- By IP address
+- Shared across protocols unless per-protocol limits set
+- Old client buckets automatically cleaned up
+
+**Response when limited:**
+- Gopher: Returns error message
+- Gemini: Returns 44 status (slow down)
+- Finger: Closes connection
+
+### security.validation
+
+Validate and sanitize all user input to prevent injection attacks.
+
+**Protections against:**
+- **CRLF injection**: `\r\n` characters removed
+- **Null byte injection**: `\x00` characters removed
+- **Directory traversal**: `..` sequences blocked
+- **XSS attacks**: Script tags and dangerous HTML removed
+- **Length limits**: Enforces maximum input lengths
+
+**Strict mode:**
+```yaml
+validation:
+  enabled: true
+  strict_mode: true  # Reject invalid input
+  # strict_mode: false  # Sanitize invalid input
+```
+
+**Strict mode true:** Rejects requests with invalid characters
+**Strict mode false:** Attempts to sanitize and continues
+
+**What gets validated:**
+- Gopher selectors
+- Gemini paths and queries
+- Finger usernames
+- Pubkeys and event IDs
+- URLs and references
+
+### security.policy
+
+Security policy settings.
+
+```yaml
+policy:
+  allow_anonymous: true      # Allow access without authentication
+  require_nip05: false       # Require NIP-05 verification
+  block_tor: false           # Block Tor exit nodes
+  block_vpn: false           # Block known VPN IPs
+```
+
+**Note:** Authentication features are planned for future phases.
+
+### Security Best Practices
+
+1. **Enable all security features** in production
+2. **Use strict validation mode** to catch attacks early
+3. **Set appropriate rate limits** based on your capacity
+4. **Regularly review deny list** for new abusive pubkeys
+5. **Monitor logs** for suspicious activity
+6. **Keep banned words list updated** for your community standards
+7. **Never commit secrets** to configuration files (use environment variables)
+
+### Security Monitoring
+
+Monitor these metrics:
+- Rate limit hits per client
+- Validation failures
+- Deny list blocks
+- Content filter matches
+
+**See also:** [SECURITY.md](SECURITY.md) for comprehensive security guide
+
+**Status:** ✅ VERIFIED (Phase 14 complete - implemented in internal/security/)
 
 ---
 
