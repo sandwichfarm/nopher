@@ -5,6 +5,9 @@ RUN apk add --no-cache git make
 
 WORKDIR /build
 
+# Allow Go to download required toolchain version
+ENV GOTOOLCHAIN=auto
+
 COPY go.mod go.sum ./
 RUN go mod download
 

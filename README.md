@@ -20,11 +20,17 @@ Nopher is a personal gateway that serves your Nostr content via legacy internet 
 ⚠️ **Early Development** - Not yet ready for production use.
 
 Current implementation status:
-- Configuration system with YAML parsing and validation
-- Storage layer with Khatru integration and SQLite backend
-- Custom tables for relay hints, social graph, sync state, and aggregates
+- ✅ Configuration system with YAML parsing, validation, and display customization
+- ✅ Storage layer with Khatru integration and SQLite backend
+- ✅ Custom tables for relay hints, social graph, sync state, and aggregates
+- ✅ Nostr client with relay discovery and event synchronization
+- ✅ Protocol servers: Gopher (RFC 1436), Gemini (with TLS), and Finger (RFC 742)
+- ✅ Content rendering with markdown support for all protocols
+- ✅ Aggregates system for interaction tracking (reactions, zaps, replies)
+- ✅ Display customization with headers, footers, and content filtering
+- ✅ Comprehensive caching layer (memory and Redis support)
 
-Protocol servers (Gopher, Gemini, Finger) are not yet implemented.
+The core functionality is implemented and working. Focus is now on polish, optimization, and additional features.
 
 ## Quick Start
 
