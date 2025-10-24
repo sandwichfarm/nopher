@@ -30,6 +30,7 @@ type Config struct {
 	Display       Display       `yaml:"display"`
 	Presentation  Presentation  `yaml:"presentation"`
 	Behavior      Behavior      `yaml:"behavior"`
+	Sections      []SectionConfig `yaml:"sections"`
 }
 
 // Site contains site metadata
@@ -856,4 +857,38 @@ func Validate(cfg *Config) error {
 	}
 
 	return nil
+}
+
+// SectionConfig represents a section definition in YAML
+type SectionConfig struct {
+	Name        string               `yaml:"name"`
+	Path        string               `yaml:"path"`
+	Title       string               `yaml:"title"`
+	Description string               `yaml:"description"`
+	Filters     SectionFilterConfig  `yaml:"filters"`
+	SortBy      string               `yaml:"sort_by"`
+	SortOrder   string               `yaml:"sort_order"`
+	Limit       int                  `yaml:"limit"`
+	ShowDates   bool                 `yaml:"show_dates"`
+	ShowAuthors bool                 `yaml:"show_authors"`
+	GroupBy     string               `yaml:"group_by"`
+	MoreLink    *SectionMoreLinkConfig `yaml:"more_link"`
+	Order       int                  `yaml:"order"`
+}
+
+// SectionFilterConfig represents section filters in YAML
+type SectionFilterConfig struct {
+	Kinds   []int               `yaml:"kinds"`
+	Authors []string            `yaml:"authors"`
+	Tags    map[string][]string `yaml:"tags"`
+	Since   string              `yaml:"since"`   // RFC3339 or duration like "-24h"
+	Until   string              `yaml:"until"`   // RFC3339 or duration
+	Search  string              `yaml:"search"`
+	Scope   string              `yaml:"scope"`   // self, following, mutual, foaf, all
+}
+
+// SectionMoreLinkConfig represents a "more" link configuration
+type SectionMoreLinkConfig struct {
+	Text       string `yaml:"text"`
+	SectionRef string `yaml:"section_ref"`
 }

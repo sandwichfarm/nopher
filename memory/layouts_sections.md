@@ -201,9 +201,9 @@ Implementation Notes
 - Default routes work without configuration
 - FilterSet supports kinds, authors, tags, time ranges
 - **Full protocol parity**: Gopher and Gemini both support sections
+- **YAML configuration**: Sections can be configured via YAML (no Go code required)
 
 🚧 **Not Yet Implemented** (Future):
-- YAML configuration for sections (currently Go code only)
 - Template system (list, cards, threaded, etc.)
 - Archive generation (by month/year)
 - Feed generation (RSS/JSON)

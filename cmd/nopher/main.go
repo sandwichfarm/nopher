@@ -13,6 +13,7 @@ import (
 	"github.com/sandwich/nopher/internal/finger"
 	"github.com/sandwich/nopher/internal/gemini"
 	"github.com/sandwich/nopher/internal/gopher"
+	"github.com/sandwich/nopher/internal/sections"
 	"github.com/sandwich/nopher/internal/storage"
 	"github.com/sandwich/nopher/internal/sync"
 )
@@ -114,6 +115,15 @@ func run(cfg *config.Config) error {
 	if cfg.Protocols.Gopher.Enabled {
 		fmt.Printf("Starting Gopher server on %s:%d...\n", cfg.Protocols.Gopher.Host, cfg.Protocols.Gopher.Port)
 		gopherServer := gopher.New(&cfg.Protocols.Gopher, cfg, st, cfg.Protocols.Gopher.Host, aggMgr)
+
+		// Load sections from config
+		if len(cfg.Sections) > 0 {
+			if err := sections.LoadFromConfig(gopherServer.GetSectionManager(), cfg.Sections); err != nil {
+				return fmt.Errorf("failed to load Gopher sections: %w", err)
+			}
+			fmt.Printf("  Loaded %d sections\n", len(cfg.Sections))
+		}
+
 		if err := gopherServer.Start(); err != nil {
 			return fmt.Errorf("failed to start Gopher server: %w", err)
 		}
@@ -128,6 +138,14 @@ func run(cfg *config.Config) error {
 		if err != nil {
 			return fmt.Errorf("failed to create Gemini server: %w", err)
 		}
+
+		// Load sections from config
+		if len(cfg.Sections) > 0 {
+			if err := sections.LoadFromConfig(geminiServer.GetSectionManager(), cfg.Sections); err != nil {
+				return fmt.Errorf("failed to load Gemini sections: %w", err)
+			}
+		}
+
 		if err := geminiServer.Start(); err != nil {
 			return fmt.Errorf("failed to start Gemini server: %w", err)
 		}

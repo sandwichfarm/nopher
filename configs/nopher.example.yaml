@@ -224,6 +224,62 @@ behavior:
     items_per_page: 50         # Items per page when enabled
     max_pages: 10              # Maximum pages to generate
 
+# Sections - Custom filtered views (optional)
+# Sections allow you to create custom filtered content views at any path
+# Multiple sections can share the same path (e.g., homepage with multiple topic previews)
+#sections:
+#  # Example: DIY preview on homepage (5 items)
+#  - name: diy-preview
+#    path: /                    # Override homepage
+#    title: Recent DIY Projects
+#    order: 1                   # Display order (lower first)
+#    filters:
+#      tags:
+#        t: [diy]              # Filter by #t tag
+#    limit: 5                  # Show 5 items
+#    show_dates: true
+#    show_authors: true
+#    more_link:
+#      text: More DIY posts
+#      section_ref: diy-full   # Link to full section
+#
+#  # Example: Philosophy preview on homepage (3 items)
+#  - name: philosophy-preview
+#    path: /
+#    title: Recent Philosophy
+#    order: 2
+#    filters:
+#      tags:
+#        t: [philosophy]
+#    limit: 3
+#    show_dates: true
+#    more_link:
+#      text: More philosophy
+#      section_ref: philosophy-full
+#
+#  # Example: Full DIY section at /diy (paginated)
+#  - name: diy-full
+#    path: /diy
+#    title: All DIY Projects
+#    filters:
+#      tags:
+#        t: [diy]
+#    limit: 9                  # Gopher pagination limit
+#    show_dates: true
+#    show_authors: true
+#    sort_by: created_at
+#    sort_order: desc
+#
+#  # Example: Full philosophy section
+#  - name: philosophy-full
+#    path: /philosophy
+#    title: All Philosophy Posts
+#    filters:
+#      tags:
+#        t: [philosophy]
+#    limit: 9
+#    show_dates: true
+
 # Template variables for headers/footers:
 # {{site.title}}       - Site title from site.title
 # {{site.description}} - Site description
