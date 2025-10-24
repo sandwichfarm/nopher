@@ -73,6 +73,18 @@ func (s *Storage) runMigrations(ctx context.Context) error {
 		 ON retention_metadata(score)`,
 		`CREATE INDEX IF NOT EXISTS idx_retention_metadata_protected
 		 ON retention_metadata(protected)`,
+
+		// relay_capabilities: Track relay feature support (NIP-77, etc.)
+		`CREATE TABLE IF NOT EXISTS relay_capabilities (
+			url TEXT PRIMARY KEY,
+			supports_negentropy INTEGER NOT NULL DEFAULT 0,
+			nip11_software TEXT,
+			nip11_version TEXT,
+			last_checked INTEGER NOT NULL,
+			check_expiry INTEGER NOT NULL
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_relay_capabilities_expiry
+		 ON relay_capabilities(check_expiry)`,
 	}
 
 	for i, migration := range migrations {
