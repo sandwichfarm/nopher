@@ -97,6 +97,9 @@ func (r *Router) Route(selector string) []byte {
 func (r *Router) handleRoot(ctx context.Context) []byte {
 	gmap := NewGophermap(r.host, r.port)
 
+	// Add header if configured
+	r.addHeaderToGophermap(gmap, "home")
+
 	gmap.AddWelcome("Nopher - Nostr Gateway", "Browse Nostr content via Gopher protocol")
 
 	gmap.AddDirectory("Notes", "/notes")
@@ -108,6 +111,9 @@ func (r *Router) handleRoot(ctx context.Context) []byte {
 	gmap.AddDirectory("Diagnostics", "/diagnostics")
 	gmap.AddSpacer()
 	gmap.AddInfo("Powered by Nopher")
+
+	// Add footer if configured
+	r.addFooterToGophermap(gmap, "home")
 
 	return gmap.Bytes()
 }
@@ -175,6 +181,9 @@ func (r *Router) handleNotes(ctx context.Context, parts []string) []byte {
 		return r.handleNote(ctx, parts[0])
 	}
 
+	// Add header if configured
+	r.addHeaderToGophermap(gmap, "notes")
+
 	// Query notes
 	queryHelper := r.server.GetQueryHelper()
 	notes, err := queryHelper.GetNotes(ctx, 50)
@@ -210,12 +219,18 @@ func (r *Router) handleNotes(ctx context.Context, parts []string) []byte {
 	gmap.AddSpacer()
 	gmap.AddDirectory("← Back to Home", "/")
 
+	// Add footer if configured
+	r.addFooterToGophermap(gmap, "notes")
+
 	return gmap.Bytes()
 }
 
 // handleArticles handles articles listing (kind 30023)
 func (r *Router) handleArticles(ctx context.Context, parts []string) []byte {
 	gmap := NewGophermap(r.host, r.port)
+
+	// Add header if configured
+	r.addHeaderToGophermap(gmap, "articles")
 
 	// Query articles
 	queryHelper := r.server.GetQueryHelper()
@@ -252,12 +267,18 @@ func (r *Router) handleArticles(ctx context.Context, parts []string) []byte {
 	gmap.AddSpacer()
 	gmap.AddDirectory("← Back to Home", "/")
 
+	// Add footer if configured
+	r.addFooterToGophermap(gmap, "articles")
+
 	return gmap.Bytes()
 }
 
 // handleReplies handles replies listing
 func (r *Router) handleReplies(ctx context.Context, parts []string) []byte {
 	gmap := NewGophermap(r.host, r.port)
+
+	// Add header if configured
+	r.addHeaderToGophermap(gmap, "replies")
 
 	// Query replies
 	queryHelper := r.server.GetQueryHelper()
@@ -294,12 +315,18 @@ func (r *Router) handleReplies(ctx context.Context, parts []string) []byte {
 	gmap.AddSpacer()
 	gmap.AddDirectory("← Back to Home", "/")
 
+	// Add footer if configured
+	r.addFooterToGophermap(gmap, "replies")
+
 	return gmap.Bytes()
 }
 
 // handleMentions handles mentions listing
 func (r *Router) handleMentions(ctx context.Context, parts []string) []byte {
 	gmap := NewGophermap(r.host, r.port)
+
+	// Add header if configured
+	r.addHeaderToGophermap(gmap, "mentions")
 
 	// Query mentions
 	queryHelper := r.server.GetQueryHelper()
@@ -335,6 +362,9 @@ func (r *Router) handleMentions(ctx context.Context, parts []string) []byte {
 
 	gmap.AddSpacer()
 	gmap.AddDirectory("← Back to Home", "/")
+
+	// Add footer if configured
+	r.addFooterToGophermap(gmap, "mentions")
 
 	return gmap.Bytes()
 }
@@ -527,6 +557,36 @@ func (r *Router) errorResponse(message string) []byte {
 	gmap.AddSpacer()
 	gmap.AddDirectory("← Back to Home", "/")
 	return gmap.Bytes()
+}
+
+// addHeaderToGophermap adds configured header to a gophermap
+func (r *Router) addHeaderToGophermap(gmap *Gophermap, page string) {
+	header, err := r.renderer.loader.GetHeader(page)
+	if err != nil || header == "" {
+		return
+	}
+
+	// Split header into lines and add as info lines
+	lines := strings.Split(header, "\n")
+	for _, line := range lines {
+		gmap.AddInfo(line)
+	}
+	gmap.AddSpacer()
+}
+
+// addFooterToGophermap adds configured footer to a gophermap
+func (r *Router) addFooterToGophermap(gmap *Gophermap, page string) {
+	footer, err := r.renderer.loader.GetFooter(page)
+	if err != nil || footer == "" {
+		return
+	}
+
+	// Split footer into lines and add as info lines
+	gmap.AddSpacer()
+	lines := strings.Split(footer, "\n")
+	for _, line := range lines {
+		gmap.AddInfo(line)
+	}
 }
 
 // getSummary creates a summary of content for display
