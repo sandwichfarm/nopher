@@ -12,7 +12,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
+RUN apk add --no-cache gcc musl-dev sqlite-dev
+RUN CGO_ENABLED=1 GOOS=linux go build -a \
     -ldflags="-s -w" \
     -o nopher cmd/nopher/main.go
 
