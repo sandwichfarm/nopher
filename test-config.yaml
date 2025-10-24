@@ -29,7 +29,7 @@ protocols:
   gemini:
     enabled: true
     host: localhost
-    port: 11965
+    port: 1965
     bind: "0.0.0.0"
     tls:
       cert_path: ./test-data/certs/gemini.crt

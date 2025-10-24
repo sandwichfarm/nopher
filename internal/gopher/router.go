@@ -181,14 +181,12 @@ func (r *Router) handleNotes(ctx context.Context, parts []string) []byte {
 		return gmap.Bytes()
 	}
 
-	// Render note list
+	// Render note list with info
 	lines := r.renderer.RenderNoteList(notes, "Notes")
 	gmap.AddInfoBlock(lines)
 
-	// Add note links
+	// Add clickable note links
 	if len(notes) > 0 {
-		gmap.AddSpacer()
-		gmap.AddInfo("Read notes:")
 		gmap.AddSpacer()
 		for i, note := range notes {
 			// Extract first line for display
@@ -232,8 +230,6 @@ func (r *Router) handleArticles(ctx context.Context, parts []string) []byte {
 	// Add article links
 	if len(articles) > 0 {
 		gmap.AddSpacer()
-		gmap.AddInfo("Read articles:")
-		gmap.AddSpacer()
 		for i, article := range articles {
 			// Extract title or first line for display
 			content := article.Event.Content
@@ -276,8 +272,6 @@ func (r *Router) handleReplies(ctx context.Context, parts []string) []byte {
 	// Add reply links
 	if len(replies) > 0 {
 		gmap.AddSpacer()
-		gmap.AddInfo("Read replies:")
-		gmap.AddSpacer()
 		for i, reply := range replies {
 			// Extract first line for display
 			content := reply.Event.Content
@@ -319,8 +313,6 @@ func (r *Router) handleMentions(ctx context.Context, parts []string) []byte {
 
 	// Add mention links
 	if len(mentions) > 0 {
-		gmap.AddSpacer()
-		gmap.AddInfo("Read mentions:")
 		gmap.AddSpacer()
 		for i, mention := range mentions {
 			// Extract first line for display
@@ -373,18 +365,11 @@ func (r *Router) handleNote(ctx context.Context, noteID string) []byte {
 		}
 	}
 
-	// Render the note
+	// Render the note as plain text
 	text := r.renderer.RenderNote(note, agg)
 
-	// Add navigation footer
-	gmap := NewGophermap(r.host, r.port)
-	gmap.AddInfo(text)
-	gmap.AddSpacer()
-	gmap.AddDirectory("View Thread", fmt.Sprintf("/thread/%s", noteID))
-	gmap.AddSpacer()
-	gmap.AddDirectory("← Back to Home", "/")
-
-	return gmap.Bytes()
+	// Return as plain text with gopher terminator (not gophermap)
+	return append([]byte(text), []byte(".\r\n")...)
 }
 
 // handleThread handles displaying a thread

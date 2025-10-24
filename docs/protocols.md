@@ -72,13 +72,19 @@ Gopher uses "selectors" (paths) to navigate content:
 | Selector | Description |
 |----------|-------------|
 | `/` | Main menu |
-| `/notes` | Notes section (kind 1) |
-| `/articles` | Articles section (kind 30023) |
-| `/inbox` | Inbox (replies/reactions/zaps) |
-| `/archive` | Archive by date |
-| `/event/<id>` | Individual event |
+| `/notes` | Notes (kind 1, non-replies) |
+| `/articles` | Long-form articles (kind 30023) |
+| `/replies` | Replies to your content |
+| `/mentions` | Posts mentioning you |
+| `/archive` | Time-based archives (by year/month) |
+| `/event/<id>` | Individual event detail |
 | `/thread/<id>` | Thread view |
-| `/diagnostics` | System status |
+| `/diagnostics` | System status and statistics |
+| `/about` | Your profile (kind 0) |
+
+**Legacy selectors** (redirect to new paths):
+| `/inbox` | → `/replies` (backwards compatibility) |
+| `/outbox` | → `/notes` (backwards compatibility) |
 
 ### Gophermap Format
 
@@ -89,7 +95,8 @@ iWelcome to My Nostr Gopherhole	fake	example.com	70
 i	fake	example.com	70
 1Notes	/notes	example.com	70
 1Articles	/articles	example.com	70
-1Inbox	/inbox	example.com	70
+1Replies	/replies	example.com	70
+1Mentions	/mentions	example.com	70
 .
 ```
 
@@ -135,7 +142,8 @@ iWelcome to Alice's Nostr Archive	fake	localhost	70
 i	fake	localhost	70
 1Notes (42 items)	/notes	localhost	70
 1Articles (7 items)	/articles	localhost	70
-1Inbox (15 interactions)	/inbox	localhost	70
+1Replies (8 items)	/replies	localhost	70
+1Mentions (15 items)	/mentions	localhost	70
 1Archive	/archive	localhost	70
 iDiagnostics	/diagnostics	localhost	70
 .
@@ -218,13 +226,19 @@ rendering:
 | Path | Description |
 |------|-------------|
 | `/` | Home page |
-| `/notes` | Notes section |
-| `/articles` | Articles section |
-| `/inbox` | Inbox |
-| `/archive` | Archive by date |
-| `/event/<id>` | Individual event |
+| `/notes` | Notes (kind 1, non-replies) |
+| `/articles` | Long-form articles (kind 30023) |
+| `/replies` | Replies to your content |
+| `/mentions` | Posts mentioning you |
+| `/archive` | Time-based archives (by year/month) |
+| `/event/<id>` | Individual event detail |
 | `/thread/<id>` | Thread view |
-| `/diagnostics` | System status |
+| `/diagnostics` | System status and statistics |
+| `/about` | Your profile (kind 0) |
+
+**Legacy paths** (redirect to new paths):
+| `/inbox` | → `/replies` (backwards compatibility) |
+| `/outbox` | → `/notes` (backwards compatibility) |
 
 ### Gemtext Format
 
@@ -295,7 +309,8 @@ Notes, articles, and interactions from Nostr
 
 => /notes Notes (42 items)
 => /articles Articles (7 items)
-=> /inbox Inbox (15 interactions)
+=> /replies Replies (8 items)
+=> /mentions Mentions (15 items)
 => /archive Archive
 
 # Click /notes

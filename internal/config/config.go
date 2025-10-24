@@ -23,10 +23,13 @@ type Config struct {
 	Inbox      Inbox      `yaml:"inbox"`
 	Outbox     Outbox     `yaml:"outbox"`
 	Storage    Storage    `yaml:"storage"`
-	Rendering  Rendering  `yaml:"rendering"`
-	Caching    Caching    `yaml:"caching"`
-	Logging    Logging    `yaml:"logging"`
-	Layout     Layout     `yaml:"layout"`
+	Rendering     Rendering     `yaml:"rendering"`
+	Caching       Caching       `yaml:"caching"`
+	Logging       Logging       `yaml:"logging"`
+	Layout        Layout        `yaml:"layout"`
+	Display       Display       `yaml:"display"`
+	Presentation  Presentation  `yaml:"presentation"`
+	Behavior      Behavior      `yaml:"behavior"`
 }
 
 // Site contains site metadata
