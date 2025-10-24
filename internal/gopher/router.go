@@ -137,16 +137,12 @@ func (r *Router) handleOutbox(ctx context.Context, parts []string) []byte {
 		return gmap.Bytes()
 	}
 
-	// Render note list
-	lines := r.renderer.RenderNoteList(notes, "Outbox - My Notes")
-	gmap.AddInfoBlock(lines)
+	gmap.AddInfo("Outbox - My Notes")
+	gmap.AddSpacer()
 
-	// Add note links
+	// Add note links with aggregates
 	if len(notes) > 0 {
-		gmap.AddSpacer()
-		gmap.AddInfo("Read notes:")
-		gmap.AddSpacer()
-		for i, note := range notes {
+		for _, note := range notes {
 			// Extract first line for display
 			content := note.Event.Content
 			if len(content) > 60 {
@@ -154,11 +150,27 @@ func (r *Router) handleOutbox(ctx context.Context, parts []string) []byte {
 			}
 			firstLine := strings.Split(content, "\n")[0]
 
-			gmap.AddTextFile(
-				fmt.Sprintf("%d. %s", i+1, firstLine),
-				fmt.Sprintf("/outbox/%s", note.Event.ID),
-			)
+			linkText := firstLine
+
+			// Add author and timestamp
+			gmap.AddInfo(fmt.Sprintf("   By %s - %s",
+				truncatePubkey(note.Event.PubKey),
+				formatTimestamp(note.Event.CreatedAt)))
+
+			// Add aggregates if available
+			if note.Aggregates != nil && note.Aggregates.HasInteractions() {
+				aggText := r.renderer.renderAggregates(note.Aggregates)
+				if aggText != "" {
+					gmap.AddInfo("   " + aggText)
+				}
+			}
+
+			gmap.AddTextFile(linkText, fmt.Sprintf("/outbox/%s", note.Event.ID))
+			gmap.AddSpacer()
 		}
+	} else {
+		gmap.AddInfo("No notes yet.")
+		gmap.AddSpacer()
 	}
 
 	gmap.AddSpacer()
@@ -194,14 +206,12 @@ func (r *Router) handleNotes(ctx context.Context, parts []string) []byte {
 		return gmap.Bytes()
 	}
 
-	// Render note list with info
-	lines := r.renderer.RenderNoteList(notes, "Notes")
-	gmap.AddInfoBlock(lines)
+	gmap.AddInfo("Notes")
+	gmap.AddSpacer()
 
-	// Add clickable note links
+	// Add clickable note links with aggregates
 	if len(notes) > 0 {
-		gmap.AddSpacer()
-		for i, note := range notes {
+		for _, note := range notes {
 			// Extract first line for display
 			content := note.Event.Content
 			if len(content) > 60 {
@@ -209,11 +219,29 @@ func (r *Router) handleNotes(ctx context.Context, parts []string) []byte {
 			}
 			firstLine := strings.Split(content, "\n")[0]
 
-			gmap.AddTextFile(
-				fmt.Sprintf("%d. %s", i+1, firstLine),
-				fmt.Sprintf("/note/%s", note.Event.ID),
-			)
+			// Build link text without numbering (client adds numbers)
+			linkText := firstLine
+
+			// Add author and timestamp info line
+			gmap.AddInfo(fmt.Sprintf("   By %s - %s",
+				truncatePubkey(note.Event.PubKey),
+				formatTimestamp(note.Event.CreatedAt)))
+
+			// Add aggregate info if available
+			if note.Aggregates != nil && note.Aggregates.HasInteractions() {
+				aggText := r.renderer.renderAggregates(note.Aggregates)
+				if aggText != "" {
+					gmap.AddInfo("   " + aggText)
+				}
+			}
+
+			// Add the clickable link
+			gmap.AddTextFile(linkText, fmt.Sprintf("/note/%s", note.Event.ID))
+			gmap.AddSpacer()
 		}
+	} else {
+		gmap.AddInfo("No notes yet.")
+		gmap.AddSpacer()
 	}
 
 	gmap.AddSpacer()
@@ -242,14 +270,12 @@ func (r *Router) handleArticles(ctx context.Context, parts []string) []byte {
 		return gmap.Bytes()
 	}
 
-	// Render article list
-	lines := r.renderer.RenderNoteList(articles, "Articles")
-	gmap.AddInfoBlock(lines)
+	gmap.AddInfo("Articles")
+	gmap.AddSpacer()
 
-	// Add article links
+	// Add article links with aggregates
 	if len(articles) > 0 {
-		gmap.AddSpacer()
-		for i, article := range articles {
+		for _, article := range articles {
 			// Extract title or first line for display
 			content := article.Event.Content
 			if len(content) > 60 {
@@ -257,11 +283,27 @@ func (r *Router) handleArticles(ctx context.Context, parts []string) []byte {
 			}
 			firstLine := strings.Split(content, "\n")[0]
 
-			gmap.AddTextFile(
-				fmt.Sprintf("%d. %s", i+1, firstLine),
-				fmt.Sprintf("/note/%s", article.Event.ID),
-			)
+			linkText := firstLine
+
+			// Add author and timestamp
+			gmap.AddInfo(fmt.Sprintf("   By %s - %s",
+				truncatePubkey(article.Event.PubKey),
+				formatTimestamp(article.Event.CreatedAt)))
+
+			// Add aggregates if available
+			if article.Aggregates != nil && article.Aggregates.HasInteractions() {
+				aggText := r.renderer.renderAggregates(article.Aggregates)
+				if aggText != "" {
+					gmap.AddInfo("   " + aggText)
+				}
+			}
+
+			gmap.AddTextFile(linkText, fmt.Sprintf("/note/%s", article.Event.ID))
+			gmap.AddSpacer()
 		}
+	} else {
+		gmap.AddInfo("No articles yet.")
+		gmap.AddSpacer()
 	}
 
 	gmap.AddSpacer()
@@ -290,14 +332,12 @@ func (r *Router) handleReplies(ctx context.Context, parts []string) []byte {
 		return gmap.Bytes()
 	}
 
-	// Render reply list
-	lines := r.renderer.RenderNoteList(replies, "Replies")
-	gmap.AddInfoBlock(lines)
+	gmap.AddInfo("Replies")
+	gmap.AddSpacer()
 
-	// Add reply links
+	// Add reply links with aggregates
 	if len(replies) > 0 {
-		gmap.AddSpacer()
-		for i, reply := range replies {
+		for _, reply := range replies {
 			// Extract first line for display
 			content := reply.Event.Content
 			if len(content) > 60 {
@@ -305,11 +345,27 @@ func (r *Router) handleReplies(ctx context.Context, parts []string) []byte {
 			}
 			firstLine := strings.Split(content, "\n")[0]
 
-			gmap.AddTextFile(
-				fmt.Sprintf("%d. %s", i+1, firstLine),
-				fmt.Sprintf("/note/%s", reply.Event.ID),
-			)
+			linkText := firstLine
+
+			// Add author and timestamp
+			gmap.AddInfo(fmt.Sprintf("   By %s - %s",
+				truncatePubkey(reply.Event.PubKey),
+				formatTimestamp(reply.Event.CreatedAt)))
+
+			// Add aggregates if available
+			if reply.Aggregates != nil && reply.Aggregates.HasInteractions() {
+				aggText := r.renderer.renderAggregates(reply.Aggregates)
+				if aggText != "" {
+					gmap.AddInfo("   " + aggText)
+				}
+			}
+
+			gmap.AddTextFile(linkText, fmt.Sprintf("/note/%s", reply.Event.ID))
+			gmap.AddSpacer()
 		}
+	} else {
+		gmap.AddInfo("No replies yet.")
+		gmap.AddSpacer()
 	}
 
 	gmap.AddSpacer()
@@ -338,14 +394,12 @@ func (r *Router) handleMentions(ctx context.Context, parts []string) []byte {
 		return gmap.Bytes()
 	}
 
-	// Render mention list
-	lines := r.renderer.RenderNoteList(mentions, "Mentions")
-	gmap.AddInfoBlock(lines)
+	gmap.AddInfo("Mentions")
+	gmap.AddSpacer()
 
-	// Add mention links
+	// Add mention links with aggregates
 	if len(mentions) > 0 {
-		gmap.AddSpacer()
-		for i, mention := range mentions {
+		for _, mention := range mentions {
 			// Extract first line for display
 			content := mention.Event.Content
 			if len(content) > 60 {
@@ -353,11 +407,27 @@ func (r *Router) handleMentions(ctx context.Context, parts []string) []byte {
 			}
 			firstLine := strings.Split(content, "\n")[0]
 
-			gmap.AddTextFile(
-				fmt.Sprintf("%d. %s", i+1, firstLine),
-				fmt.Sprintf("/note/%s", mention.Event.ID),
-			)
+			linkText := firstLine
+
+			// Add author and timestamp
+			gmap.AddInfo(fmt.Sprintf("   By %s - %s",
+				truncatePubkey(mention.Event.PubKey),
+				formatTimestamp(mention.Event.CreatedAt)))
+
+			// Add aggregates if available
+			if mention.Aggregates != nil && mention.Aggregates.HasInteractions() {
+				aggText := r.renderer.renderAggregates(mention.Aggregates)
+				if aggText != "" {
+					gmap.AddInfo("   " + aggText)
+				}
+			}
+
+			gmap.AddTextFile(linkText, fmt.Sprintf("/note/%s", mention.Event.ID))
+			gmap.AddSpacer()
 		}
+	} else {
+		gmap.AddInfo("No mentions yet.")
+		gmap.AddSpacer()
 	}
 
 	gmap.AddSpacer()

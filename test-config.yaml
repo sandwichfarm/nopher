@@ -49,8 +49,13 @@ relays:
     - wss://purplepag.es
     - wss://user.kindpag.es
     - wss://profiles.nostr1.com
-  discovery:
-    enabled: false
+
+discovery:
+  refresh_seconds: 900
+  use_owner_hints: true
+  use_author_hints: true
+  fallback_to_seeds: true
+  max_relays_per_author: 8
 
 sync:
   enabled: true
