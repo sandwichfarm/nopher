@@ -129,12 +129,13 @@ func (cm *CursorManager) GetAllCursors(ctx context.Context) (map[string]map[int]
 }
 
 // IsReplaceableKind returns true if the kind should be synced without cursors
-// Replaceable kinds (0, 3, 10002) are always fetched fresh
+// Replaceable kinds (0, 3, 10002) and parameterized replaceable kinds (30023) are always fetched fresh
 func (cm *CursorManager) IsReplaceableKind(kind int) bool {
 	replaceableKinds := map[int]bool{
-		0:     true, // Profile
-		3:     true, // Contacts
-		10002: true, // Relay hints
+		0:     true, // Profile (NIP-01 replaceable)
+		3:     true, // Contacts (NIP-01 replaceable)
+		10002: true, // Relay hints (NIP-01 replaceable)
+		30023: true, // Long-form articles (NIP-33 parameterized replaceable)
 	}
 	return replaceableKinds[kind]
 }

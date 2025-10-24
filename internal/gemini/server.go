@@ -60,7 +60,12 @@ func New(cfg *config.GeminiProtocol, fullCfg *config.Config, st *storage.Storage
 
 // Start starts the Gemini server
 func (s *Server) Start() error {
-	addr := fmt.Sprintf("%s:%d", s.config.Host, s.config.Port)
+	// Use Bind field for listening, fallback to Host if Bind not set
+	bindAddr := s.config.Bind
+	if bindAddr == "" {
+		bindAddr = s.config.Host
+	}
+	addr := fmt.Sprintf("%s:%d", bindAddr, s.config.Port)
 
 	listener, err := tls.Listen("tcp", addr, s.tlsConfig)
 	if err != nil {
