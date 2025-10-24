@@ -32,7 +32,8 @@ nophr --config nophr.yaml
 - [rendering](#rendering) - Protocol-specific rendering
 - [caching](#caching) - Response caching
 - [logging](#logging) - Logging configuration
-- [layout](#layout) - Custom sections and pages
+- [sections](#sections) - Custom filtered views
+- [layout](#layout) - (DEPRECATED - use sections instead)
 - [security](#security) - Security features (deny lists, rate limiting, validation)
 - [display](#display) - Display control (feed/detail views, limits)
 - [presentation](#presentation) - Visual presentation (headers, footers, separators)
@@ -932,65 +933,82 @@ NOPHER_LOG_LEVEL=debug nophr --config nophr.yaml
 
 ---
 
-## layout
+## sections
 
-Custom sections and page layouts for organizing and presenting content.
+Custom filtered views for organizing and presenting content at specific URL paths.
+
+**Note:** Sections are OPTIONAL. Built-in endpoints (`/notes`, `/articles`, `/replies`, `/mentions`) work without any section configuration.
 
 ```yaml
-layout:
-  sections:
-    notes:
-      title: "Recent Notes"
-      description: "Latest short-form posts"
-      filters:
-        kinds: [1]
-        limit: 20
-      sort_by: "created_at"
-      sort_order: "desc"
-      show_dates: true
-      show_authors: true
+sections:
+  - name: diy-preview
+    path: /
+    title: "Latest DIY Projects"
+    description: "Recent DIY posts"
+    order: 0
+    limit: 5
+    show_dates: true
+    show_authors: true
+    sort_by: created_at
+    sort_order: desc
+    filters:
+      kinds: [1, 30023]
+      tags:
+        t: ["diy"]
+    more_link:
+      text: "View all DIY posts"
+      section_ref: diy-full
 
-    articles:
-      title: "Articles"
-      description: "Long-form content"
-      filters:
-        kinds: [30023]
-        limit: 10
-      sort_by: "published_at"
-      sort_order: "desc"
-
-    inbox:
-      title: "Inbox"
-      description: "Your interactions"
-      filters:
-        tags:
-          p: ["${OWNER_PUBKEY}"]
-        kinds: [1, 7, 9735]
-        limit: 50
-      sort_by: "created_at"
-      sort_order: "desc"
+  - name: diy-full
+    path: /diy
+    title: "DIY Projects"
+    description: "All DIY projects and tutorials"
+    limit: 20
+    filters:
+      kinds: [1, 30023]
+      tags:
+        t: ["diy"]
+    sort_by: created_at
+    sort_order: desc
 ```
 
-### layout.sections
+### sections Configuration
 
-Define custom sections for organizing events by kind, author, tags, time range, and other criteria.
+Sections allow you to create custom filtered views of your content at specific URL paths.
 
-**Section structure:**
+**Section fields:**
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `title` | string | - | Display title for the section |
-| `description` | string | - | Section description |
-| `path` | string | - | URL path (e.g., `/diy`, `/art`, `/` for homepage) |
-| `order` | int | `0` | Display order when multiple sections share a path |
-| `filters` | object | - | Filter criteria (see below) |
-| `sort_by` | string | `created_at` | Sort field: `created_at`, `reactions`, `zaps`, `replies` |
-| `sort_order` | string | `desc` | Sort order: `asc` or `desc` |
-| `limit` | int | `20` | Events per page |
-| `show_dates` | bool | `true` | Display event timestamps |
-| `show_authors` | bool | `true` | Display author names |
-| `group_by` | string | - | Grouping: `day`, `week`, `month`, `year`, `author`, `kind` |
-| `more_link` | object | - | Optional link to full paginated view (see below) |
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `name` | string | Yes | - | Unique identifier for the section |
+| `path` | string | Yes | - | URL path (e.g., `/diy`, `/art`, `/` for homepage) |
+| `title` | string | Yes | - | Display title for the section |
+| `description` | string | No | - | Section description |
+| `order` | int | No | `0` | Display order when multiple sections share a path |
+| `limit` | int | No | `20` | Events per page |
+| `show_dates` | bool | No | `true` | Display event timestamps |
+| `show_authors` | bool | No | `true` | Display author names |
+| `sort_by` | string | No | `created_at` | Sort field: `created_at`, `reactions`, `zaps`, `replies` |
+| `sort_order` | string | No | `desc` | Sort order: `asc` or `desc` |
+| `group_by` | string | No | - | Grouping: `day`, `week`, `month`, `year`, `author`, `kind` |
+| `filters` | object | No | - | Filter criteria (see below) |
+| `more_link` | object | No | - | Optional link to full paginated view (see below) |
+
+**Filter options:**
+
+```yaml
+filters:
+  kinds: [1, 30023]                    # Event kinds to include
+  authors: ["pubkey1", "pubkey2"]      # Filter by pubkeys (hex or npub)
+  tags:
+    t: ["diy", "art"]                  # Filter by hashtags
+    p: ["pubkey"]                      # Filter by p-tags
+    e: ["eventid"]                     # Filter by e-tags
+  since: "2024-01-01T00:00:00Z"        # RFC3339 timestamp or "-24h" duration
+  until: "2025-01-01T00:00:00Z"        # RFC3339 timestamp or "-1d" duration
+  search: "keyword"                    # NIP-50 search term
+  scope: "following"                   # self, following, mutual, foaf, all
+```
 
 **MoreLink structure:**
 
@@ -998,21 +1016,6 @@ Define custom sections for organizing events by kind, author, tags, time range, 
 |-------|------|-------------|
 | `text` | string | Link text (e.g., "More DIY posts", "View all articles") |
 | `section_ref` | string | Name of the section to link to (must be registered) |
-
-**Filter options:**
-
-```yaml
-filters:
-  kinds: [1, 30023]                    # Event kinds to include
-  authors: ["pubkey1", "pubkey2"]      # Filter by pubkeys
-  tags:
-    p: ["pubkey"]                      # Filter by tags (p, e, etc.)
-    e: ["eventid"]
-  since: 1704067200                    # Unix timestamp (start)
-  until: 1735689600                    # Unix timestamp (end)
-  limit: 20                            # Max events
-  scope: "following"                   # self, following, mutual, foaf, all
-```
 
 **Built-in endpoints vs. Custom sections:**
 
@@ -1031,149 +1034,142 @@ nophr provides built-in router endpoints:
 
 **Note:** The concepts of "inbox" and "outbox" as section names are DEPRECATED. Use the built-in router endpoints instead (`/notes`, `/replies`, `/mentions`, `/articles`). Sections are for custom filtered content only.
 
-**Time-based filtering:**
+### sections Examples
 
-```yaml
-filters:
-  kinds: [1]
-  since: ${LAST_7_DAYS}    # Built-in time ranges
-  # LAST_7_DAYS, LAST_30_DAYS, THIS_WEEK, THIS_MONTH, THIS_YEAR
-```
+**Example 1: Homepage with multiple section previews**
 
-**Archive support:**
-
-Sections automatically generate time-based archives:
-- `/archive/notes/2025/10` - October 2025 notes
-- `/archive/articles/2025` - All 2025 articles
-- Monthly calendar views with event counts
-
-### layout.sections Examples
-
-**Homepage with multiple section previews:**
 ```yaml
 sections:
-  diy-preview:
-    path: /                         # Show on homepage
+  - name: diy-preview
+    path: /
     title: "Latest DIY Projects"
     description: "Recent DIY posts"
-    order: 0                        # First section
+    order: 0                        # First section on homepage
+    limit: 5
+    sort_by: created_at
+    sort_order: desc
     filters:
+      kinds: [1, 30023]
       tags:
         t: ["diy"]
-      kinds: [1, 30023]
-      limit: 5
-    sort_by: "created_at"
-    sort_order: "desc"
     more_link:
       text: "View all DIY posts"
-      section_ref: "diy-full"
+      section_ref: diy-full
 
-  art-preview:
-    path: /                         # Also show on homepage
+  - name: art-preview
+    path: /
     title: "Recent Art"
     description: "Latest art posts"
-    order: 1                        # Second section
+    order: 1                        # Second section on homepage
+    limit: 5
+    sort_by: created_at
+    sort_order: desc
     filters:
+      kinds: [1, 30023]
       tags:
         t: ["art"]
-      kinds: [1, 30023]
-      limit: 5
-    sort_by: "created_at"
-    sort_order: "desc"
     more_link:
       text: "View all art posts"
-      section_ref: "art-full"
+      section_ref: art-full
 
-  diy-full:
-    path: /diy                      # Dedicated DIY page
+  - name: diy-full
+    path: /diy
     title: "DIY Projects"
     description: "All DIY projects and tutorials"
+    limit: 20
+    sort_by: created_at
+    sort_order: desc
     filters:
+      kinds: [1, 30023]
       tags:
         t: ["diy"]
-      kinds: [1, 30023]
-      limit: 20
-    sort_by: "created_at"
-    sort_order: "desc"
 
-  art-full:
-    path: /art                      # Dedicated art page
+  - name: art-full
+    path: /art
     title: "Art Gallery"
     description: "All art and creative posts"
+    limit: 20
+    sort_by: reactions
+    sort_order: desc
     filters:
+      kinds: [1, 30023]
       tags:
         t: ["art"]
-      kinds: [1, 30023]
-      limit: 20
-    sort_by: "reactions"
-    sort_order: "desc"
 ```
 
-**Recent from following:**
+**Example 2: Following timeline**
+
 ```yaml
 sections:
-  timeline:
+  - name: following-timeline
     path: /following
     title: "Timeline"
     description: "Recent posts from people you follow"
+    limit: 50
+    sort_by: created_at
+    sort_order: desc
     filters:
       kinds: [1]
-      scope: "following"
-      limit: 50
-    sort_by: "created_at"
-    sort_order: "desc"
+      scope: following
 ```
 
-**Thread view:**
+**Example 3: Time-based filtering**
+
 ```yaml
 sections:
-  thread:
-    title: "Thread"
-    description: "Conversation thread"
+  - name: recent-week
+    path: /recent
+    title: "This Week"
+    description: "Posts from the last 7 days"
+    limit: 30
     filters:
-      tags:
-        e: ["${ROOT_EVENT_ID}"]
-      kinds: [1]
-    sort_by: "created_at"
-    sort_order: "asc"
-    group_by: "day"
+      kinds: [1, 30023]
+      since: "-7d"                   # 7 days ago
 ```
 
-**Monthly archive:**
+**Example 4: Specific authors**
+
 ```yaml
 sections:
-  monthly:
-    title: "This Month"
-    description: "Posts from this month"
+  - name: priority-authors
+    path: /priority
+    title: "Priority Authors"
+    description: "Posts from my favorite people"
+    limit: 20
     filters:
-      kinds: [1]
-      since: ${THIS_MONTH_START}
-      until: ${THIS_MONTH_END}
-    sort_by: "created_at"
-    sort_order: "desc"
+      kinds: [1, 30023]
+      authors:
+        - "npub1abc..."
+        - "npub1xyz..."
 ```
 
-### Pagination
+**Status:** ✅ VERIFIED (validated in internal/sections/loader.go)
 
-Sections support automatic pagination:
-- Page 1: `/section/notes`
-- Page 2: `/section/notes/2`
-- Page 3: `/section/notes/3`
+---
 
-Navigation includes:
-- Previous/Next page links
-- Page numbers
-- Total pages and items
+## layout
 
-### Archives
+**DEPRECATED:** The `layout.sections` configuration format is no longer used. Use top-level `sections:` array instead (see above).
 
-Sections generate archives automatically:
-- List archives: `/archive/notes`
-- Monthly view: `/archive/notes/2025/10`
-- Daily view: `/archive/notes/2025/10/24`
-- Calendar: Monthly calendar with event counts per day
+If you have old config with `layout.sections`, migrate to the new format:
 
-**Status:** ✅ VERIFIED (Phase 11 complete - implemented in internal/sections/)
+**Old format (deprecated):**
+```yaml
+layout:
+  sections:
+    mySection:
+      title: "My Section"
+```
+
+**New format (correct):**
+```yaml
+sections:
+  - name: mySection
+    path: /my-section
+    title: "My Section"
+    filters:
+      kinds: [1]
+```
 
 ---
 

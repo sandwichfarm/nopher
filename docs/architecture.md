@@ -1441,7 +1441,7 @@ func (s *Server) Start() {
 - ✅ Enhanced Docker Compose (completed - with Redis, Caddy options)
 - ✅ Reverse proxy examples (completed - nginx, Caddy configs)
 
-### Phase 17: Advanced Retention
+### Phase 20: Advanced Retention
 
 - Rule-based retention system
 - Multi-dimensional conditions (kind, author, social distance, interactions)
@@ -1450,7 +1450,9 @@ func (s *Server) Start() {
 - Protected events (never delete)
 - Incremental evaluation (on ingestion + periodic)
 
-**Status:** 📋 Planned - Full specification available in [memory/PHASE_17_RETENTION.md](../memory/PHASE_17_RETENTION.md)
+**Status:** 📋 Future Enhancement - Full specification available in [memory/PHASE_20_ADVANCED_RETENTION.md](../memory/PHASE_20_ADVANCED_RETENTION.md)
+
+**Note:** Phase 12 already implements simple time-based retention (`keep_days` configuration). Phase 20 would add sophisticated multi-dimensional retention on top of this foundation.
 
 ---
 

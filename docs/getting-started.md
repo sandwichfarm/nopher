@@ -162,7 +162,8 @@ The generated configuration includes many sections:
 | `rendering` | Protocol-specific rendering options | 🟡 Implemented |
 | `caching` | Response caching (memory/Redis) | ✅ Verified |
 | `logging` | Log level configuration | ✅ Verified |
-| `layout` | Sections and layouts (filtering/pagination/archives) | ✅ Verified |
+| `sections` | Custom filtered views at specific URL paths | ✅ Verified |
+| `layout` | (DEPRECATED - use sections instead) | ⚠️ Deprecated |
 | `security` | Security features (deny lists, rate limiting, validation) | ✅ Verified |
 | `display` | Display control (feed/detail views, limits) | ✅ Verified |
 | `presentation` | Visual presentation (headers, footers, separators) | ✅ Verified |
