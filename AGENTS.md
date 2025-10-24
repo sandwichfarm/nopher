@@ -438,6 +438,254 @@ func TestRenderEvent(t *testing.T) {
 
 Hard to test: 500-line function with embedded DB queries, HTTP calls, file I/O, and complex logic all mixed together.
 
+Testing Protocols and Best Practices
+
+⚠️ **CRITICAL: Avoid Background Process Chaos**
+
+Background processes from testing can accumulate and cause issues. Follow these strict protocols:
+
+**❌ NEVER: Run parallel background processes**
+```bash
+# BAD: Multiple background servers running simultaneously
+./nopher --config test1.yaml > log1.log 2>&1 &
+./nopher --config test2.yaml > log2.log 2>&1 &
+./nopher --config test3.yaml > log3.log 2>&1 &
+# Now you have 3 processes fighting for ports and resources!
+```
+
+**✅ ALWAYS: Sequential testing with cleanup**
+```bash
+# GOOD: One test at a time, with cleanup
+./nopher --config test-config.yaml &
+PID=$!
+
+# Do your testing...
+sleep 5
+curl localhost:70
+
+# Clean up IMMEDIATELY
+kill $PID
+wait $PID
+
+# Now safe to run next test
+```
+
+**Testing Workflow Guidelines**
+
+1. **Unit Tests First** ✅
+   - Run `go test ./...` for all packages
+   - These are fast, don't spawn processes
+   - Fix all test failures before integration testing
+
+2. **Integration Tests Second** ✅
+   - Start ONE server instance only
+   - Test with actual clients (curl, netcat, etc.)
+   - Kill and verify cleanup before next test
+
+3. **Process Management** ✅
+   ```bash
+   # Start process
+   ./nopher --config test.yaml > test.log 2>&1 &
+   PID=$!
+
+   # Always save the PID!
+   echo $PID > /tmp/nopher-test.pid
+
+   # Test...
+   sleep 2
+   # ... your tests here ...
+
+   # Clean up
+   kill $(cat /tmp/nopher-test.pid) 2>/dev/null
+   rm /tmp/nopher-test.pid
+
+   # Verify cleanup
+   ps aux | grep "[n]opher" || echo "✓ Clean"
+   ```
+
+4. **Port Conflicts** ⚠️
+   - Only one process can bind to port 70 (Gopher)
+   - Only one process can bind to port 1965 (Gemini)
+   - Use non-standard ports for parallel tests:
+     ```yaml
+     # test-config-1.yaml
+     gopher:
+       port: 17070  # Non-standard
+     gemini:
+       port: 11965  # Non-standard
+     ```
+
+5. **Background Bash Shells** ⚠️
+   - Claude's Bash tool with `run_in_background: true` creates persistent shells
+   - These shells can accumulate and create stale reminders
+   - **RULE: Only use background mode for long-running operations (>2 minutes)**
+   - **For tests: Use sequential commands with proper cleanup**
+
+**Test Execution Checklist**
+
+Before starting tests:
+- [ ] No existing nopher processes running
+- [ ] Ports are available (70, 1965, 79)
+- [ ] Test database/storage is clean
+
+During tests:
+- [ ] ONE test server at a time
+- [ ] Save PID for cleanup
+- [ ] Monitor for port conflicts
+- [ ] Check logs for errors
+
+After tests:
+- [ ] Kill all test processes
+- [ ] Verify no processes remain: `ps aux | grep "[n]opher"`
+- [ ] Clean up test artifacts (logs, databases)
+- [ ] Reset to clean state
+
+**Common Testing Anti-Patterns**
+
+🚩 **"Fire and Forget"** - Starting background processes without tracking PIDs
+```bash
+# BAD: No PID tracking
+./nopher --config test.yaml &
+# Later: How do I kill this?
+```
+
+🚩 **"Parallel Chaos"** - Running multiple servers simultaneously
+```bash
+# BAD: Port conflicts guaranteed
+for config in test*.yaml; do
+    ./nopher --config $config &  # All trying to bind port 70!
+done
+```
+
+🚩 **"Zombie Horde"** - Not cleaning up after tests
+```bash
+# BAD: Processes accumulate
+./nopher --config test1.yaml &
+# Test something...
+./nopher --config test2.yaml &
+# Test something else...
+# Now have 2 zombie processes!
+```
+
+🚩 **"Log Pollution"** - All output to same file
+```bash
+# BAD: Logs mixed together
+./nopher --config test1.yaml > test.log 2>&1 &
+./nopher --config test2.yaml > test.log 2>&1 &
+# Logs are now useless jumble
+```
+
+**Proper Integration Testing Example**
+
+```bash
+#!/bin/bash
+# integration-test.sh
+
+set -e  # Exit on error
+
+# Cleanup function
+cleanup() {
+    echo "Cleaning up..."
+    if [ -f /tmp/nopher-test.pid ]; then
+        kill $(cat /tmp/nopher-test.pid) 2>/dev/null || true
+        rm /tmp/nopher-test.pid
+    fi
+    pkill -f "nopher --config test-config.yaml" 2>/dev/null || true
+    rm -f test-data/nopher.db test.log
+    echo "✓ Cleanup complete"
+}
+
+# Always cleanup on exit
+trap cleanup EXIT INT TERM
+
+# Verify clean state
+if pgrep -f "nopher --config" > /dev/null; then
+    echo "ERROR: Nopher already running. Clean up first."
+    exit 1
+fi
+
+# Build
+echo "Building..."
+go build -o nopher cmd/nopher/main.go
+
+# Start server
+echo "Starting server..."
+./nopher --config test-config.yaml > test.log 2>&1 &
+echo $! > /tmp/nopher-test.pid
+
+# Wait for startup
+echo "Waiting for startup..."
+sleep 3
+
+# Verify it started
+if ! ps -p $(cat /tmp/nopher-test.pid) > /dev/null; then
+    echo "ERROR: Server failed to start"
+    cat test.log
+    exit 1
+fi
+
+# Run tests
+echo "Running tests..."
+echo "Testing Gopher (port 70)..."
+echo "" | nc localhost 70 | head -5
+
+echo "Testing Gemini (port 1965)..."
+echo "gemini://localhost/" | timeout 2 openssl s_client -connect localhost:1965 -quiet 2>/dev/null | head -5
+
+echo "✓ All tests passed"
+
+# Cleanup happens automatically via trap
+```
+
+**Quick Reference: Testing Commands**
+
+```bash
+# Unit tests (safe, no processes)
+go test ./...
+go test ./internal/config -v
+go test -run TestSpecificTest ./...
+
+# Build for integration testing
+go build -o nopher cmd/nopher/main.go
+
+# Start test server (save PID!)
+./nopher --config test-config.yaml > test.log 2>&1 &
+echo $! > /tmp/nopher.pid
+
+# Check if running
+ps -p $(cat /tmp/nopher.pid)
+
+# View logs
+tail -f test.log
+
+# Test endpoints
+echo "" | nc localhost 70  # Gopher
+echo "gemini://localhost/" | openssl s_client -connect localhost:1965 -quiet 2>/dev/null  # Gemini
+
+# Clean up
+kill $(cat /tmp/nopher.pid)
+wait $(cat /tmp/nopher.pid) 2>/dev/null
+rm /tmp/nopher.pid
+
+# Verify cleanup
+ps aux | grep "[n]opher" || echo "✓ All clean"
+
+# Nuclear cleanup (if needed)
+pkill -9 -f "nopher --config"
+```
+
+**Summary: Testing Philosophy**
+
+- **Fast feedback:** Unit tests first, integration tests second
+- **Clean slate:** Always start from clean state
+- **One thing at a time:** Sequential testing, not parallel
+- **Immediate cleanup:** Kill processes as soon as done
+- **Verify cleanup:** Check no processes remain
+- **Save PIDs:** Always track what you start
+- **Descriptive logs:** One log file per test run
+
+**When testing fails, don't accumulate debris. Clean up, understand the failure, fix it, then try again.**
+
 Red Flags in Code Review
 
 Watch for these anti-patterns:
